@@ -36,9 +36,10 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           <div className="mb-6">
             <Button
               variant="ghost"
-              size="icon"
               onClick={toggleSidebar}
-              className="w-full hover:bg-sidebar-accent"
+              className={`w-full hover:bg-sidebar-accent ${
+                isExpanded ? 'justify-start gap-2' : 'justify-center'
+              }`}
               data-testid="button-sidebar-toggle"
             >
               <Menu className="h-4 w-4" />
