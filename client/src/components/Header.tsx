@@ -19,14 +19,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   return (
     <header className="flex items-center justify-between p-4 border-b bg-background">
       <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleSidebar}
-          data-testid="button-sidebar-toggle"
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
+        
         <img src={logoUrl} alt="Mantua Protocol" className="w-8 h-8" />
         <h1 className="text-xl font-semibold text-foreground" data-testid="text-brand-name">
           Mantua Protocol
