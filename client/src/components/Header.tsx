@@ -21,22 +21,6 @@ export default function Header() {
         </h1>
       </div>
 
-      <nav className="hidden md:flex items-center gap-6">
-        <button 
-          className="text-muted-foreground hover:text-foreground transition-colors hover-elevate px-3 py-1.5 rounded-md"
-          data-testid="link-user-activity"
-          onClick={() => console.log('User activity clicked')}
-        >
-          User activity
-        </button>
-        <button 
-          className="text-muted-foreground hover:text-foreground transition-colors hover-elevate px-3 py-1.5 rounded-md"
-          data-testid="link-agent-activity"
-          onClick={() => console.log('Agent activity clicked')}
-        >
-          Agent activity
-        </button>
-      </nav>
 
       <div className="flex items-center gap-3">
         <Button

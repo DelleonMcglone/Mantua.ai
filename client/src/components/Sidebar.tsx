@@ -1,4 +1,4 @@
-import { ChevronDown, MessageSquarePlus, Search, Settings, Package } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -58,6 +58,28 @@ export default function Sidebar() {
         >
           <Search className="h-4 w-4" />
           Search
+        </Button>
+
+        {/* User activity */}
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
+          onClick={() => console.log('User activity clicked')}
+          data-testid="button-user-activity"
+        >
+          <User className="h-4 w-4" />
+          User activity
+        </Button>
+
+        {/* Agent activity */}
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
+          onClick={() => console.log('Agent activity clicked')}
+          data-testid="button-agent-activity"
+        >
+          <Bot className="h-4 w-4" />
+          Agent activity
         </Button>
 
         {/* Settings */}
