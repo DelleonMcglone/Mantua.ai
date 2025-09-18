@@ -26,6 +26,20 @@ export default function Header() {
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
+          data-testid="button-community"
+          onClick={() => console.log('Community clicked')}
+        >
+          Community
+        </Button>
+        <Button
+          variant="ghost"
+          data-testid="button-docs"
+          onClick={() => console.log('Docs clicked')}
+        >
+          Docs
+        </Button>
+        <Button
+          variant="ghost"
           size="icon"
           onClick={toggleTheme}
           data-testid="button-theme-toggle"
