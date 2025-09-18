@@ -17,12 +17,12 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background">
+    <div className="flex h-screen w-full bg-background relative">
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
       
       {/* Main area */}
-      <div className="flex flex-col flex-1 lg:ml-0">
+      <div className="flex flex-col flex-1 min-w-0">
         <Header onToggleSidebar={toggleSidebar} />
         <MainContent />
       </div>

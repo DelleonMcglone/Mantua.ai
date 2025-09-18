@@ -12,22 +12,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay for mobile */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onClose}
           data-testid="sidebar-overlay"
         />
       )}
       
       {/* Sidebar */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 
-        w-64 bg-sidebar border-r border-sidebar-border 
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+      <aside 
+        className={`
+          fixed lg:relative inset-y-0 left-0 z-50 w-64 
+          bg-sidebar border-r border-sidebar-border 
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? 'transform translate-x-0' : 'transform -translate-x-full lg:translate-x-0'}
+        `}
+        data-testid="sidebar-main"
+      >
         <div className="p-4 h-full">
           {/* Close button for mobile */}
           <div className="flex justify-end mb-4 lg:hidden">
