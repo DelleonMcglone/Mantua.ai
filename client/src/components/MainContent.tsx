@@ -45,7 +45,7 @@ export default function MainContent() {
           <h2 className="text-4xl font-semibold text-foreground" data-testid="text-welcome-subtitle">
             your personal DeFi Assistant
           </h2>
-          <p className="text-muted-foreground text-lg" data-testid="text-welcome-description">The program programmable liquidity layer </p>
+          
         </div>
 
         {/* Chat Input */}
