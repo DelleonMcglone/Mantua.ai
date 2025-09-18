@@ -28,7 +28,7 @@ export default function ChatInput() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="What would you like to do today?"
+          placeholder="Ask Mantua"
           className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
           data-testid="input-chat-message"
         />
