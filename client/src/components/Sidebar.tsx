@@ -45,6 +45,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
           
           <div className="space-y-2">
+        {/* New chats */}
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-primary hover:bg-sidebar-accent"
+          onClick={() => console.log('New chats clicked')}
+          data-testid="button-new-chats"
+        >
+          <MessageSquarePlus className="h-4 w-4" />
+          New chats
+        </Button>
+
         {/* Assets Dropdown */}
         <div>
           <Button
@@ -71,17 +82,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           )}
         </div>
-
-        {/* New chats */}
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 text-primary hover:bg-sidebar-accent"
-          onClick={() => console.log('New chats clicked')}
-          data-testid="button-new-chats"
-        >
-          <MessageSquarePlus className="h-4 w-4" />
-          New chats
-        </Button>
 
         {/* Search */}
         <Button
