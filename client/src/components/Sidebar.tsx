@@ -1,13 +1,47 @@
-import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
 
   return (
-    <aside className="w-64 bg-sidebar border-r border-sidebar-border p-4 h-full">
-      <div className="space-y-2">
+    <>
+      {/* Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+          data-testid="sidebar-overlay"
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50 
+        w-64 bg-sidebar border-r border-sidebar-border 
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="p-4 h-full">
+          {/* Close button for mobile */}
+          <div className="flex justify-end mb-4 lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              data-testid="button-sidebar-close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="space-y-2">
         {/* Assets Dropdown */}
         <div>
           <Button
@@ -92,7 +126,9 @@ export default function Sidebar() {
           <Settings className="h-4 w-4" />
           Settings
         </Button>
-      </div>
-    </aside>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

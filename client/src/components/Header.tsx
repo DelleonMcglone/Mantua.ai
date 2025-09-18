@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Menu } from "lucide-react";
 import logoUrl from "@assets/generated_images/Purple_Mantua_Protocol_logo_8c90b33a.png";
 import { useState } from "react";
 
-export default function Header() {
+interface HeaderProps {
+  onToggleSidebar?: () => void;
+}
+
+export default function Header({ onToggleSidebar }: HeaderProps) {
   const [isDark, setIsDark] = useState(false);
 
   const toggleTheme = () => {
@@ -15,12 +19,19 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between p-4 border-b bg-background">
       <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleSidebar}
+          data-testid="button-sidebar-toggle"
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
         <img src={logoUrl} alt="Mantua Protocol" className="w-8 h-8" />
         <h1 className="text-xl font-semibold text-foreground" data-testid="text-brand-name">
           Mantua Protocol
         </h1>
       </div>
-
 
       <div className="flex items-center gap-3">
         <Button
