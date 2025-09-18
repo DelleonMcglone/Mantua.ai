@@ -1,15 +1,36 @@
-import logoUrl from "@assets/generated_images/Purple_Mantua_Protocol_logo_8c90b33a.png";
+import logoBlack from "@assets/Mantua logo black_1758235323665.png";
+import logoWhite from "@assets/Mantua logo white_processed_1758235323665.png";
 import ChatInput from "./ChatInput";
 import ActionButtons from "./ActionButtons";
+import { useState, useEffect } from "react";
 
 export default function MainContent() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check initial theme
+    setIsDark(document.documentElement.classList.contains('dark'));
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <main className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
       <div className="max-w-2xl w-full text-center space-y-8">
         {/* Mantua Logo */}
         <div className="flex justify-center mb-8">
           <img 
-            src={logoUrl} 
+            src={isDark ? logoBlack : logoWhite} 
             alt="Mantua Protocol" 
             className="w-16 h-16" 
             data-testid="img-mantua-logo"

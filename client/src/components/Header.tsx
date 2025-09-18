@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Sun, Moon } from "lucide-react";
-import logoUrl from "@assets/generated_images/Purple_Mantua_Protocol_logo_8c90b33a.png";
+import logoBlack from "@assets/Mantua logo black_1758235323665.png";
+import logoWhite from "@assets/Mantua logo white_processed_1758235323665.png";
 import { useState } from "react";
 
 export default function Header() {
@@ -16,7 +17,7 @@ export default function Header() {
     <header className="flex items-center justify-between p-4 border-b bg-background">
       <div className="flex items-center gap-3">
         
-        <img src={logoUrl} alt="Mantua Protocol" className="w-8 h-8" />
+        <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-8 h-8" />
         <h1 className="text-xl font-semibold text-foreground" data-testid="text-brand-name">
           Mantua Protocol
         </h1>
