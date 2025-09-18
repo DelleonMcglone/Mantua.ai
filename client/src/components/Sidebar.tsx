@@ -66,9 +66,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 Tokens
               </button>
               <button className="text-sm text-muted-foreground hover:text-sidebar-foreground block py-1 hover-elevate px-2 rounded-sm">
-                NFTs
-              </button>
-              <button className="text-sm text-muted-foreground hover:text-sidebar-foreground block py-1 hover-elevate px-2 rounded-sm">
                 Pools
               </button>
             </div>
