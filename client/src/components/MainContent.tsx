@@ -46,7 +46,7 @@ export default function MainContent() {
             your personal DeFi Assistant
           </h2>
           <p className="text-muted-foreground text-lg" data-testid="text-welcome-description">
-            Your DeFi assistant for hooks, swaps, and programmable liquidity.
+            The program programmable liquidity layer for Defi
           </p>
         </div>
 
