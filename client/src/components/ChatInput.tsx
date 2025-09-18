@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Settings } from "lucide-react";
+import { Send } from "lucide-react";
 import { useState } from "react";
 
 export default function ChatInput() {
@@ -22,15 +22,7 @@ export default function ChatInput() {
   return (
     <div className="relative w-full max-w-2xl">
       <div className="flex items-center gap-2 p-4 border rounded-lg bg-background border-border">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground"
-          data-testid="button-chat-settings"
-          onClick={() => console.log('Chat settings clicked')}
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+        
         
         <Input
           value={message}
