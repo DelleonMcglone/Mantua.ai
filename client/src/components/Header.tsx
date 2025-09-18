@@ -37,7 +37,7 @@ export default function Header() {
           data-testid="button-connect-wallet"
           onClick={() => console.log('Connect wallet clicked')}
         >
-          💳 Connect wallet
+          Connect wallet
         </Button>
       </div>
     </header>
