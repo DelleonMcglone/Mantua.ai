@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Sun, Moon } from "lucide-react";
 import logoBlack from "@assets/Mantua logo black_1758235323665.png";
-import logoWhite from "@assets/Mantua logo white_processed_1758235323665.png";
+import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import { useState } from "react";
 
 export default function Header() {

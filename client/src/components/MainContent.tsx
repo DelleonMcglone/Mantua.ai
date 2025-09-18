@@ -1,5 +1,5 @@
 import logoBlack from "@assets/Mantua logo black_1758235323665.png";
-import logoWhite from "@assets/Mantua logo white_processed_1758235323665.png";
+import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import ActionButtons from "./ActionButtons";
 import { useState, useEffect } from "react";
