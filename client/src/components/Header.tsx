@@ -1,13 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Menu } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import logoUrl from "@assets/generated_images/Purple_Mantua_Protocol_logo_8c90b33a.png";
 import { useState } from "react";
 
-interface HeaderProps {
-  onToggleSidebar?: () => void;
-}
-
-export default function Header({ onToggleSidebar }: HeaderProps) {
+export default function Header() {
   const [isDark, setIsDark] = useState(false);
 
   const toggleTheme = () => {
