@@ -2,11 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Sun, Moon } from "lucide-react";
 import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
 export default function Landing() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+  
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+  }, []);
   const [, setLocation] = useLocation();
 
   const toggleTheme = () => {
@@ -23,7 +27,7 @@ export default function Landing() {
       {/* Header */}
       <header className="flex items-center justify-between p-6 border-b bg-background">
         <div className="flex items-center gap-3">
-          <img src={isDark ? logoWhite : logoBlack} alt="Mantua Protocol" className="w-8 h-8" />
+          <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-8 h-8" />
           <h1 className="text-xl font-semibold text-foreground" data-testid="text-brand-name">
             Mantua Protocol
           </h1>
@@ -105,7 +109,7 @@ export default function Landing() {
               {/* Preview Header */}
               <div className="flex items-center justify-between p-4 border-b bg-background">
                 <div className="flex items-center gap-3">
-                  <img src={isDark ? logoWhite : logoBlack} alt="Mantua Protocol" className="w-6 h-6" />
+                  <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-6 h-6" />
                   <span className="text-sm font-medium text-foreground">Mantua Protocol</span>
                 </div>
                 <div className="flex items-center gap-2">
