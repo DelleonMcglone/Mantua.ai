@@ -122,12 +122,15 @@ export default function Landing() {
                 {/* Sidebar */}
                 <div className="w-64 bg-muted/30 border-r p-4">
                   <div className="space-y-6">
-                    <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                    <div className="flex items-center gap-2 text-sm text-primary">
                       <MessageSquarePlus className="h-4 w-4" />
                       New chats
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground flex items-center gap-2">
-                      <Search className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="relative">
+                        <div className="absolute -inset-2 bg-muted/50 rounded-lg"></div>
+                        <Search className="h-4 w-4 relative z-10" />
+                      </div>
                       Search
                     </div>
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
