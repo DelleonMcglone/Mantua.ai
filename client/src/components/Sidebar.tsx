@@ -8,7 +8,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
 
   const toggleSidebar = () => {
