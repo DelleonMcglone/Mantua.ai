@@ -15,10 +15,23 @@ The frontend is built using **React 18** with **TypeScript** and follows a compo
 - **UI Library**: Shadcn/ui components built on top of Radix UI primitives
 - **Styling**: Tailwind CSS with custom design system implementing purple-themed color palette
 - **State Management**: TanStack React Query for server state management
-- **Routing**: Wouter for lightweight client-side routing
-- **Component Structure**: Modular components organized by feature (Header, Sidebar, MainContent, ChatInput, ActionButtons)
+- **Routing**: Wouter for lightweight client-side routing with separate landing page and main application routes
+- **Component Structure**: Modular components organized by feature (Header, Sidebar, MainContent, ChatInput, ActionButtons, Landing)
 
 The design system follows a cohesive purple color scheme (270° 85% 60% primary) with Inter font family and responsive layout patterns.
+
+## Application Structure
+The application now features a dual-page architecture:
+
+- **Landing Page** (`/`): Marketing-focused entry point with hero section, feature descriptions, and "Launch App" call-to-action
+- **Main Application** (`/app`): Full DeFi assistant interface with sidebar navigation, chat functionality, and action buttons
+- **Navigation Flow**: Landing page → Launch App button → Main application interface
+
+The landing page includes:
+- Header with Docs, Support links, theme toggle, and Launch App button
+- Hero section with "Built on Base" badge and main value proposition
+- App preview mockup showing the main interface
+- Consistent purple branding and theme-aware logo switching
 
 ## Backend Architecture
 The backend uses a **Node.js/Express** server architecture:
