@@ -113,10 +113,6 @@ export default function Landing() {
                   <span className="text-sm font-medium text-foreground">Mantua Protocol</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>User activity</span>
-                    <span>Agent activity</span>
-                  </div>
                   <div className="bg-muted px-3 py-1 rounded text-xs text-muted-foreground">xxxyyy...23brul</div>
                 </div>
               </div>
@@ -126,16 +122,14 @@ export default function Landing() {
                 {/* Sidebar */}
                 <div className="w-64 bg-muted/30 border-r p-4">
                   <div className="space-y-6">
-                    <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">Search</div>
-                    <div className="flex items-center gap-2 text-sm text-primary">
+                    <div className="flex items-center justify-center gap-2 text-sm text-primary">
                       <div className="w-2 h-2 bg-primary rounded-full"></div>
                       New chats
                     </div>
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">Search</div>
                     <div className="text-sm text-muted-foreground">Assets</div>
-                    <div className="text-sm text-muted-foreground">Settings</div>
-                    <div className="mt-8 text-xs text-muted-foreground uppercase tracking-wide">
-                      RECENTS
-                    </div>
+                    <div className="text-sm text-muted-foreground">User Activity</div>
+                    <div className="text-sm text-muted-foreground">Agent Activity</div>
                   </div>
                 </div>
                 
@@ -146,14 +140,14 @@ export default function Landing() {
                   </div>
                   
                   <div className="max-w-md mx-auto">
-                    <div className="text-right mb-2 text-xs text-muted-foreground">Balance: ETH 0.0034</div>
-                    
                     <div className="bg-muted/30 rounded-lg p-4 space-y-4">
-                      <div className="text-sm text-muted-foreground">Sell</div>
-                      
                       <div className="flex items-center justify-between">
-                        <div className="text-2xl font-semibold">0.5</div>
-                        <div className="flex items-center gap-2">
+                        <div>
+                          <div className="text-sm text-muted-foreground mb-1">Sell</div>
+                          <div className="text-2xl font-semibold">0.5</div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-xs text-muted-foreground">Balance: ETH 0.0034</div>
                           <div className="flex items-center gap-1 bg-background rounded-lg px-3 py-1 border">
                             <span className="text-sm font-medium">ETH</span>
                             <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
