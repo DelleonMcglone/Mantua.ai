@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, MessageSquarePlus, Search, Package, User, Bot } from "lucide-react";
 import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import { useState, useEffect } from "react";
@@ -123,13 +123,25 @@ export default function Landing() {
                 <div className="w-64 bg-muted/30 border-r p-4">
                   <div className="space-y-6">
                     <div className="flex items-center justify-center gap-2 text-sm text-primary">
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      <MessageSquarePlus className="h-4 w-4" />
                       New chats
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">Search</div>
-                    <div className="text-sm text-muted-foreground">Assets</div>
-                    <div className="text-sm text-muted-foreground">User Activity</div>
-                    <div className="text-sm text-muted-foreground">Agent Activity</div>
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground flex items-center gap-2">
+                      <Search className="h-4 w-4" />
+                      Search
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Assets
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      User Activity
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
+                      Agent Activity
+                    </div>
                   </div>
                 </div>
                 
