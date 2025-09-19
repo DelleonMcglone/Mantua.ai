@@ -29,7 +29,7 @@ export default function Landing() {
         <div className="flex items-center gap-3">
           <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-8 h-8" />
           <h1 className="text-xl font-semibold text-foreground" data-testid="text-brand-name">
-            Mantua Protocol
+            Mantua.AI
           </h1>
         </div>
 
@@ -76,10 +76,15 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* Logo */}
+        <div className="mb-8">
+          <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-16 h-16 mx-auto" />
+        </div>
+
         {/* Main Headline */}
         <div className="max-w-4xl mb-8">
           <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight">
-            The programmable
+            Mantua.AI, the programmable
             <br />
             liquidity layer for DeFi
           </h1>
@@ -109,8 +114,8 @@ export default function Landing() {
               {/* Preview Header */}
               <div className="flex items-center justify-between p-4 border-b bg-background">
                 <div className="flex items-center gap-3">
-                  <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-6 h-6" />
-                  <span className="text-sm font-medium text-foreground">Mantua Protocol</span>
+                  <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-6 h-6" />
+                  <span className="text-sm font-medium text-foreground">Mantua.AI</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="bg-muted px-3 py-1 rounded text-xs text-muted-foreground">Datadealer.base.eth</div>

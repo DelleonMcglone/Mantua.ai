@@ -31,7 +31,7 @@ export default function MainContent() {
         <div className="flex justify-center mb-8">
           <img 
             src={isDark ? logoBlack : logoWhite} 
-            alt="Mantua Protocol" 
+            alt="Mantua.AI" 
             className="w-16 h-16" 
             data-testid="img-mantua-logo"
           />

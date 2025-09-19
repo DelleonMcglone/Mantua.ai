@@ -26,9 +26,9 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between p-4 border-b bg-background">
       <div className="flex items-center gap-3 cursor-pointer hover-elevate rounded-lg p-2 -m-2" onClick={handleLogoClick} data-testid="button-logo-home">
-        <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-8 h-8" />
+        <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-8 h-8" />
         <h1 className="text-xl font-semibold text-foreground" data-testid="text-brand-name">
-          Mantua Protocol
+          Mantua.AI
         </h1>
       </div>
 
