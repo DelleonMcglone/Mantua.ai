@@ -151,7 +151,7 @@ export default function Landing() {
                 {/* Main Content */}
                 <div className="flex-1 p-6 bg-background">
                   <div className="text-sm text-muted-foreground mb-8 text-right">
-                    Swap ETH for USDC using my custom hook
+                    Swap ETH for USDC use the dynamic fee hook
                   </div>
                   
                   <div className="max-w-md mx-auto">
