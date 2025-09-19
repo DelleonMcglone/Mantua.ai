@@ -84,9 +84,7 @@ export default function Landing() {
         {/* Main Headline */}
         <div className="max-w-4xl mb-8">
           <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight">
-            Mantua.AI
-            <br />
-            the programmable liquidity layer
+            Mantua.AI the programmable liquidity layer for Defi
           </h1>
         </div>
 
