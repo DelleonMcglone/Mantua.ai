@@ -112,12 +112,12 @@ export default function Landing() {
                   <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-6 h-6" />
                   <span className="text-sm font-medium text-foreground">Mantua Protocol</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span>User activity</span>
                     <span>Agent activity</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">xxxyyy...23brul</div>
+                  <div className="bg-muted px-3 py-1 rounded text-xs text-muted-foreground">xxxyyy...23brul</div>
                 </div>
               </div>
               
@@ -125,8 +125,8 @@ export default function Landing() {
               <div className="flex">
                 {/* Sidebar */}
                 <div className="w-64 bg-muted/30 border-r p-4">
-                  <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">Search</div>
+                  <div className="space-y-6">
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">Search</div>
                     <div className="flex items-center gap-2 text-sm text-primary">
                       <div className="w-2 h-2 bg-primary rounded-full"></div>
                       New chats
@@ -140,22 +140,32 @@ export default function Landing() {
                 </div>
                 
                 {/* Main Content */}
-                <div className="flex-1 p-6">
-                  <div className="text-sm text-muted-foreground mb-4">
+                <div className="flex-1 p-6 bg-background">
+                  <div className="text-sm text-muted-foreground mb-8 text-right">
                     Swap ETH for USDC using my custom hook
                   </div>
-                  <div className="bg-muted/30 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <div className="text-lg font-semibold">0.5</div>
-                        <div className="text-xs text-muted-foreground">~$0.37 ETH</div>
-                      </div>
-                      <div className="text-right">
+                  
+                  <div className="max-w-md mx-auto">
+                    <div className="text-right mb-2 text-xs text-muted-foreground">Balance: ETH 0.0034</div>
+                    
+                    <div className="bg-muted/30 rounded-lg p-4 space-y-4">
+                      <div className="text-sm text-muted-foreground">Sell</div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-2xl font-semibold">0.5</div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm">ETH</span>
-                          <div className="text-xs text-primary">Max</div>
+                          <div className="flex items-center gap-1 bg-background rounded-lg px-3 py-1 border">
+                            <span className="text-sm font-medium">ETH</span>
+                            <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">Balance: ETH 0.0034</div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground">0.0567 ETH</span>
+                        <span className="text-primary">Max</span>
                       </div>
                     </div>
                   </div>
