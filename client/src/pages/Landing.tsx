@@ -32,17 +32,17 @@ export default function Landing() {
         <div className="flex items-center gap-6">
           <Button
             variant="ghost"
+            data-testid="button-community"
+            onClick={() => console.log('Community clicked')}
+          >
+            Community
+          </Button>
+          <Button
+            variant="ghost"
             data-testid="button-docs"
             onClick={() => console.log('Docs clicked')}
           >
             Docs
-          </Button>
-          <Button
-            variant="ghost"
-            data-testid="button-support"
-            onClick={() => console.log('Support clicked')}
-          >
-            Support
           </Button>
           <Button
             variant="ghost"
@@ -53,8 +53,7 @@ export default function Landing() {
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           <Button 
-            variant="outline"
-            className="border-border"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
             data-testid="button-launch-app-header"
             onClick={handleLaunchApp}
           >
@@ -67,9 +66,9 @@ export default function Landing() {
       <main className="flex flex-col items-center justify-center px-8 py-16 text-center">
         {/* Built on Base Badge */}
         <div className="mb-12">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium border border-primary/20">
-            <div className="w-2 h-2 bg-primary rounded-full"></div>
-            Built on Base
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-500 px-4 py-2 rounded-full text-sm font-medium border border-blue-500/20">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            Built on Base Sepolia
           </div>
         </div>
 
@@ -85,7 +84,7 @@ export default function Landing() {
         {/* Subtitle */}
         <div className="max-w-2xl mb-12">
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Instantly swap, manage, and optimize custom liquidity — just by typing what you want.
+            Hooks for logic. Agents for action. AI for intelligence.
           </p>
         </div>
 
