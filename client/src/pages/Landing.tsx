@@ -113,7 +113,7 @@ export default function Landing() {
                   <span className="text-sm font-medium text-foreground">Mantua Protocol</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="bg-muted px-3 py-1 rounded text-xs text-muted-foreground">xxxyyy...23brul</div>
+                  <div className="bg-muted px-3 py-1 rounded text-xs text-muted-foreground">Datadealer.base.eth</div>
                 </div>
               </div>
               
