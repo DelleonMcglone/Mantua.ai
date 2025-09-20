@@ -40,7 +40,7 @@ export default function MainContent() {
         {/* Welcome Message */}
         <div className="space-y-4">
           <h1 className="text-4xl font-semibold text-foreground" data-testid="text-welcome-title">
-            Meet Mantua,
+            Meet Mantua.AI,
           </h1>
           <h2 className="text-4xl font-semibold text-foreground" data-testid="text-welcome-subtitle">
             your personal DeFi Assistant
