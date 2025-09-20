@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 export default function ActionButtons() {
   const actions = [
-    { label: "What can Mantua do?", id: "what-mantua-do" },
+    { label: "What can Mantua.AI do?", id: "what-mantua-do" },
     { label: "Learn about Hooks", id: "learn-hooks" },
     { label: "DeFi Research", id: "defi-research" },
     { label: "Swap", id: "swap" },
