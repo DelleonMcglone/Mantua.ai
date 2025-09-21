@@ -4,18 +4,58 @@ import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { 
-  Wallet,
-  ConnectWallet,
-  WalletDropdown,
-  WalletDropdownDisconnect 
-} from '@coinbase/onchainkit/wallet';
-import { 
-  Identity,
-  Avatar, 
-  Name, 
-  Address 
-} from '@coinbase/onchainkit/identity';
+import { useConnect, useDisconnect, useActiveAccount } from 'thirdweb/react';
+import { createWallet } from 'thirdweb/wallets';
+import { baseSepolia } from 'thirdweb/chains';
+import { client } from '../providers/ThirdwebProvider';
+
+const metamask = createWallet("io.metamask");
+
+function WalletConnection() {
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  const account = useActiveAccount();
+
+  const shortenedAddress = account
+    ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
+    : "";
+
+  const handleConnect = () => {
+    connect(() => metamask, { client, chain: baseSepolia });
+  };
+
+  const handleDisconnect = () => {
+    if (account) disconnect(account);
+  };
+
+  if (account) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-foreground" data-testid="text-wallet-address">
+          {shortenedAddress}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDisconnect}
+          data-testid="button-disconnect-wallet"
+        >
+          Disconnect
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Button 
+      className="bg-primary text-primary-foreground hover:bg-primary/90"
+      data-testid="button-connect-wallet"
+      onClick={handleConnect}
+    >
+      Connect wallet
+    </Button>
+  );
+}
 
 export default function Header() {
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
@@ -67,22 +107,7 @@ export default function Header() {
         >
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
-        <Wallet>
-          <ConnectWallet 
-            className="bg-primary text-primary-foreground hover:bg-primary/90 min-h-9 px-4 py-2 rounded-md text-sm font-medium"
-            data-testid="button-connect-wallet"
-          >
-            Connect wallet
-          </ConnectWallet>
-          <WalletDropdown>
-            <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-              <Avatar />
-              <Name />
-              <Address />
-            </Identity>
-            <WalletDropdownDisconnect />
-          </WalletDropdown>
-        </Wallet>
+        <WalletConnection />
       </div>
     </header>
   );

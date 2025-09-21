@@ -1,11 +1,10 @@
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { OnchainProviders } from "./providers/OnchainKitProvider";
+import { ThirdwebProviders } from "./providers/ThirdwebProvider";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
-import '@coinbase/onchainkit/styles.css';
 
 function Router() {
   return (
@@ -20,12 +19,12 @@ function Router() {
 
 function App() {
   return (
-    <OnchainProviders>
+    <ThirdwebProviders>
       <TooltipProvider>
         <Toaster />
         <Router />
       </TooltipProvider>
-    </OnchainProviders>
+    </ThirdwebProviders>
   );
 }
 
