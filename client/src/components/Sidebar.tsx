@@ -1,10 +1,57 @@
 import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useActiveAccount, useWalletBalance } from 'thirdweb/react';
+import { baseSepolia } from 'thirdweb/chains';
+import { client } from '../providers/ThirdwebProvider';
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+}
+
+function TokensSection({ isExpanded }: { isExpanded: boolean }) {
+  const account = useActiveAccount();
+  const { data: balance, isLoading } = useWalletBalance({
+    client,
+    chain: baseSepolia,
+    address: account?.address,
+  });
+
+  if (!account) {
+    return (
+      <div className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground" data-testid="text-tokens-connect-prompt">
+        Connect your wallet to view tokens
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground" data-testid="text-tokens-loading">
+        Loading balances...
+      </div>
+    );
+  }
+
+  return (
+    <div className="ml-6 mt-1 space-y-1" data-testid="div-tokens-balances">
+      {balance && (
+        <div className="flex justify-between items-center px-2 py-1 text-xs" data-testid="div-eth-balance">
+          <span className="text-sidebar-foreground">ETH</span>
+          <span className="text-muted-foreground">
+            {parseFloat(balance.displayValue).toFixed(4)}
+          </span>
+        </div>
+      )}
+      {/* Additional tokens would be displayed here */}
+      {!balance && (
+        <div className="px-2 py-1 text-xs text-muted-foreground" data-testid="text-no-balances">
+          No tokens found
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
@@ -100,11 +147,14 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 )}
               </Button>
               {isExpanded && isAssetsOpen && (
-                <div className="ml-6 mt-1 space-y-1" data-testid="dropdown-assets-content">
-                  <button className="text-sm text-muted-foreground hover:text-sidebar-foreground block py-1 hover-elevate px-2 rounded-sm">
-                    Tokens
-                  </button>
-                  <button className="text-sm text-muted-foreground hover:text-sidebar-foreground block py-1 hover-elevate px-2 rounded-sm">
+                <div className="space-y-2" data-testid="dropdown-assets-content">
+                  <div>
+                    <div className="ml-6 text-sm font-medium text-sidebar-foreground mb-1">
+                      Tokens
+                    </div>
+                    <TokensSection isExpanded={isExpanded} />
+                  </div>
+                  <button className="ml-6 text-sm text-muted-foreground hover:text-sidebar-foreground block py-1 hover-elevate px-2 rounded-sm">
                     Pools
                   </button>
                 </div>
