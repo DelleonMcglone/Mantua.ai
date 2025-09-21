@@ -4,17 +4,14 @@ import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useConnect, useDisconnect, useActiveAccount } from 'thirdweb/react';
-import { createWallet } from 'thirdweb/wallets';
-import { baseSepolia } from 'thirdweb/chains';
-import { client } from '../providers/ThirdwebProvider';
-
-const metamask = createWallet("io.metamask");
+import { useConnect, useDisconnect, useActiveAccount, useActiveWallet } from 'thirdweb/react';
+import { client, metamask, baseSepolia } from '../providers/ThirdwebProvider';
 
 function WalletConnection() {
-  const { connect } = useConnect();
+  const { connect, isConnecting, error } = useConnect();
   const { disconnect } = useDisconnect();
   const account = useActiveAccount();
+  const wallet = useActiveWallet();
 
   const shortenedAddress = account
     ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
@@ -22,14 +19,19 @@ function WalletConnection() {
 
   const handleConnect = async () => {
     try {
-      await connect(async () => metamask);
+      await connect(async () => {
+        await metamask.connect({ client, chain: baseSepolia });
+        return metamask;
+      });
     } catch (error) {
       console.error('Failed to connect wallet:', error);
     }
   };
 
   const handleDisconnect = () => {
-    disconnect(metamask);
+    if (wallet) {
+      disconnect(wallet);
+    }
   };
 
   if (account) {

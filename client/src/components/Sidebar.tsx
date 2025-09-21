@@ -2,8 +2,7 @@ import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, M
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useActiveAccount, useWalletBalance } from 'thirdweb/react';
-import { baseSepolia } from 'thirdweb/chains';
-import { client } from '../providers/ThirdwebProvider';
+import { client, baseSepolia } from '../providers/ThirdwebProvider';
 
 interface SidebarProps {
   isOpen?: boolean;
