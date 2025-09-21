@@ -1,11 +1,11 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { OnchainProviders } from "./providers/OnchainKitProvider";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
+import '@coinbase/onchainkit/styles.css';
 
 function Router() {
   return (
@@ -20,12 +20,12 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <OnchainProviders>
       <TooltipProvider>
         <Toaster />
         <Router />
       </TooltipProvider>
-    </QueryClientProvider>
+    </OnchainProviders>
   );
 }
 
