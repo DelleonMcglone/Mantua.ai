@@ -3,12 +3,20 @@ import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 import { useState } from "react";
 
-export default function ChatInput() {
+interface ChatInputProps {
+  onSubmit?: (message: string) => void;
+}
+
+export default function ChatInput({ onSubmit }: ChatInputProps) {
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
     if (message.trim()) {
-      console.log('Message sent:', message);
+      if (onSubmit) {
+        onSubmit(message);
+      } else {
+        console.log('Message sent:', message);
+      }
       setMessage("");
     }
   };
