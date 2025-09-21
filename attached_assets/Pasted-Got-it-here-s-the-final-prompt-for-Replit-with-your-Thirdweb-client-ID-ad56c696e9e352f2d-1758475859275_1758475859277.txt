@@ -1,0 +1,152 @@
+Got it ✅ — here’s the **final prompt for Replit** with your **Thirdweb client ID (`ad56c696e9e352f2d6beb550518a3023`)** included directly:
+
+---
+
+### Prompt for Replit
+
+I already have a **Connect Wallet button** on the Home page. Please integrate it with **Thirdweb + MetaMask (Base Sepolia only)** instead of rendering a separate `<ConnectButton />`.
+
+### Requirements
+
+1. **Wallet Provider Setup**
+
+   * Use `thirdweb/react` hooks: `useConnect`, `useDisconnect`, `useActiveAccount`.
+   * Wallet: **MetaMask (`io.metamask`) only**.
+   * Chain: **Base Sepolia Testnet (chainId: 84532)**.
+   * Use `createThirdwebClient` with my client ID:
+
+     ```
+     ad56c696e9e352f2d6beb550518a3023
+     ```
+
+2. **Onboarding Flow Logic**
+
+   * When **no wallet is connected**, the **hero section** should display:
+
+     ```
+     Meet Mantua.AI,
+     your personal DeFi Assistant
+     ```
+
+     plus the **Connect Wallet button**.
+   * After a user **connects their wallet**, the hero message disappears and is replaced with:
+
+     ```
+     Hi, 0x123...abcd
+     ```
+
+     (shortened wallet address).
+   * After the user enters their **first prompt**, the greeting disappears and only the **streamed output results** remain.
+   * If a user **disconnects their wallet**, reset back to the initial hero state (as if they never connected).
+
+3. **Integration with Existing Button**
+
+   * Reuse the current **Connect Wallet button** already on the Home page.
+   * On click: trigger MetaMask connection via Thirdweb.
+   * If connected: show abbreviated address + disconnect option.
+   * If disconnected: show “Connect Wallet” button again and reset state.
+
+4. **Example Implementation**
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { useConnect, useDisconnect, useActiveAccount } from "thirdweb/react";
+import { createThirdwebClient } from "thirdweb";
+import { createWallet } from "thirdweb/wallets";
+import { baseSepolia } from "thirdweb/chains";
+
+const client = createThirdwebClient({
+  clientId: "ad56c696e9e352f2d6beb550518a3023",
+});
+
+const metamask = createWallet("io.metamask");
+
+export default function HomeHero() {
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  const account = useActiveAccount();
+
+  const [hasPrompted, setHasPrompted] = useState(false);
+
+  const shortenedAddress = account
+    ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
+    : "";
+
+  const handleDisconnect = () => {
+    if (account) disconnect(account);
+    setHasPrompted(false); // reset flow when disconnected
+  };
+
+  return (
+    <div className="text-center py-10">
+      {/* Hero Section */}
+      {!account && (
+        <>
+          <h1 className="text-3xl font-bold">Meet Mantua.AI,</h1>
+          <p className="text-xl text-gray-600">your personal DeFi Assistant</p>
+          <button
+            className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg"
+            onClick={() => connect(metamask, { client, chain: baseSepolia })}
+          >
+            Connect Wallet
+          </button>
+        </>
+      )}
+
+      {/* Greeting after wallet connects */}
+      {account && !hasPrompted && (
+        <div className="flex flex-col items-center gap-4">
+          <h2 className="text-2xl font-semibold">Hi, {shortenedAddress}</h2>
+          <button
+            className="px-3 py-1 bg-red-500 text-white rounded-md"
+            onClick={handleDisconnect}
+          >
+            Disconnect
+          </button>
+        </div>
+      )}
+
+      {/* Input for Prompt */}
+      {account && !hasPrompted && (
+        <div className="mt-6">
+          <input
+            type="text"
+            placeholder="Ask Mantua.AI something..."
+            className="border px-4 py-2 rounded-md w-80"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.currentTarget.value.trim() !== "") {
+                setHasPrompted(true);
+                // Trigger your streaming logic here
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* Streaming Output */}
+      {account && hasPrompted && (
+        <div className="mt-8 text-left w-full max-w-2xl mx-auto">
+          {/* Replace with your real streaming logic */}
+          <p className="text-gray-800">Streaming results...</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+✅ End goal:
+
+* **Not connected** → show hero text + connect button.
+* **Connected** → show greeting with abbreviated wallet address.
+* **After first prompt** → greeting disappears, only streaming results remain.
+* **Disconnect** → resets flow to hero state.
+* Use **client ID: `ad56c696e9e352f2d6beb550518a3023`** in `createThirdwebClient`.
+
+---
+
+Do you also want me to include a **MetaMask “Add Base Sepolia” network helper** so new users who don’t have Base Sepolia configured can add it automatically when they connect?
