@@ -20,12 +20,16 @@ function WalletConnection() {
     ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
     : "";
 
-  const handleConnect = () => {
-    connect(() => metamask, { client, chain: baseSepolia });
+  const handleConnect = async () => {
+    try {
+      await connect(async () => metamask);
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
   };
 
   const handleDisconnect = () => {
-    if (account) disconnect(account);
+    disconnect(metamask);
   };
 
   if (account) {
