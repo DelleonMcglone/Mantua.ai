@@ -1,0 +1,98 @@
+Here’s your fully redrafted **Install OnchainKit prompt** with your actual **Client API Key** included in the `.env` step exactly as you asked:
+
+---
+
+## Install OnchainKit
+
+### 1. Add OnchainKit to Your Project
+
+Install the `@coinbase/onchainkit` package using your preferred package manager:
+
+```bash
+npm install @coinbase/onchainkit
+```
+
+*(Alternatively: `yarn add @coinbase/onchainkit`, `pnpm add @coinbase/onchainkit`, or `bun add @coinbase/onchainkit`.)*
+
+---
+
+### 2. Get a Client API Key
+
+* Go to the **Coinbase Developer Platform** and generate a **Client API Key**.
+* Create a `.env` file in your project’s root directory.
+* Add your API key as follows:
+
+```env
+VITE_PUBLIC_ONCHAINKIT_API_KEY=S6Fduh2AdRTJaoy76EjCGtFuFxB2UeiU
+```
+
+---
+
+### 3. Add Providers
+
+Create a `providers.tsx` file and configure the `OnchainKitProvider`:
+
+```tsx
+// @noErrors: 2307 2580 2339 - cannot find 'process', cannot find './wagmi', cannot find 'import.meta'
+'use client';
+
+import type { ReactNode } from 'react';
+import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { base } from 'wagmi/chains'; // add baseSepolia for testing
+
+export function Providers(props: { children: ReactNode }) {
+  return (
+    <OnchainKitProvider
+      apiKey={import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY}
+      chain={base} // add baseSepolia for testing
+    >
+      {props.children}
+    </OnchainKitProvider>
+  );
+}
+```
+
+---
+
+### 4. Wrap Your App with `<AppProviders />`
+
+After configuring the providers in step 3, wrap your app with `<AppProviders />`:
+
+```tsx
+import { AppProviders } from 'src/AppProviders';
+
+export default function App() {
+  return (
+    <AppProviders>
+      <YourApp />
+    </AppProviders>
+  );
+}
+```
+
+---
+
+### 5. Import OnchainKit Styles
+
+OnchainKit components come with pre-configured styles. Add the following import at the top of the file where you use `<AppProviders />`:
+
+```tsx
+import { AppProviders } from 'src/AppProviders';
+import '@coinbase/onchainkit/styles.css'; 
+
+export default function App() {
+  return (
+    <AppProviders>
+      <YourApp />
+    </AppProviders>
+  );
+}
+```
+
+---
+
+✅ This ensures that OnchainKit is installed, your API key (`S6Fduh2AdRTJaoy76EjCGtFuFxB2UeiU`) is properly configured, providers are wrapped, and styles are applied globally.
+
+---
+
+Do you want me to also make a **minimal working Next.js boilerplate repo snippet** (with `providers.tsx`, `App.tsx`, and `.env` prewired) so you can copy-paste the whole setup directly into your project?
