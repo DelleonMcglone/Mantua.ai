@@ -4,7 +4,7 @@ import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useConnect, useDisconnect, useActiveAccount, useActiveWallet } from 'thirdweb/react';
+import { useConnect, useDisconnect, useActiveAccount, useActiveWallet, useWalletBalance } from 'thirdweb/react';
 import { client, metamask, baseSepolia } from '../providers/ThirdwebProvider';
 
 function WalletConnection() {
@@ -13,9 +13,19 @@ function WalletConnection() {
   const account = useActiveAccount();
   const wallet = useActiveWallet();
 
+  const { data: balance, isLoading: balanceLoading } = useWalletBalance({
+    client,
+    chain: baseSepolia,
+    address: account?.address,
+  });
+
   const shortenedAddress = account
     ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
     : "";
+
+  const formattedBalance = balance
+    ? `${parseFloat(balance.displayValue).toFixed(4)} ${balance.symbol}`
+    : "0.0000 ETH";
 
   const handleConnect = async () => {
     try {
@@ -36,19 +46,19 @@ function WalletConnection() {
 
   if (account) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-foreground" data-testid="text-wallet-address">
+      <Button
+        variant="outline"
+        onClick={handleDisconnect}
+        data-testid="button-wallet-info"
+        className="flex flex-col items-center gap-0 h-auto py-2 px-3"
+      >
+        <span className="text-sm font-medium" data-testid="text-wallet-address">
           {shortenedAddress}
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDisconnect}
-          data-testid="button-disconnect-wallet"
-        >
-          Disconnect
-        </Button>
-      </div>
+        <span className="text-xs text-muted-foreground" data-testid="text-wallet-balance">
+          {balanceLoading ? "Loading..." : formattedBalance}
+        </span>
+      </Button>
     );
   }
 
