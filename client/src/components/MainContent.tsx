@@ -98,8 +98,8 @@ export default function MainContent() {
   };
 
   return (
-    <main className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-      <div className="max-w-2xl w-full text-center space-y-8">
+    <main className="flex-1 flex flex-col items-center p-8 bg-background">
+      <div className={`max-w-2xl w-full text-center space-y-8 ${account && hasPrompted ? 'h-full flex flex-col justify-between' : 'flex-1 flex flex-col justify-center'}`}>
         {/* Mantua Logo */}
         <div className="flex justify-center mb-8">
           <img 
@@ -137,17 +137,36 @@ export default function MainContent() {
           </div>
         )}
 
-        {/* State 3: After Prompt - Show Streaming Results */}
+        {/* State 3: After Prompt - Show Chat Messages */}
         {account && hasPrompted && (
           <div className="space-y-6 text-left w-full">
             <h2 className="text-xl font-semibold text-foreground" data-testid="text-chat-header">
               Chat with Mantua.AI
             </h2>
-            <div className="p-4 bg-muted rounded-lg" data-testid="div-streaming-results">
-              <p className="text-muted-foreground">
-                Streaming results will appear here...
-              </p>
-              {/* This is where your actual streaming logic would go */}
+            <div className="h-96 overflow-y-auto border rounded-lg p-4 space-y-4 bg-background" data-testid="div-chat-messages">
+              {chatMessages.map((message) => (
+                <div 
+                  key={message.id} 
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div 
+                    className={`max-w-[80%] p-3 rounded-lg ${
+                      message.sender === 'user' 
+                        ? 'bg-primary text-primary-foreground ml-auto' 
+                        : 'bg-muted text-foreground'
+                    }`}
+                    data-testid={`message-${message.sender}-${message.id}`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                  </div>
+                </div>
+              ))}
+              {chatMessages.length === 0 && (
+                <p className="text-muted-foreground text-center py-8">
+                  Your conversation with Mantua.AI will appear here...
+                </p>
+              )}
+              <div ref={messagesEndRef} />
             </div>
           </div>
         )}
