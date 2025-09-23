@@ -303,9 +303,39 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
           {/* Fixed input at bottom */}
           <div className="border-t bg-background p-4">
             <div className="max-w-4xl mx-auto space-y-3">
-              {/* Agent mode indicator and action buttons directly above input */}
+              {/* Agent action buttons directly above input when in Agent mode */}
               {isAgentMode && (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <Button
+                    variant="outline"
+                    className="text-sm py-2"
+                    onClick={() => handleAgentAction('Request testnet funds via faucet')}
+                    data-testid="button-agent-faucet"
+                  >
+                    Request testnet funds via faucet
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="text-sm py-2"
+                    onClick={() => handleAgentAction('Manage wallet details and balance checks')}
+                    data-testid="button-agent-wallet"
+                  >
+                    Manage wallet details and balance checks
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="text-sm py-2"
+                    onClick={() => handleAgentAction('Execute token transfers and trades')}
+                    data-testid="button-agent-trades"
+                  >
+                    Execute token transfers and trades
+                  </Button>
+                </div>
+              )}
+              <div className="space-y-2">
+                <ChatInput onSubmit={handleChatSubmit} />
+                {/* Agent mode indicator button directly under input */}
+                {isAgentMode && (
                   <div className="flex justify-start">
                     <Button
                       variant="secondary"
@@ -317,35 +347,8 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                       Agent
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <Button
-                      variant="outline"
-                      className="text-sm py-2"
-                      onClick={() => handleAgentAction('Request testnet funds via faucet')}
-                      data-testid="button-agent-faucet"
-                    >
-                      Request testnet funds via faucet
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="text-sm py-2"
-                      onClick={() => handleAgentAction('Manage wallet details and balance checks')}
-                      data-testid="button-agent-wallet"
-                    >
-                      Manage wallet details and balance checks
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="text-sm py-2"
-                      onClick={() => handleAgentAction('Execute token transfers and trades')}
-                      data-testid="button-agent-trades"
-                    >
-                      Execute token transfers and trades
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <ChatInput onSubmit={handleChatSubmit} />
+                )}
+              </div>
             </div>
           </div>
         </div>
