@@ -13,6 +13,8 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+type ActionId = 'what-mantua-do' | 'learn-hooks' | 'analyze-uniswap-v4';
+
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
   const [hasPrompted, setHasPrompted] = useState(false);
@@ -73,7 +75,7 @@ export default function MainContent() {
   const handleActionClick = (actionId: string) => {
     setHasPrompted(true);
     
-    const actionContent = getActionContent(actionId);
+    const actionContent = getActionContent(actionId as ActionId);
     if (actionContent) {
       // Add assistant response immediately for action buttons
       const assistantMessage: ChatMessage = {
@@ -83,11 +85,21 @@ export default function MainContent() {
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, assistantMessage]);
+    } else {
+      console.error(`Unknown action ID: ${actionId}`);
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        content: "Sorry, I don't understand that action. Please try one of the available options.",
+        sender: 'assistant',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
     }
   };
 
   // Get predefined content for action buttons
-  const getActionContent = (actionId: string): string => {
+  const getActionContent = (actionId: ActionId): string => {
     switch (actionId) {
       case 'what-mantua-do':
         return `Mantua.AI is the programmable liquidity layer for DeFi.
@@ -196,6 +208,8 @@ Permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3
 Source: Uniswap v4 official deployments (Uniswap Docs)`;
       
       default:
+        // This should never happen with proper TypeScript typing
+        const _exhaustiveCheck: never = actionId;
         return "";
     }
   };
@@ -249,7 +263,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                     }`}
                     data-testid={`message-${message.sender}-${message.id}`}
                   >
-                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ))}
