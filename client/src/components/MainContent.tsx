@@ -98,66 +98,27 @@ export default function MainContent() {
   };
 
   return (
-    <main className="flex-1 flex flex-col items-center p-8 bg-background">
-      <div className={`max-w-2xl w-full text-center space-y-8 ${account && hasPrompted ? 'h-full flex flex-col justify-between' : 'flex-1 flex flex-col justify-center'}`}>
-        {/* Mantua Logo */}
-        <div className="flex justify-center mb-8">
-          <img 
-            src={isDark ? logoBlack : logoWhite} 
-            alt="Mantua.AI" 
-            className="w-16 h-16" 
-            data-testid="img-mantua-logo"
-          />
-        </div>
-
-        {/* State 1: Not Connected - Show Hero Message */}
-        {!account && (
-          <div className="space-y-4">
-            <h1 className="text-4xl font-semibold text-foreground" data-testid="text-welcome-title">
-              Meet Mantua.AI,
-            </h1>
-            <h2 className="text-4xl font-semibold text-foreground" data-testid="text-welcome-subtitle">
-              your personal DeFi Assistant
-            </h2>
-            <p className="text-lg text-muted-foreground mt-6" data-testid="text-connect-prompt">
-              Connect your wallet to get started
-            </p>
-          </div>
-        )}
-
-        {/* State 2: Connected but No Prompt - Show Greeting */}
-        {account && !hasPrompted && (
-          <div className="space-y-6">
-            <h1 className="text-3xl font-semibold text-foreground" data-testid="text-greeting">
-              Hi, {shortenedAddress}
-            </h1>
-            <p className="text-lg text-muted-foreground" data-testid="text-ask-prompt">
-              What can I help you with today?
-            </p>
-          </div>
-        )}
-
-        {/* State 3: After Prompt - Show Chat Messages */}
-        {account && hasPrompted && (
-          <div className="space-y-6 text-left w-full">
-            <h2 className="text-xl font-semibold text-foreground" data-testid="text-chat-header">
-              Chat with Mantua.AI
-            </h2>
-            <div className="h-96 overflow-y-auto border rounded-lg p-4 space-y-4 bg-background" data-testid="div-chat-messages">
+    <main className="flex-1 flex flex-col bg-background">
+      {account && hasPrompted ? (
+        /* Full-width chat layout */
+        <div className="flex-1 flex flex-col h-full">
+          {/* Chat messages container */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4" data-testid="div-chat-messages">
+            <div className="max-w-4xl mx-auto space-y-4">
               {chatMessages.map((message) => (
                 <div 
                   key={message.id} 
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div 
-                    className={`max-w-[80%] p-3 rounded-lg ${
+                    className={`max-w-[70%] px-4 py-3 rounded-2xl ${
                       message.sender === 'user' 
-                        ? 'bg-primary text-primary-foreground ml-auto' 
-                        : 'bg-muted text-foreground'
+                        ? 'bg-primary text-primary-foreground shadow-sm' 
+                        : 'bg-muted text-foreground shadow-sm'
                     }`}
                     data-testid={`message-${message.sender}-${message.id}`}
                   >
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-sm leading-relaxed">{message.content}</p>
                   </div>
                 </div>
               ))}
@@ -169,16 +130,66 @@ export default function MainContent() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-        )}
-
-        {/* Chat Input - Show when wallet is connected */}
-        {account && (
-          <div className="space-y-6">
-            <ChatInput onSubmit={handleChatSubmit} />
-            <ActionButtons />
+          
+          {/* Fixed input at bottom */}
+          <div className="border-t bg-background p-4">
+            <div className="max-w-4xl mx-auto">
+              <ChatInput onSubmit={handleChatSubmit} />
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        /* Centered layout for States 1 & 2 */
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="max-w-2xl w-full text-center space-y-8">
+            {/* Mantua Logo - only show when not in chat mode */}
+            <div className="flex justify-center mb-8">
+              <img 
+                src={isDark ? logoBlack : logoWhite} 
+                alt="Mantua.AI" 
+                className="w-16 h-16" 
+                data-testid="img-mantua-logo"
+              />
+            </div>
+
+            {/* State 1: Not Connected - Show Hero Message */}
+            {!account && (
+              <div className="space-y-4">
+                <h1 className="text-4xl font-semibold text-foreground" data-testid="text-welcome-title">
+                  Meet Mantua.AI,
+                </h1>
+                <h2 className="text-4xl font-semibold text-foreground" data-testid="text-welcome-subtitle">
+                  your personal DeFi Assistant
+                </h2>
+                <p className="text-lg text-muted-foreground mt-6" data-testid="text-connect-prompt">
+                  Connect your wallet to get started
+                </p>
+              </div>
+            )}
+
+            {/* State 2: Connected but No Prompt - Show Greeting */}
+            {account && !hasPrompted && (
+              <div className="space-y-6">
+                <h1 className="text-3xl font-semibold text-foreground" data-testid="text-greeting">
+                  Hi, {shortenedAddress}
+                </h1>
+                <p className="text-lg text-muted-foreground" data-testid="text-ask-prompt">
+                  What can I help you with today?
+                </p>
+              </div>
+            )}
+
+            {/* Chat Input - Show when wallet is connected and not in chat mode */}
+            {account && (
+              <div className="space-y-6">
+                <ChatInput onSubmit={handleChatSubmit} />
+                <ActionButtons />
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
     </main>
   );
 }
