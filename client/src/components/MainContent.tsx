@@ -13,11 +13,12 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-type ActionId = 'what-mantua-do' | 'learn-hooks' | 'analyze-uniswap-v4';
+type ActionId = 'what-mantua-do' | 'explore-agent' | 'learn-hooks' | 'analyze-uniswap-v4';
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
   const [hasPrompted, setHasPrompted] = useState(false);
+  const [isAgentMode, setIsAgentMode] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const account = useActiveAccount();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,6 +48,7 @@ export default function MainContent() {
   useEffect(() => {
     if (!account) {
       setHasPrompted(false);
+      setIsAgentMode(false);
       setChatMessages([]);
     }
   }, [account]);
@@ -73,6 +75,13 @@ export default function MainContent() {
 
   // Handle action button clicks with predefined content
   const handleActionClick = (actionId: string) => {
+    if (actionId === 'explore-agent') {
+      // Enter Agent mode
+      setHasPrompted(true);
+      setIsAgentMode(true);
+      return;
+    }
+    
     setHasPrompted(true);
     
     const actionContent = getActionContent(actionId as ActionId);
@@ -207,11 +216,26 @@ Universal Router: 0x492E6456D9528771018DeB9E87ef7750EF184104
 Permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3
 Source: Uniswap v4 official deployments (Uniswap Docs)`;
       
+      case 'explore-agent':
+        // This is handled separately in handleActionClick
+        return "";
+      
       default:
         // This should never happen with proper TypeScript typing
         const _exhaustiveCheck: never = actionId;
         return "";
     }
+  };
+
+  // Handle agent action button clicks
+  const handleAgentAction = (action: string) => {
+    const agentMessage: ChatMessage = {
+      id: `assistant-${Date.now()}`,
+      content: `Executing agent action: ${action}`,
+      sender: 'assistant',
+      timestamp: new Date()
+    };
+    setChatMessages(prev => [...prev, agentMessage]);
   };
 
   // Handle chat input submission
@@ -247,6 +271,49 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       {account && hasPrompted ? (
         /* Full-width chat layout */
         <div className="flex-1 flex flex-col min-h-0">
+          {/* Agent mode indicator and action buttons */}
+          {isAgentMode && (
+            <div className="border-b bg-background p-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-4">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs"
+                    data-testid="text-agent-mode"
+                  >
+                    Agent
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Button
+                    variant="outline"
+                    className="text-sm"
+                    onClick={() => handleAgentAction('Request testnet funds via faucet')}
+                    data-testid="button-agent-faucet"
+                  >
+                    Request testnet funds via faucet
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="text-sm"
+                    onClick={() => handleAgentAction('Manage wallet details and balance checks')}
+                    data-testid="button-agent-wallet"
+                  >
+                    Manage wallet details and balance checks
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="text-sm"
+                    onClick={() => handleAgentAction('Execute token transfers and trades')}
+                    data-testid="button-agent-trades"
+                  >
+                    Execute token transfers and trades
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Chat messages container */}
           <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0" data-testid="div-chat-messages">
             <div className="max-w-4xl mx-auto space-y-4">

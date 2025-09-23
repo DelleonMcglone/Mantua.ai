@@ -7,6 +7,7 @@ interface ActionButtonsProps {
 export default function ActionButtons({ onActionClick }: ActionButtonsProps) {
   const actions = [
     { label: "What can Mantua.AI do?", id: "what-mantua-do" },
+    { label: "Explore Agent", id: "explore-agent" },
     { label: "Learn about Hooks", id: "learn-hooks" },
     { label: "Analyze Uniswap v4 contracts", id: "analyze-uniswap-v4" },
   ];
@@ -20,7 +21,7 @@ export default function ActionButtons({ onActionClick }: ActionButtonsProps) {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-2xl">
+    <div className="grid grid-cols-2 gap-3 w-full max-w-2xl">
       {actions.map((action) => (
         <Button
           key={action.id}
