@@ -2,14 +2,23 @@ import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import ActionButtons from "./ActionButtons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useActiveAccount } from 'thirdweb/react';
 import { Button } from "@/components/ui/button";
+
+interface ChatMessage {
+  id: string;
+  content: string;
+  sender: 'user' | 'assistant';
+  timestamp: Date;
+}
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
   const [hasPrompted, setHasPrompted] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const account = useActiveAccount();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const shortenedAddress = account
     ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
@@ -36,15 +45,55 @@ export default function MainContent() {
   useEffect(() => {
     if (!account) {
       setHasPrompted(false);
+      setChatMessages([]);
     }
   }, [account]);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  // Mock assistant responses
+  const getMockAssistantResponse = (userMessage: string): string => {
+    const responses = [
+      "I understand you're asking about DeFi operations. Let me help you with that.",
+      "Great question! In the DeFi space, there are several approaches to consider...",
+      "I can help you navigate that DeFi strategy. Here's what I recommend...",
+      "That's an excellent point about liquidity management. Let me explain the options...",
+      "For yield farming and staking, here are the key considerations...",
+      "Regarding swap operations, I can guide you through the best practices...",
+      "Token analysis shows some interesting patterns. Here's my assessment...",
+      "Risk management is crucial in DeFi. Let me break down the key factors..."
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
 
   // Handle chat input submission
   const handleChatSubmit = (message: string) => {
     if (message.trim()) {
       setHasPrompted(true);
-      // Here you would integrate with your chat/streaming logic
-      console.log('Chat message submitted:', message);
+      
+      // Add user message
+      const userMessage: ChatMessage = {
+        id: `user-${Date.now()}`,
+        content: message.trim(),
+        sender: 'user',
+        timestamp: new Date()
+      };
+      
+      setChatMessages(prev => [...prev, userMessage]);
+      
+      // Add mock assistant response after a short delay
+      setTimeout(() => {
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          content: getMockAssistantResponse(message),
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+        setChatMessages(prev => [...prev, assistantMessage]);
+      }, 1000);
     }
   };
 
