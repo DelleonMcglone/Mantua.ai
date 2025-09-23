@@ -243,12 +243,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-background">
+    <main className="flex-1 flex flex-col bg-background min-h-0">
       {account && hasPrompted ? (
         /* Full-width chat layout */
-        <div className="flex-1 flex flex-col h-full">
+        <div className="flex-1 flex flex-col min-h-0">
           {/* Chat messages container */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4" data-testid="div-chat-messages">
+          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0" data-testid="div-chat-messages">
             <div className="max-w-4xl mx-auto space-y-4">
               {chatMessages.map((message) => (
                 <div 
