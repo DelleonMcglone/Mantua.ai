@@ -238,6 +238,11 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     setChatMessages(prev => [...prev, agentMessage]);
   };
 
+  // Exit Agent mode
+  const exitAgentMode = () => {
+    setIsAgentMode(false);
+  };
+
   // Handle chat input submission
   const handleChatSubmit = (message: string) => {
     if (message.trim()) {
@@ -271,49 +276,6 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       {account && hasPrompted ? (
         /* Full-width chat layout */
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Agent mode indicator and action buttons */}
-          {isAgentMode && (
-            <div className="border-b bg-background p-4">
-              <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="text-xs"
-                    data-testid="text-agent-mode"
-                  >
-                    Agent
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Button
-                    variant="outline"
-                    className="text-sm"
-                    onClick={() => handleAgentAction('Request testnet funds via faucet')}
-                    data-testid="button-agent-faucet"
-                  >
-                    Request testnet funds via faucet
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="text-sm"
-                    onClick={() => handleAgentAction('Manage wallet details and balance checks')}
-                    data-testid="button-agent-wallet"
-                  >
-                    Manage wallet details and balance checks
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="text-sm"
-                    onClick={() => handleAgentAction('Execute token transfers and trades')}
-                    data-testid="button-agent-trades"
-                  >
-                    Execute token transfers and trades
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
           {/* Chat messages container */}
           <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0" data-testid="div-chat-messages">
             <div className="max-w-4xl mx-auto space-y-4">
@@ -334,18 +296,55 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                   </div>
                 </div>
               ))}
-              {chatMessages.length === 0 && (
-                <p className="text-muted-foreground text-center py-8">
-                  Your conversation with Mantua.AI will appear here...
-                </p>
-              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
           
           {/* Fixed input at bottom */}
           <div className="border-t bg-background p-4">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto space-y-3">
+              {/* Agent mode indicator and action buttons directly above input */}
+              {isAgentMode && (
+                <div className="space-y-3">
+                  <div className="flex justify-start">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="text-xs"
+                      onClick={exitAgentMode}
+                      data-testid="button-agent-mode"
+                    >
+                      Agent
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <Button
+                      variant="outline"
+                      className="text-sm py-2"
+                      onClick={() => handleAgentAction('Request testnet funds via faucet')}
+                      data-testid="button-agent-faucet"
+                    >
+                      Request testnet funds via faucet
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-sm py-2"
+                      onClick={() => handleAgentAction('Manage wallet details and balance checks')}
+                      data-testid="button-agent-wallet"
+                    >
+                      Manage wallet details and balance checks
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-sm py-2"
+                      onClick={() => handleAgentAction('Execute token transfers and trades')}
+                      data-testid="button-agent-trades"
+                    >
+                      Execute token transfers and trades
+                    </Button>
+                  </div>
+                </div>
+              )}
               <ChatInput onSubmit={handleChatSubmit} />
             </div>
           </div>
