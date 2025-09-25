@@ -1,13 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Send, Plus } from "lucide-react";
 import { useState } from "react";
 
 interface ChatInputProps {
   onSubmit?: (message: string) => void;
+  onQuickAction?: (actionId: string) => void;
 }
 
-export default function ChatInput({ onSubmit }: ChatInputProps) {
+export default function ChatInput({ onSubmit, onQuickAction }: ChatInputProps) {
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
@@ -27,9 +29,55 @@ export default function ChatInput({ onSubmit }: ChatInputProps) {
     }
   };
 
+  const handleQuickAction = (actionId: string) => {
+    if (onQuickAction) {
+      onQuickAction(actionId);
+    }
+  };
+
   return (
     <div className="relative w-full">
       <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
+        {/* Plus button dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full hover:bg-muted/50 transition-all"
+              data-testid="button-quick-actions"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="top" className="w-64" data-testid="dropdown-quick-actions">
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('what-can-mantua-do')}
+              data-testid="dropdown-item-what-can-mantua-do"
+            >
+              What can Mantua do?
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('learn-about-hooks')}
+              data-testid="dropdown-item-learn-about-hooks"
+            >
+              Learn about Hooks
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('analyze-uniswap-v4')}
+              data-testid="dropdown-item-analyze-uniswap-v4"
+            >
+              Analyze Uniswap v4 contracts
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('explore-agent')}
+              data-testid="dropdown-item-explore-agent"
+            >
+              Explore Agents
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
