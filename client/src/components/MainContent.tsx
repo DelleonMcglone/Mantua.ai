@@ -333,21 +333,22 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                 </div>
               )}
               <div className="space-y-2">
-                <ChatInput onSubmit={handleChatSubmit} />
-                {/* Agent mode indicator button directly under input */}
-                {isAgentMode && (
-                  <div className="flex justify-start">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="text-xs"
-                      onClick={exitAgentMode}
-                      data-testid="button-agent-mode"
-                    >
-                      Agent
-                    </Button>
-                  </div>
-                )}
+                <div className="space-y-3">
+                  <ChatInput onSubmit={handleChatSubmit} />
+                  {/* Agent mode indicator button inside chat container */}
+                  {isAgentMode && (
+                    <div className="flex justify-start px-4">
+                      <Button
+                        size="sm"
+                        className="text-xs bg-primary hover:bg-primary/80 text-primary-foreground rounded-full px-3 py-1 h-6"
+                        onClick={exitAgentMode}
+                        data-testid="button-agent-mode"
+                      >
+                        Agent
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
