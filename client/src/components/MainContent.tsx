@@ -1,7 +1,6 @@
 import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
-import ActionButtons from "./ActionButtons";
 import { useState, useEffect, useRef } from "react";
 import { useActiveAccount } from 'thirdweb/react';
 import { Button } from "@/components/ui/button";
@@ -334,7 +333,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
               )}
               <div className="space-y-2">
                 <div className="space-y-3">
-                  <ChatInput onSubmit={handleChatSubmit} />
+                  <ChatInput onSubmit={handleChatSubmit} onQuickAction={handleActionClick} />
                   {/* Agent mode indicator button inside chat container */}
                   {isAgentMode && (
                     <div className="flex justify-start px-4">
@@ -397,8 +396,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
             {/* Chat Input - Show when wallet is connected and not in chat mode */}
             {account && (
               <div className="space-y-6">
-                <ChatInput onSubmit={handleChatSubmit} />
-                <ActionButtons onActionClick={handleActionClick} />
+                <ChatInput onSubmit={handleChatSubmit} onQuickAction={handleActionClick} />
               </div>
             )}
 
