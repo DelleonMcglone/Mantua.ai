@@ -1,8 +1,10 @@
-import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useActiveAccount, useWalletBalance } from 'thirdweb/react';
 import { client, baseSepolia } from '../providers/ThirdwebProvider';
+import { useChatContext } from '@/contexts/ChatContext';
+import { useLocation } from 'wouter';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -53,16 +55,72 @@ function TokensSection({ isExpanded }: { isExpanded: boolean }) {
   );
 }
 
+function ChatListSection({ isExpanded }: { isExpanded: boolean }) {
+  const { allChats, currentChat, switchToChat } = useChatContext();
+  const [location] = useLocation();
+
+  // Only show chat list in expanded mode and limit to recent chats
+  if (!isExpanded) return null;
+
+  const recentChats = allChats.slice(0, 8); // Show up to 8 recent chats
+
+  if (recentChats.length === 0) {
+    return (
+      <div className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground" data-testid="text-no-chats">
+        No recent chats
+      </div>
+    );
+  }
+
+  return (
+    <div className="ml-6 mt-1 space-y-1" data-testid="div-chat-list">
+      {recentChats.map((chat) => {
+        const isActive = currentChat?.id === chat.id || location === `/chat/${chat.id}`;
+        
+        return (
+          <button
+            key={chat.id}
+            onClick={() => switchToChat(chat.id)}
+            className={`
+              w-full text-left px-2 py-1 text-xs rounded-sm hover-elevate 
+              flex items-center gap-2 group
+              ${isActive 
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
+                : 'text-sidebar-foreground hover:text-sidebar-accent-foreground'
+              }
+            `}
+            data-testid={`button-chat-${chat.id}`}
+            title={chat.title}
+          >
+            <MessageSquare className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate flex-1 min-w-0">{chat.title}</span>
+            {chat.isAgentMode && (
+              <Bot className="h-3 w-3 flex-shrink-0 text-primary" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
+  const [isChatsOpen, setIsChatsOpen] = useState(true); // Start with chats open
+  const { createNewChat } = useChatContext();
 
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
     if (!isExpanded) {
       setIsAssetsOpen(false); // Close assets dropdown when collapsing
+      setIsChatsOpen(true); // Show chats when expanding
     }
     console.log('Sidebar toggled:', !isExpanded);
+  };
+
+  const handleNewChat = () => {
+    createNewChat();
   };
 
   return (
@@ -99,13 +157,34 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               className={`w-full text-primary hover:bg-sidebar-accent ${
                 isExpanded ? 'justify-start gap-2' : 'justify-center'
               }`}
-              onClick={() => console.log('New chats clicked')}
+              onClick={handleNewChat}
               data-testid="button-new-chats"
               title={!isExpanded ? 'New chats' : ''}
             >
               <MessageSquarePlus className="h-4 w-4" />
               {isExpanded && 'New chats'}
             </Button>
+
+            {/* Chat History Dropdown */}
+            {isExpanded && (
+              <div>
+                <Button
+                  variant="ghost"
+                  className={`w-full text-sidebar-foreground hover:bg-sidebar-accent justify-start gap-2`}
+                  onClick={() => setIsChatsOpen(!isChatsOpen)}
+                  data-testid="button-chats-dropdown"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Recent Chats
+                  <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${isChatsOpen ? 'rotate-180' : ''}`} />
+                </Button>
+                {isChatsOpen && (
+                  <div className="space-y-1" data-testid="dropdown-chats-content">
+                    <ChatListSection isExpanded={isExpanded} />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Search */}
             <Button

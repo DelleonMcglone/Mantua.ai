@@ -4,23 +4,34 @@ import ChatInput from "./ChatInput";
 import { useState, useEffect, useRef } from "react";
 import { useActiveAccount } from 'thirdweb/react';
 import { Button } from "@/components/ui/button";
-
-interface ChatMessage {
-  id: string;
-  content: string;
-  sender: 'user' | 'assistant';
-  timestamp: Date;
-}
+import { useChatContext } from '@/contexts/ChatContext';
+import { useLocation } from 'wouter';
+import type { ChatMessage } from '@/lib/chatManager';
 
 type ActionId = 'swap' | 'add-liquidity' | 'explore-agent' | 'what-can-mantua-do' | 'learn-about-hooks' | 'analyze-uniswap-v4';
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
-  const [hasPrompted, setHasPrompted] = useState(false);
-  const [isAgentMode, setIsAgentMode] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const { currentChat, addMessage, updateAgentMode } = useChatContext();
+  const [location] = useLocation();
   const account = useActiveAccount();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Derived state from current chat
+  const hasPrompted = currentChat ? currentChat.messages.length > 0 : false;
+  const isAgentMode = currentChat ? currentChat.isAgentMode : false;
+  const chatMessages = currentChat ? currentChat.messages : [];
+
+  // Debug logging
+  useEffect(() => {
+    console.log(`[MainContent] State update:`, {
+      hasAccount: !!account,
+      currentChatId: currentChat?.id,
+      messageCount: chatMessages.length,
+      hasPrompted,
+      location
+    });
+  }, [account, currentChat, chatMessages, hasPrompted, location]);
 
   const shortenedAddress = account
     ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
@@ -43,14 +54,9 @@ export default function MainContent() {
     return () => observer.disconnect();
   }, []);
 
-  // Reset state when wallet disconnects
-  useEffect(() => {
-    if (!account) {
-      setHasPrompted(false);
-      setIsAgentMode(false);
-      setChatMessages([]);
-    }
-  }, [account]);
+  // Note: We don't need to reset chat state when wallet disconnects
+  // since each chat maintains its own state through the chat context
+  // The wallet connection is checked in the UI rendering logic
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -74,35 +80,28 @@ export default function MainContent() {
 
   // Handle action button clicks with predefined content
   const handleActionClick = (actionId: string) => {
+    if (!currentChat) return; // No active chat to add messages to
+
     if (actionId === 'explore-agent') {
       // Enter Agent mode
-      setHasPrompted(true);
-      setIsAgentMode(true);
+      updateAgentMode(true);
       return;
     }
-    
-    setHasPrompted(true);
     
     const actionContent = getActionContent(actionId as ActionId);
     if (actionContent) {
       // Add assistant response immediately for action buttons
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
+      addMessage({
         content: actionContent,
-        sender: 'assistant',
-        timestamp: new Date()
-      };
-      setChatMessages(prev => [...prev, assistantMessage]);
+        sender: 'assistant'
+      });
     } else {
       console.error(`Unknown action ID: ${actionId}`);
       // Add error message to chat
-      const errorMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
+      addMessage({
         content: "Sorry, I don't understand that action. Please try one of the available options.",
-        sender: 'assistant',
-        timestamp: new Date()
-      };
-      setChatMessages(prev => [...prev, errorMessage]);
+        sender: 'assistant'
+      });
     }
   };
 
@@ -263,51 +262,41 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
 
   // Handle agent action button clicks
   const handleAgentAction = (action: string) => {
-    const agentMessage: ChatMessage = {
-      id: `assistant-${Date.now()}`,
+    if (!currentChat) return; // No active chat to add messages to
+    
+    addMessage({
       content: `Executing agent action: ${action}`,
-      sender: 'assistant',
-      timestamp: new Date()
-    };
-    setChatMessages(prev => [...prev, agentMessage]);
+      sender: 'assistant'
+    });
   };
 
   // Exit Agent mode
   const exitAgentMode = () => {
-    setIsAgentMode(false);
+    updateAgentMode(false);
   };
 
   // Handle chat input submission
   const handleChatSubmit = (message: string) => {
-    if (message.trim()) {
-      setHasPrompted(true);
-      
-      // Add user message
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        content: message.trim(),
-        sender: 'user',
-        timestamp: new Date()
-      };
-      
-      setChatMessages(prev => [...prev, userMessage]);
-      
-      // Add mock assistant response after a short delay
-      setTimeout(() => {
-        const assistantMessage: ChatMessage = {
-          id: `assistant-${Date.now()}`,
-          content: getMockAssistantResponse(message),
-          sender: 'assistant',
-          timestamp: new Date()
-        };
-        setChatMessages(prev => [...prev, assistantMessage]);
-      }, 1000);
-    }
+    if (!currentChat || !message.trim()) return; // No active chat or empty message
+    
+    // Add user message
+    addMessage({
+      content: message.trim(),
+      sender: 'user'
+    });
+    
+    // Add mock assistant response after a short delay
+    setTimeout(() => {
+      addMessage({
+        content: getMockAssistantResponse(message),
+        sender: 'assistant'
+      });
+    }, 1000);
   };
 
   return (
     <main className="flex-1 flex flex-col bg-background min-h-0">
-      {account && hasPrompted ? (
+      {hasPrompted && currentChat ? (
         /* Full-width chat layout */
         <div className="flex-1 flex flex-col min-h-0">
           {/* Chat messages container */}
@@ -407,7 +396,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
             )}
 
             {/* State 2: Connected but No Prompt - Show Greeting */}
-            {account && !hasPrompted && (
+            {account && !hasPrompted && !currentChat && (
               <div className="space-y-6">
                 <h1 className="text-3xl font-semibold text-foreground" data-testid="text-greeting">
                   Hi, {shortenedAddress}
@@ -418,11 +407,20 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
               </div>
             )}
 
-            {/* Chat Input - Show when wallet is connected and not in chat mode */}
-            {account && (
+            {/* State 3: Not Connected and No Chat - Show Connect Prompt */}
+            {!account && !currentChat && (
+              <div className="space-y-4">
+                <p className="text-lg text-muted-foreground text-center" data-testid="text-connect-prompt">
+                  Connect your wallet to get started
+                </p>
+              </div>
+            )}
+
+            {/* Chat Input - Show when there's a current chat OR wallet is connected */}
+            {(currentChat || account) && (
               <div className="space-y-6">
                 <ChatInput 
-                  onSubmit={handleChatSubmit} 
+                  onSubmit={account ? handleChatSubmit : undefined} 
                   onQuickAction={handleActionClick}
                   isAgentMode={isAgentMode}
                   onExitAgent={exitAgentMode}
