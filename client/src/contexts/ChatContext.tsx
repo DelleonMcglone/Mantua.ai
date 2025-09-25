@@ -66,8 +66,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
       console.log(`[ChatContext] Route change detected: ${location}, chatId: ${chatId}`);
       
       if (chatId === 'new') {
-        // Handle /chat/new - create a new chat
-        createNewChat();
+        // Handle /chat/new - clear current chat and show empty state
+        console.log(`[ChatContext] Route to /chat/new detected, clearing current chat`);
+        setCurrentChat(null);
+        chatManager.clearCurrentChatId();
       } else {
         // Only load if it's different from current chat
         if (!currentChat || currentChat.id !== chatId) {
