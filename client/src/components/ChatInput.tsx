@@ -7,9 +7,11 @@ import { useState } from "react";
 interface ChatInputProps {
   onSubmit?: (message: string) => void;
   onQuickAction?: (actionId: string) => void;
+  isAgentMode?: boolean;
+  onExitAgent?: () => void;
 }
 
-export default function ChatInput({ onSubmit, onQuickAction }: ChatInputProps) {
+export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExitAgent }: ChatInputProps) {
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
@@ -86,6 +88,18 @@ export default function ChatInput({ onSubmit, onQuickAction }: ChatInputProps) {
           className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/70"
           data-testid="input-chat-message"
         />
+
+        {/* Agent mode indicator button inside input */}
+        {isAgentMode && (
+          <Button
+            size="sm"
+            className="text-xs bg-primary hover:bg-primary/80 text-primary-foreground rounded-full px-3 py-1 h-6"
+            onClick={onExitAgent}
+            data-testid="button-agent-mode"
+          >
+            Agent
+          </Button>
+        )}
 
         <Button
           size="icon"

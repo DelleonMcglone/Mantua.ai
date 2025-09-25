@@ -332,22 +332,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                 </div>
               )}
               <div className="space-y-2">
-                <div className="space-y-3">
-                  <ChatInput onSubmit={handleChatSubmit} onQuickAction={handleActionClick} />
-                  {/* Agent mode indicator button inside chat container */}
-                  {isAgentMode && (
-                    <div className="flex justify-start px-4">
-                      <Button
-                        size="sm"
-                        className="text-xs bg-primary hover:bg-primary/80 text-primary-foreground rounded-full px-3 py-1 h-6"
-                        onClick={exitAgentMode}
-                        data-testid="button-agent-mode"
-                      >
-                        Agent
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <ChatInput 
+                  onSubmit={handleChatSubmit} 
+                  onQuickAction={handleActionClick}
+                  isAgentMode={isAgentMode}
+                  onExitAgent={exitAgentMode}
+                />
               </div>
             </div>
           </div>
@@ -396,7 +386,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
             {/* Chat Input - Show when wallet is connected and not in chat mode */}
             {account && (
               <div className="space-y-6">
-                <ChatInput onSubmit={handleChatSubmit} onQuickAction={handleActionClick} />
+                <ChatInput 
+                  onSubmit={handleChatSubmit} 
+                  onQuickAction={handleActionClick}
+                  isAgentMode={isAgentMode}
+                  onExitAgent={exitAgentMode}
+                />
               </div>
             )}
 
