@@ -357,7 +357,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
               )}
               <div className="space-y-2">
                 <ChatInput 
-                  onSubmit={handleChatSubmit} 
+                  onSubmit={account ? handleChatSubmit : undefined} 
                   onQuickAction={handleActionClick}
                   isAgentMode={isAgentMode}
                   onExitAgent={exitAgentMode}
