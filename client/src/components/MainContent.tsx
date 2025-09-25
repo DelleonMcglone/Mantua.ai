@@ -12,7 +12,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-type ActionId = 'what-mantua-do' | 'explore-agent' | 'learn-hooks' | 'analyze-uniswap-v4';
+type ActionId = 'what-can-mantua-do' | 'explore-agent' | 'learn-about-hooks' | 'analyze-uniswap-v4';
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
@@ -109,7 +109,7 @@ export default function MainContent() {
   // Get predefined content for action buttons
   const getActionContent = (actionId: ActionId): string => {
     switch (actionId) {
-      case 'what-mantua-do':
+      case 'what-can-mantua-do':
         return `Mantua.AI is the programmable liquidity layer for DeFi.
 It combines AI reasoning, Uniswap v4 hooks, and onchain agents to give you natural-language control over liquidity.
 Here are some example actions you can perform with Mantua:
@@ -150,7 +150,7 @@ Retrieve token, protocol, and market insights.
 - Compare TVL between ETH/USDC pools on Base vs Unichain
 - Show me recent volume trends for cbBTC on Base`;
       
-      case 'learn-hooks':
+      case 'learn-about-hooks':
         return `Hooks are custom pieces of logic that extend Uniswap v4 pools and in some cases swaps.
 They let developers and traders add intelligence, protection, and new features directly into liquidity.
 Here are some examples of what you can do with hooks:
