@@ -54,6 +54,24 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="w-64" data-testid="dropdown-quick-actions">
             <DropdownMenuItem
+              onClick={() => handleQuickAction('swap')}
+              data-testid="dropdown-item-swap"
+            >
+              Swap
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('add-liquidity')}
+              data-testid="dropdown-item-add-liquidity"
+            >
+              Add Liquidity
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('explore-agent')}
+              data-testid="dropdown-item-explore-agent"
+            >
+              Explore Agents
+            </DropdownMenuItem>
+            <DropdownMenuItem
               onClick={() => handleQuickAction('what-can-mantua-do')}
               data-testid="dropdown-item-what-can-mantua-do"
             >
@@ -70,12 +88,6 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
               data-testid="dropdown-item-analyze-uniswap-v4"
             >
               Analyze Uniswap v4 contracts
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleQuickAction('explore-agent')}
-              data-testid="dropdown-item-explore-agent"
-            >
-              Explore Agents
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

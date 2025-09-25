@@ -12,7 +12,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-type ActionId = 'what-can-mantua-do' | 'explore-agent' | 'learn-about-hooks' | 'analyze-uniswap-v4';
+type ActionId = 'swap' | 'add-liquidity' | 'explore-agent' | 'what-can-mantua-do' | 'learn-about-hooks' | 'analyze-uniswap-v4';
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
@@ -109,6 +109,41 @@ export default function MainContent() {
   // Get predefined content for action buttons
   const getActionContent = (actionId: ActionId): string => {
     switch (actionId) {
+      case 'swap':
+        return `Execute token swaps with intelligent routing and optional hooks.
+
+**Standard Swaps:**
+• Swap ETH for USDC with best execution
+• Swap USDC for cbBTC using optimal routes
+• Multi-hop swaps across liquidity pools
+
+**Hook-Enhanced Swaps:**
+• Dynamic fee swaps that adjust based on volatility
+• MEV-protected swaps with time-weighted pricing
+• Limit order swaps with automated execution
+
+**Available on Base Sepolia testnet with full mainnet feature parity.**`;
+
+      case 'add-liquidity':
+        return `Provide liquidity to earn fees and participate in DeFi protocols.
+
+**Standard Liquidity:**
+• Add liquidity to ETH/USDC pools
+• Earn trading fees from swaps
+• Withdraw anytime with accumulated rewards
+
+**Hook-Enhanced Liquidity:**
+• Dynamic fee pools that maximize returns
+• Automated rebalancing strategies
+• Custom liquidity management hooks
+
+**Range Orders:**
+• Set price ranges for concentrated liquidity
+• Maximize capital efficiency
+• Automated position management
+
+**Get started with testnet tokens or use the faucet for initial funding.**`;
+
       case 'what-can-mantua-do':
         return `Mantua.AI is the programmable liquidity layer for DeFi.
 It combines AI reasoning, Uniswap v4 hooks, and onchain agents to give you natural-language control over liquidity.
