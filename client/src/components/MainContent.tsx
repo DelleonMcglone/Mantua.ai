@@ -370,15 +370,17 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
         /* Centered layout for States 1 & 2 */
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="max-w-2xl w-full text-center space-y-8">
-            {/* Mantua Logo - only show when not in chat mode */}
-            <div className="flex justify-center mb-8">
-              <img 
-                src={isDark ? logoBlack : logoWhite} 
-                alt="Mantua.AI" 
-                className="w-16 h-16" 
-                data-testid="img-mantua-logo"
-              />
-            </div>
+            {/* Mantua Logo - only show when wallet is connected */}
+            {account && (
+              <div className="flex justify-center mb-8">
+                <img 
+                  src={isDark ? logoBlack : logoWhite} 
+                  alt="Mantua.AI" 
+                  className="w-16 h-16" 
+                  data-testid="img-mantua-logo"
+                />
+              </div>
+            )}
 
             {/* State 1: Not Connected - Show Hero Message */}
             {!account && (
@@ -403,15 +405,6 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                 </h1>
                 <p className="text-lg text-muted-foreground" data-testid="text-ask-prompt">
                   What can I help you with today?
-                </p>
-              </div>
-            )}
-
-            {/* State 3: Not Connected and No Chat - Show Connect Prompt */}
-            {!account && !currentChat && (
-              <div className="space-y-4">
-                <p className="text-lg text-muted-foreground text-center" data-testid="text-connect-prompt">
-                  Connect your wallet to get started
                 </p>
               </div>
             )}

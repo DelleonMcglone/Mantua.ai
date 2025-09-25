@@ -1,4 +1,4 @@
-import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useActiveAccount, useWalletBalance } from 'thirdweb/react';
@@ -56,13 +56,22 @@ function TokensSection({ isExpanded }: { isExpanded: boolean }) {
 }
 
 function ChatListSection({ isExpanded }: { isExpanded: boolean }) {
-  const { allChats, currentChat, switchToChat } = useChatContext();
+  const { allChats, currentChat, switchToChat, deleteChat } = useChatContext();
   const [location] = useLocation();
 
   // Only show chat list in expanded mode and limit to recent chats
   if (!isExpanded) return null;
 
   const recentChats = allChats.slice(0, 8); // Show up to 8 recent chats
+
+  const handleDeleteChat = (chatId: string, chatTitle: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the chat switch
+    
+    const confirmed = window.confirm(`Are you sure you want to delete "${chatTitle}"?`);
+    if (confirmed) {
+      deleteChat(chatId);
+    }
+  };
 
   if (recentChats.length === 0) {
     return (
@@ -78,26 +87,39 @@ function ChatListSection({ isExpanded }: { isExpanded: boolean }) {
         const isActive = currentChat?.id === chat.id || location === `/chat/${chat.id}`;
         
         return (
-          <button
+          <div
             key={chat.id}
-            onClick={() => switchToChat(chat.id)}
             className={`
-              w-full text-left px-2 py-1 text-xs rounded-sm hover-elevate 
+              w-full px-2 py-1 text-xs rounded-sm hover-elevate 
               flex items-center gap-2 group
               ${isActive 
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
                 : 'text-sidebar-foreground hover:text-sidebar-accent-foreground'
               }
             `}
-            data-testid={`button-chat-${chat.id}`}
-            title={chat.title}
+            data-testid={`div-chat-${chat.id}`}
           >
-            <MessageSquare className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate flex-1 min-w-0">{chat.title}</span>
-            {chat.isAgentMode && (
-              <Bot className="h-3 w-3 flex-shrink-0 text-primary" />
-            )}
-          </button>
+            <button
+              onClick={() => switchToChat(chat.id)}
+              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+              data-testid={`button-chat-${chat.id}`}
+              title={chat.title}
+            >
+              <MessageSquare className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate flex-1 min-w-0">{chat.title}</span>
+              {chat.isAgentMode && (
+                <Bot className="h-3 w-3 flex-shrink-0 text-primary" />
+              )}
+            </button>
+            <button
+              onClick={(e) => handleDeleteChat(chat.id, chat.title, e)}
+              className="opacity-0 group-hover:opacity-100 h-3 w-3 flex-shrink-0 text-muted-foreground hover:text-destructive transition-opacity"
+              data-testid={`button-delete-chat-${chat.id}`}
+              title={`Delete "${chat.title}"`}
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
         );
       })}
     </div>
