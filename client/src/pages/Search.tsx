@@ -1,34 +1,34 @@
 import { useState } from "react";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, Diamond, DollarSign, Bitcoin, Euro } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 // Mock token data
 interface Token {
   symbol: string;
   name: string;
-  icon: string;
+  IconComponent: typeof Diamond;
 }
 
 const MOCK_TOKENS: Token[] = [
   {
     symbol: "ETH",
     name: "Ethereum",
-    icon: "🔷" // Using emoji as placeholder for now
+    IconComponent: Diamond
   },
   {
     symbol: "USDC", 
     name: "USDC",
-    icon: "🔵"
+    IconComponent: DollarSign
   },
   {
     symbol: "cbBTC",
     name: "cbBTC", 
-    icon: "🟠"
+    IconComponent: Bitcoin
   },
   {
     symbol: "EURC",
     name: "EURC",
-    icon: "🟣"
+    IconComponent: Euro
   }
 ];
 
@@ -83,8 +83,8 @@ export default function Search() {
                   data-testid={`button-token-${token.symbol.toLowerCase()}`}
                 >
                   {/* Token Icon */}
-                  <div className="flex-shrink-0 w-10 h-10 bg-muted rounded-full flex items-center justify-center text-lg">
-                    {token.icon}
+                  <div className="flex-shrink-0 w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                    <token.IconComponent className="h-5 w-5 text-foreground" />
                   </div>
                   
                   {/* Token Info */}
