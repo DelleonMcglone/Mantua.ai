@@ -131,7 +131,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const [isChatsOpen, setIsChatsOpen] = useState(true); // Start with chats open
   const { createNewChat } = useChatContext();
-  const [, navigate] = useLocation();
 
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
@@ -215,7 +214,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
                 isExpanded ? 'justify-start gap-2' : 'justify-center'
               }`}
-              onClick={() => navigate('/search')}
+              onClick={() => console.log('Search clicked')}
               data-testid="button-search"
               title={!isExpanded ? 'Search' : ''}
             >

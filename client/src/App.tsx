@@ -5,7 +5,6 @@ import { ThirdwebProviders } from "./providers/ThirdwebProvider";
 import { ChatProvider } from "@/contexts/ChatContext";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
-import Search from "@/pages/Search";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -13,7 +12,6 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/app" component={Home} />
-      <Route path="/search" component={Search} />
       {/* Chat routes - /chat/new and /chat/:id */}
       <Route path="/chat/:id" component={Home} />
       {/* Fallback to 404 */}
