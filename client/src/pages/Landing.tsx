@@ -68,13 +68,7 @@ export default function Landing() {
 
       {/* Hero Section */}
       <main className="flex flex-col items-center justify-center px-8 py-16 text-center">
-        {/* Built on Base Badge */}
-        <div className="mb-12">
-          <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-500 px-4 py-2 rounded-full text-sm font-medium border border-blue-500/20">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            Built on Base Sepolia
-          </div>
-        </div>
+        
 
         {/* Logo */}
         <div className="mb-8">
