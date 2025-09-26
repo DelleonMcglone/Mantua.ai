@@ -19,30 +19,36 @@ interface Token {
   icon: string;
 }
 
+// Import token logos
+import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
+import usdcLogo from '@assets/Frame 352_1758910679715.png';
+import cbbtcLogo from '@assets/Frame 352 (2)_1758910679714.png';
+import eurcLogo from '@assets/Frame 352 (3)_1758910679715.png';
+
 const TOKENS: Token[] = [
   {
     id: 'ethereum',
     name: 'Ethereum',
     symbol: 'ETH',
-    icon: '🔷'
+    icon: ethereumLogo
   },
   {
     id: 'usdc',
     name: 'USDC',
     symbol: 'USDC',
-    icon: '🔵'
+    icon: usdcLogo
   },
   {
     id: 'cbbtc',
     name: 'cbBTC',
     symbol: 'cbBTC',
-    icon: '🟠'
+    icon: cbbtcLogo
   },
   {
     id: 'eurc',
     name: 'EURC',
     symbol: 'EURC',
-    icon: '🔵'
+    icon: eurcLogo
   }
 ];
 
@@ -116,7 +122,7 @@ function TokenSearchDropdown({ isOpen, onClose, searchQuery, onSearchQueryChange
                 className="w-full px-3 py-2 flex items-center gap-3 hover:bg-sidebar-accent text-left transition-colors"
                 data-testid={`button-token-${token.id}`}
               >
-                <span className="text-lg">{token.icon}</span>
+                <img src={token.icon} alt={token.name} className="w-6 h-6 rounded-full" />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sidebar-foreground text-sm">{token.name}</div>
                   <div className="text-xs text-muted-foreground">{token.symbol}</div>
