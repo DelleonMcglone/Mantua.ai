@@ -27,7 +27,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSend();
     }
@@ -56,7 +56,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 rounded-full hover:bg-muted/50 transition-all"
+              className="h-8 w-8 rounded-full transition-all"
               data-testid="button-quick-actions"
             >
               <Plus className="h-4 w-4" />
@@ -107,7 +107,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="h-8 px-3 rounded-full bg-background/50 hover:bg-background/80 border-border/50 transition-all text-sm"
+              className="h-8 px-3 rounded-full bg-background/50 border-border/50 transition-all text-sm"
               data-testid="button-chain-selector"
             >
               {selectedChain}
@@ -133,7 +133,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder="Ask Mantua"
           className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/70"
           data-testid="input-chat-message"
@@ -155,7 +155,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
           size="icon"
           onClick={handleSend}
           disabled={!message.trim()}
-          className="h-8 w-8 rounded-full bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 transition-all"
+          className="h-8 w-8 rounded-full bg-primary disabled:bg-muted disabled:text-muted-foreground/50 transition-all"
           data-testid="button-send-message"
         >
           <Send className="h-4 w-4" />
