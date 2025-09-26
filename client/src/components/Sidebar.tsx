@@ -1,6 +1,7 @@
 import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useState, useRef, useEffect } from "react";
 import { useActiveAccount, useWalletBalance } from 'thirdweb/react';
 import { client, baseSepolia } from '../providers/ThirdwebProvider';
 import { useChatContext } from '@/contexts/ChatContext';
@@ -9,6 +10,128 @@ import { useLocation } from 'wouter';
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+}
+
+interface Token {
+  id: string;
+  name: string;
+  symbol: string;
+  icon: string;
+}
+
+const TOKENS: Token[] = [
+  {
+    id: 'ethereum',
+    name: 'Ethereum',
+    symbol: 'ETH',
+    icon: '🔷'
+  },
+  {
+    id: 'usdc',
+    name: 'USDC',
+    symbol: 'USDC',
+    icon: '🔵'
+  },
+  {
+    id: 'cbbtc',
+    name: 'cbBTC',
+    symbol: 'cbBTC',
+    icon: '🟠'
+  },
+  {
+    id: 'eurc',
+    name: 'EURC',
+    symbol: 'EURC',
+    icon: '🔵'
+  }
+];
+
+interface TokenSearchDropdownProps {
+  isOpen: boolean;
+  onClose: () => void;
+  searchQuery: string;
+  onSearchQueryChange: (query: string) => void;
+}
+
+function TokenSearchDropdown({ isOpen, onClose, searchQuery, onSearchQueryChange }: TokenSearchDropdownProps) {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter tokens based on search query
+  const filteredTokens = TOKENS.filter(token =>
+    token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    token.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Handle token selection
+  const handleTokenSelect = (token: Token) => {
+    console.log('Token selected:', token);
+    onClose();
+  };
+
+  // Click outside detection
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="absolute top-full left-0 right-0 mt-1 bg-sidebar border border-sidebar-border rounded-lg shadow-lg z-50 overflow-hidden animate-in slide-in-from-top-1 duration-200"
+      data-testid="dropdown-token-search"
+    >
+      {/* Search Input */}
+      <div className="p-3 border-b border-sidebar-border">
+        <Input
+          placeholder="Search token by name or symbol"
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange(e.target.value)}
+          className="w-full text-sm bg-background border-border"
+          data-testid="input-token-search"
+          autoFocus
+        />
+      </div>
+
+      {/* Token List */}
+      <div className="max-h-64 overflow-y-auto">
+        {filteredTokens.length > 0 ? (
+          <div className="py-2">
+            {filteredTokens.map((token) => (
+              <button
+                key={token.id}
+                onClick={() => handleTokenSelect(token)}
+                className="w-full px-3 py-2 flex items-center gap-3 hover:bg-sidebar-accent text-left transition-colors"
+                data-testid={`button-token-${token.id}`}
+              >
+                <span className="text-lg">{token.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sidebar-foreground text-sm">{token.name}</div>
+                  <div className="text-xs text-muted-foreground">{token.symbol}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            No tokens found
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function TokensSection({ isExpanded }: { isExpanded: boolean }) {
@@ -130,6 +253,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const [isChatsOpen, setIsChatsOpen] = useState(true); // Start with chats open
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { createNewChat } = useChatContext();
 
   const toggleSidebar = () => {
@@ -137,8 +262,25 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     if (!isExpanded) {
       setIsAssetsOpen(false); // Close assets dropdown when collapsing
       setIsChatsOpen(true); // Show chats when expanding
+      setIsSearchOpen(false); // Close search dropdown when collapsing
     }
     console.log('Sidebar toggled:', !isExpanded);
+  };
+
+  const handleSearchToggle = () => {
+    if (isExpanded) {
+      setIsSearchOpen(!isSearchOpen);
+      if (!isSearchOpen) {
+        setSearchQuery(''); // Clear search when opening
+        setIsAssetsOpen(false); // Close assets when opening search
+        setIsChatsOpen(false); // Close chats when opening search
+      }
+    }
+  };
+
+  const handleSearchClose = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
   };
 
   const handleNewChat = () => {
@@ -193,7 +335,10 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 <Button
                   variant="ghost"
                   className={`w-full text-sidebar-foreground hover:bg-sidebar-accent justify-start gap-2`}
-                  onClick={() => setIsChatsOpen(!isChatsOpen)}
+                  onClick={() => {
+                    setIsChatsOpen(!isChatsOpen);
+                    setIsSearchOpen(false); // Close search when opening chats
+                  }}
                   data-testid="button-chats-dropdown"
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -209,18 +354,29 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             )}
 
             {/* Search */}
-            <Button
-              variant="ghost"
-              className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
-                isExpanded ? 'justify-start gap-2' : 'justify-center'
-              }`}
-              onClick={() => console.log('Search clicked')}
-              data-testid="button-search"
-              title={!isExpanded ? 'Search' : ''}
-            >
-              <Search className="h-4 w-4" />
-              {isExpanded && 'Search'}
-            </Button>
+            <div className="relative">
+              <Button
+                variant="ghost"
+                className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
+                  isExpanded ? 'justify-start gap-2' : 'justify-center'
+                } ${isSearchOpen ? 'bg-sidebar-accent' : ''}`}
+                onClick={handleSearchToggle}
+                data-testid="button-search"
+                title={!isExpanded ? 'Search' : ''}
+              >
+                <Search className="h-4 w-4" />
+                {isExpanded && 'Search'}
+              </Button>
+              
+              {isExpanded && (
+                <TokenSearchDropdown
+                  isOpen={isSearchOpen}
+                  onClose={handleSearchClose}
+                  searchQuery={searchQuery}
+                  onSearchQueryChange={setSearchQuery}
+                />
+              )}
+            </div>
 
             {/* Assets Dropdown */}
             <div>
@@ -232,6 +388,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 onClick={() => {
                   if (isExpanded) {
                     setIsAssetsOpen(!isAssetsOpen);
+                    setIsSearchOpen(false); // Close search when opening assets
                     console.log('Assets dropdown toggled:', !isAssetsOpen);
                   }
                 }}
