@@ -1,4 +1,4 @@
-import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
