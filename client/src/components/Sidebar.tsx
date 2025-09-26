@@ -30,13 +30,13 @@ const TOKENS: Token[] = [
     id: 'ethereum',
     name: 'Ethereum',
     symbol: 'ETH',
-    icon: ethereumLogo
+    icon: usdcLogo
   },
   {
     id: 'usdc',
     name: 'USDC',
     symbol: 'USDC',
-    icon: usdcLogo
+    icon: ethereumLogo
   },
   {
     id: 'cbbtc',
