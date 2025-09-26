@@ -102,7 +102,7 @@ function TokenSearchDropdown({ isOpen, onClose, searchQuery, onSearchQueryChange
       {/* Search Input */}
       <div className="p-3 border-b border-sidebar-border">
         <Input
-          placeholder="Search token by name or symbol"
+          placeholder="Search token"
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
           className="w-full text-sm bg-background border-border"
