@@ -1,18 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, Plus } from "lucide-react";
+import { Send, Plus, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 interface ChatInputProps {
   onSubmit?: (message: string) => void;
   onQuickAction?: (actionId: string) => void;
+  onChainSelect?: (chain: string) => void;
   isAgentMode?: boolean;
   onExitAgent?: () => void;
 }
 
-export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExitAgent }: ChatInputProps) {
+export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAgentMode, onExitAgent }: ChatInputProps) {
   const [message, setMessage] = useState("");
+  const [selectedChain, setSelectedChain] = useState("Base Sepolia");
 
   const handleSend = () => {
     if (message.trim()) {
@@ -37,6 +39,14 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
     }
   };
 
+  const handleChainSelect = (chain: string) => {
+    setSelectedChain(chain);
+    console.log('Chain selected:', chain);
+    if (onChainSelect) {
+      onChainSelect(chain);
+    }
+  };
+
   return (
     <div className="relative w-full">
       <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
@@ -54,28 +64,10 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="w-64" data-testid="dropdown-quick-actions">
             <DropdownMenuItem
-              onClick={() => handleQuickAction('swap')}
-              data-testid="dropdown-item-swap"
-            >
-              Swap
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleQuickAction('add-liquidity')}
-              data-testid="dropdown-item-add-liquidity"
-            >
-              Add Liquidity
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleQuickAction('explore-agent')}
-              data-testid="dropdown-item-explore-agent"
-            >
-              Explore Agents
-            </DropdownMenuItem>
-            <DropdownMenuItem
               onClick={() => handleQuickAction('what-can-mantua-do')}
               data-testid="dropdown-item-what-can-mantua-do"
             >
-              What can Mantua do?
+              What can Mantua do
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => handleQuickAction('learn-about-hooks')}
@@ -88,6 +80,52 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
               data-testid="dropdown-item-analyze-uniswap-v4"
             >
               Analyze Uniswap v4 contracts
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('explore-agent')}
+              data-testid="dropdown-item-explore-agent"
+            >
+              Explore Agents
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('swap')}
+              data-testid="dropdown-item-swap"
+            >
+              Swap
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('add-liquidity')}
+              data-testid="dropdown-item-add-liquidity"
+            >
+              Add Liquidity
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Chain Selector dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="h-8 px-3 rounded-full bg-background/50 hover:bg-background/80 border-border/50 transition-all text-sm"
+              data-testid="button-chain-selector"
+            >
+              {selectedChain}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="top" className="w-48" data-testid="dropdown-chain-selector">
+            <DropdownMenuItem
+              onClick={() => handleChainSelect('Base Sepolia')}
+              data-testid="dropdown-item-base-sepolia"
+            >
+              Base Sepolia
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleChainSelect('Unichain Sepolia')}
+              data-testid="dropdown-item-unichain-sepolia"
+            >
+              Unichain Sepolia
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
