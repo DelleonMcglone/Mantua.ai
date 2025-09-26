@@ -12,7 +12,7 @@ type ActionId = 'swap' | 'add-liquidity' | 'explore-agent' | 'what-can-mantua-do
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
-  const { currentChat, addMessage, updateAgentMode } = useChatContext();
+  const { currentChat, addMessage, updateAgentMode, createNewChat } = useChatContext();
   const [location] = useLocation();
   const account = useActiveAccount();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -277,21 +277,59 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
 
   // Handle chat input submission
   const handleChatSubmit = (message: string) => {
-    if (!currentChat || !message.trim()) return; // No active chat or empty message
+    if (!message.trim()) return; // Empty message
     
-    // Add user message
-    addMessage({
-      content: message.trim(),
-      sender: 'user'
-    });
+    // If no current chat but wallet is connected, create a new chat
+    if (!currentChat && account) {
+      console.log('No current chat but wallet connected, creating new chat for message:', message);
+      createNewChat();
+      // The message will be processed in the next render cycle after chat is created
+      // For now, we'll add the message to the new chat that will be created
+      setTimeout(() => {
+        addMessage({
+          content: message.trim(),
+          sender: 'user'
+        });
+        
+        // Add mock assistant response
+        setTimeout(() => {
+          addMessage({
+            content: getMockAssistantResponse(message),
+            sender: 'assistant'
+          });
+        }, 1000);
+      }, 100);
+      return;
+    }
     
-    // Add mock assistant response after a short delay
-    setTimeout(() => {
+    // If no current chat and no wallet, still allow system messages
+    if (!currentChat && !account) {
+      console.log('No wallet connected, but allowing system message:', message);
+      createNewChat();
+      setTimeout(() => {
+        addMessage({
+          content: message.trim(),
+          sender: message === "Please connect your wallet to continue." ? 'assistant' : 'user'
+        });
+      }, 100);
+      return;
+    }
+    
+    // Normal case: current chat exists
+    if (currentChat) {
       addMessage({
-        content: getMockAssistantResponse(message),
-        sender: 'assistant'
+        content: message.trim(),
+        sender: 'user'
       });
-    }, 1000);
+      
+      // Add mock assistant response after a short delay
+      setTimeout(() => {
+        addMessage({
+          content: getMockAssistantResponse(message),
+          sender: 'assistant'
+        });
+      }, 1000);
+    }
   };
 
   return (
@@ -357,7 +395,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
               )}
               <div className="space-y-2">
                 <ChatInput 
-                  onSubmit={account ? handleChatSubmit : undefined} 
+                  onSubmit={handleChatSubmit} 
                   onQuickAction={handleActionClick}
                   isAgentMode={isAgentMode}
                   onExitAgent={exitAgentMode}
@@ -413,7 +451,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
             {(currentChat || account) && (
               <div className="space-y-6">
                 <ChatInput 
-                  onSubmit={account ? handleChatSubmit : undefined} 
+                  onSubmit={handleChatSubmit} 
                   onQuickAction={handleActionClick}
                   isAgentMode={isAgentMode}
                   onExitAgent={exitAgentMode}
