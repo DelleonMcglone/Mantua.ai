@@ -214,7 +214,10 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
                 isExpanded ? 'justify-start gap-2' : 'justify-center'
               }`}
-              onClick={() => console.log('Search clicked')}
+              onClick={() => { 
+                const [, navigate] = useLocation(); 
+                navigate('/search'); 
+              }}
               data-testid="button-search"
               title={!isExpanded ? 'Search' : ''}
             >
