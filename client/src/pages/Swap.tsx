@@ -35,12 +35,26 @@ const HOOK_OPTIONS = [
   { value: 'custom', label: 'Custom hook' }
 ];
 
-export default function Swap() {
-  const [sellToken, setSellToken] = useState('ETH');
-  const [buyToken, setBuyToken] = useState('USDC');
+interface SwapProps {
+  initialSellToken?: string;
+  initialBuyToken?: string;
+  initialSelectedHook?: string;
+  initialShowCustomHook?: boolean;
+  inlineMode?: boolean;
+}
+
+export default function Swap({ 
+  initialSellToken = 'ETH',
+  initialBuyToken = 'USDC', 
+  initialSelectedHook = 'no-hook',
+  initialShowCustomHook = false,
+  inlineMode = false
+}: SwapProps = {}) {
+  const [sellToken, setSellToken] = useState(initialSellToken || 'ETH');
+  const [buyToken, setBuyToken] = useState(initialBuyToken || 'USDC');
   const [sellAmount, setSellAmount] = useState('0.5');
   const [buyAmount, setBuyAmount] = useState('$208.90');
-  const [selectedHook, setSelectedHook] = useState('no-hook');
+  const [selectedHook, setSelectedHook] = useState(initialSelectedHook || 'no-hook');
   const [customHookAddress, setCustomHookAddress] = useState('');
   const [isValidatingHook, setIsValidatingHook] = useState(false);
   const [isHookValidated, setIsHookValidated] = useState(false);
@@ -48,6 +62,9 @@ export default function Swap() {
   const [showSwapDetails, setShowSwapDetails] = useState(false);
   const [transactionState, setTransactionState] = useState<'idle' | 'swapping' | 'processing' | 'completed' | 'error'>('idle');
   const [transactionHash, setTransactionHash] = useState('');
+  
+  // Show custom hook section if initially requested
+  const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
 
   const handleMaxClick = () => {
     const token = TOKENS.find(t => t.symbol === sellToken);
@@ -127,7 +144,7 @@ export default function Swap() {
   // If transaction completed, show success screen
   if (transactionState === 'completed') {
     return (
-      <div className="max-w-md mx-auto p-6 space-y-6">
+      <div className={`${inlineMode ? 'w-full p-4 space-y-6' : 'max-w-md mx-auto p-6 space-y-6'}`}>
         {/* Success Header */}
         <Card className="border-green-500 bg-green-50 dark:bg-green-950/20">
           <CardContent className="p-6 text-center">
@@ -252,7 +269,7 @@ export default function Swap() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-6">
+    <div className={`${inlineMode ? 'w-full p-4 space-y-6' : 'max-w-md mx-auto p-6 space-y-6'}`}>
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-foreground mb-2" data-testid="text-swap-title">
           Swap {sellToken} for {buyToken}

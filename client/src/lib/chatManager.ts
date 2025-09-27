@@ -5,6 +5,15 @@ export interface ChatMessage {
   content: string;
   sender: 'user' | 'assistant';
   timestamp: Date;
+  component?: {
+    type: 'swap';
+    props?: {
+      sellToken?: string;
+      buyToken?: string;
+      selectedHook?: string;
+      showCustomHook?: boolean;
+    };
+  };
 }
 
 export interface Chat {

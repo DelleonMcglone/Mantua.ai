@@ -1,6 +1,7 @@
 import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
+import SwapPage from "@/pages/Swap";
 import { useState, useEffect, useRef } from "react";
 import { useActiveAccount } from 'thirdweb/react';
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,20 @@ export default function MainContent() {
         content: actionContent,
         sender: 'assistant'
       });
+      
+      // For swap actions, also add the component after the text
+      if (actionId === 'swap') {
+        setTimeout(() => {
+          addMessage({
+            content: 'Ready to execute your swap:',
+            sender: 'assistant',
+            component: {
+              type: 'swap',
+              props: { sellToken: '', buyToken: '', showCustomHook: false }
+            }
+          });
+        }, 500);
+      }
     } else {
       console.error(`Unknown action ID: ${actionId}`);
       // Add error message to chat
@@ -275,28 +290,69 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     updateAgentMode(false);
   };
 
+  // Intent parsing for swap commands
+  const parseSwapIntent = (message: string) => {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Basic "swap" command
+    if (lowerMessage === 'swap') {
+      return { type: 'swap', sellToken: '', buyToken: '', showCustomHook: false };
+    }
+    
+    // "Swap X for Y" pattern
+    const swapForPattern = /swap\s+(\w+)\s+for\s+(\w+)/i;
+    const swapForMatch = message.match(swapForPattern);
+    if (swapForMatch) {
+      const [, sellToken, buyToken] = swapForMatch;
+      const hasCustomHook = lowerMessage.includes('custom hook') || lowerMessage.includes('my custom hook');
+      return {
+        type: 'swap',
+        sellToken: sellToken.toUpperCase(),
+        buyToken: buyToken.toUpperCase(),
+        selectedHook: hasCustomHook ? 'custom' : '',
+        showCustomHook: hasCustomHook
+      };
+    }
+    
+    return null;
+  };
+
   // Handle chat input submission
   const handleChatSubmit = (message: string) => {
     if (!message.trim()) return; // Empty message
+    
+    // Check for swap intent
+    const swapIntent = parseSwapIntent(message.trim());
     
     // If no current chat but wallet is connected, create a new chat
     if (!currentChat && account) {
       console.log('No current chat but wallet connected, creating new chat for message:', message);
       createNewChat();
       // The message will be processed in the next render cycle after chat is created
-      // For now, we'll add the message to the new chat that will be created
       setTimeout(() => {
         addMessage({
           content: message.trim(),
           sender: 'user'
         });
         
-        // Add mock assistant response
+        // Add appropriate response based on intent
         setTimeout(() => {
-          addMessage({
-            content: getMockAssistantResponse(message),
-            sender: 'assistant'
-          });
+          if (swapIntent) {
+            // For swap intents, add the component message
+            addMessage({
+              content: 'I\'ll help you execute this swap. Here\'s the swap interface:',
+              sender: 'assistant',
+              component: {
+                type: 'swap',
+                props: swapIntent
+              }
+            });
+          } else {
+            addMessage({
+              content: getMockAssistantResponse(message),
+              sender: 'assistant'
+            });
+          }
         }, 1000);
       }, 100);
       return;
@@ -322,12 +378,24 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
         sender: 'user'
       });
       
-      // Add mock assistant response after a short delay
+      // Add appropriate response based on intent
       setTimeout(() => {
-        addMessage({
-          content: getMockAssistantResponse(message),
-          sender: 'assistant'
-        });
+        if (swapIntent) {
+          // For swap intents, add the component message
+          addMessage({
+            content: 'I\'ll help you execute this swap. Here\'s the swap interface:',
+            sender: 'assistant',
+            component: {
+              type: 'swap',
+              props: swapIntent
+            }
+          });
+        } else {
+          addMessage({
+            content: getMockAssistantResponse(message),
+            sender: 'assistant'
+          });
+        }
       }, 1000);
     }
   };
@@ -346,14 +414,35 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div 
-                    className={`max-w-[70%] px-4 py-3 rounded-2xl ${
+                    className={`${
+                      message.component ? 'max-w-[90%]' : 'max-w-[70%]'
+                    } ${
                       message.sender === 'user' 
-                        ? 'bg-primary text-primary-foreground shadow-sm' 
-                        : 'bg-muted text-foreground shadow-sm'
+                        ? 'px-4 py-3 rounded-2xl bg-primary text-primary-foreground shadow-sm' 
+                        : message.component 
+                          ? 'space-y-3'
+                          : 'px-4 py-3 rounded-2xl bg-muted text-foreground shadow-sm'
                     }`}
                     data-testid={`message-${message.sender}-${message.id}`}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    {message.content && (
+                      <div className={message.component ? 'px-4 py-3 rounded-2xl bg-muted text-foreground shadow-sm' : ''}>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                    )}
+                    
+                    {/* Render inline component */}
+                    {message.component && message.component.type === 'swap' && (
+                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid={`component-swap-${message.id}`}>
+                        <SwapPage 
+                          initialSellToken={message.component.props?.sellToken}
+                          initialBuyToken={message.component.props?.buyToken}
+                          initialSelectedHook={message.component.props?.selectedHook}
+                          initialShowCustomHook={message.component.props?.showCustomHook}
+                          inlineMode={true}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

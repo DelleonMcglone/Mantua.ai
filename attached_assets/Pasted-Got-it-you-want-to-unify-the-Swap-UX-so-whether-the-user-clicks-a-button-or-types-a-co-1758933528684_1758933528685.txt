@@ -1,0 +1,76 @@
+Got it ✅ — you want to unify the **Swap UX** so whether the user **clicks a button** or **types a command**, the **Swap component displays automatically**, with the right defaults prefilled.
+
+Here’s how we’ll define it for Replit:
+
+---
+
+### 🟣 Replit Prompt: **Swap Component Triggering & Prefill Behavior**
+
+Update chatbot behavior so the **Swap component** displays consistently when triggered by button or text input.
+
+**1. Trigger Conditions**
+
+* If user clicks **+ → Swap** →
+
+  * Display the **Swap info text**:
+
+    ```
+    Execute token swaps with intelligent routing and optional hooks.
+
+    **Standard Swaps:**
+    • Swap ETH for USDC with best execution
+    • Swap USDC for cbBTC using optimal routes
+    • Multi-hop swaps across liquidity pools
+
+    **Hook-Enhanced Swaps:**
+    • Dynamic fee swaps that adjust based on volatility
+    • MEV-protected swaps with time-weighted pricing
+    • Limit order swaps with automated execution
+
+    **Available on Base Sepolia testnet with full mainnet feature parity.**
+    ```
+  * Then immediately **render the Swap component** below it.
+
+* If user types **"Swap"** →
+
+  * Skip the text response.
+  * Immediately **render the Swap component**.
+
+* If user types **"Swap [token A] for [token B]"** →
+
+  * Render the Swap component with:
+
+    * **Token A** auto-filled as “Sell” token.
+    * **Token B** auto-filled as “Buy” token.
+
+* If user types **"Swap [token A] for [token B] using my custom hook"** →
+
+  * Render the Swap component with:
+
+    * Token A and B auto-filled.
+    * Hook dropdown pre-selected to **Custom Hook**.
+    * Custom hook section expanded, waiting for address input.
+
+---
+
+**2. Behavior**
+
+* Swap component should always render inline in the chat interface (scrollable feed).
+* Once a swap is submitted:
+
+  * Show **transaction progress state** (“Transaction processing…”).
+  * On success → show **confirmation + updated portfolio + Mantua suggestion**.
+
+---
+
+**3. Technical Notes**
+
+* Use intent parsing:
+
+  * Detect keywords `"Swap"`, `"for"`, `"using my custom hook"`.
+  * Map tokens to dropdown options.
+* Fallback: If token names are not recognized, load component with blank token selectors.
+
+---
+
+⚡ Do you also want me to extend this same **typed + button dual trigger pattern** to **Add Liquidity** later, so typing `"Add Liquidity ETH/USDC"` launches the Liquidity component directly?
