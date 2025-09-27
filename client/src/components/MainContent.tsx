@@ -13,6 +13,8 @@ type ActionId = 'swap' | 'add-liquidity' | 'explore-agent' | 'what-can-mantua-do
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
+  const [activeComponent, setActiveComponent] = useState<null | "swap" | "liquidity">(null);
+  const [swapProps, setSwapProps] = useState<any>(null);
   const { currentChat, addMessage, updateAgentMode, createNewChat } = useChatContext();
   const [location] = useLocation();
   const account = useActiveAccount();
@@ -97,18 +99,13 @@ export default function MainContent() {
         sender: 'assistant'
       });
       
-      // For swap actions, also add the component after the text
+      // For swap actions, set active component (guard against duplicates)
       if (actionId === 'swap') {
-        setTimeout(() => {
-          addMessage({
-            content: 'Ready to execute your swap:',
-            sender: 'assistant',
-            component: {
-              type: 'swap',
-              props: { sellToken: '', buyToken: '', showCustomHook: false }
-            }
-          });
-        }, 500);
+        if (activeComponent !== 'swap') {
+          setActiveComponent('swap');
+          // Set default props for button-triggered swap
+          setSwapProps({ sellToken: '', buyToken: '', showCustomHook: false });
+        }
       }
     } else {
       console.error(`Unknown action ID: ${actionId}`);
@@ -338,15 +335,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
         // Add appropriate response based on intent
         setTimeout(() => {
           if (swapIntent) {
-            // For swap intents, add the component message
-            addMessage({
-              content: 'I\'ll help you execute this swap. Here\'s the swap interface:',
-              sender: 'assistant',
-              component: {
-                type: 'swap',
-                props: swapIntent
-              }
-            });
+            // For swap intents, set active component (guard against duplicates)
+            if (activeComponent !== 'swap') {
+              setActiveComponent('swap');
+              // Store swap props for component rendering
+              setSwapProps(swapIntent);
+            }
           } else {
             addMessage({
               content: getMockAssistantResponse(message),
@@ -381,15 +375,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       // Add appropriate response based on intent
       setTimeout(() => {
         if (swapIntent) {
-          // For swap intents, add the component message
-          addMessage({
-            content: 'I\'ll help you execute this swap. Here\'s the swap interface:',
-            sender: 'assistant',
-            component: {
-              type: 'swap',
-              props: swapIntent
-            }
-          });
+          // For swap intents, set active component (guard against duplicates)
+          if (activeComponent !== 'swap') {
+            setActiveComponent('swap');
+            // Store swap props for component rendering
+            setSwapProps(swapIntent);
+          }
         } else {
           addMessage({
             content: getMockAssistantResponse(message),
@@ -414,38 +405,34 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div 
-                    className={`${
-                      message.component ? 'max-w-[90%]' : 'max-w-[70%]'
-                    } ${
+                    className={`max-w-[70%] px-4 py-3 rounded-2xl ${
                       message.sender === 'user' 
-                        ? 'px-4 py-3 rounded-2xl bg-primary text-primary-foreground shadow-sm' 
-                        : message.component 
-                          ? 'space-y-3'
-                          : 'px-4 py-3 rounded-2xl bg-muted text-foreground shadow-sm'
+                        ? 'bg-primary text-primary-foreground shadow-sm' 
+                        : 'bg-muted text-foreground shadow-sm'
                     }`}
                     data-testid={`message-${message.sender}-${message.id}`}
                   >
-                    {message.content && (
-                      <div className={message.component ? 'px-4 py-3 rounded-2xl bg-muted text-foreground shadow-sm' : ''}>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                      </div>
-                    )}
-                    
-                    {/* Render inline component */}
-                    {message.component && message.component.type === 'swap' && (
-                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid={`component-swap-${message.id}`}>
-                        <SwapPage 
-                          initialSellToken={message.component.props?.sellToken}
-                          initialBuyToken={message.component.props?.buyToken}
-                          initialSelectedHook={message.component.props?.selectedHook}
-                          initialShowCustomHook={message.component.props?.showCustomHook}
-                          inlineMode={true}
-                        />
-                      </div>
-                    )}
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ))}
+              
+              {/* Render active component */}
+              {activeComponent === 'swap' && (
+                <div className="flex justify-start">
+                  <div className="max-w-[90%] space-y-3">
+                    <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-swap-active">
+                      <SwapPage 
+                        initialSellToken={swapProps?.sellToken}
+                        initialBuyToken={swapProps?.buyToken}
+                        initialSelectedHook={swapProps?.selectedHook}
+                        initialShowCustomHook={swapProps?.showCustomHook}
+                        inlineMode={true}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
