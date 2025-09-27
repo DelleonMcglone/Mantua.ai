@@ -101,10 +101,10 @@ export default function MainContent() {
       
       // For swap actions, set active component (guard against duplicates)
       if (actionId === 'swap') {
+        // Always set default props for button-triggered swap
+        setSwapProps({ sellToken: '', buyToken: '', showCustomHook: false });
         if (activeComponent !== 'swap') {
           setActiveComponent('swap');
-          // Set default props for button-triggered swap
-          setSwapProps({ sellToken: '', buyToken: '', showCustomHook: false });
         }
       }
     } else {
@@ -335,11 +335,10 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
         // Add appropriate response based on intent
         setTimeout(() => {
           if (swapIntent) {
-            // For swap intents, set active component (guard against duplicates)
+            // For swap intents, always update props but guard component activation
+            setSwapProps(swapIntent);
             if (activeComponent !== 'swap') {
               setActiveComponent('swap');
-              // Store swap props for component rendering
-              setSwapProps(swapIntent);
             }
           } else {
             addMessage({
@@ -375,11 +374,10 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       // Add appropriate response based on intent
       setTimeout(() => {
         if (swapIntent) {
-          // For swap intents, set active component (guard against duplicates)
+          // For swap intents, always update props but guard component activation
+          setSwapProps(swapIntent);
           if (activeComponent !== 'swap') {
             setActiveComponent('swap');
-            // Store swap props for component rendering
-            setSwapProps(swapIntent);
           }
         } else {
           addMessage({

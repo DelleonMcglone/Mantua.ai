@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,14 @@ export default function Swap({
   
   // Show custom hook section if initially requested
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
+
+  // Update state when props change (for inline mode updates)
+  useEffect(() => {
+    if (initialSellToken) setSellToken(initialSellToken);
+    if (initialBuyToken) setBuyToken(initialBuyToken);
+    if (initialSelectedHook) setSelectedHook(initialSelectedHook);
+    setShowCustomHook(initialShowCustomHook || initialSelectedHook === 'custom');
+  }, [initialSellToken, initialBuyToken, initialSelectedHook, initialShowCustomHook]);
 
   const handleMaxClick = () => {
     const token = TOKENS.find(t => t.symbol === sellToken);
