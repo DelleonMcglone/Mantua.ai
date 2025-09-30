@@ -125,13 +125,6 @@ export default function Landing() {
                       <MessageSquarePlus className="h-4 w-4" />
                       New chats
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="relative">
-                        <div className="absolute -inset-2 bg-muted/50 rounded-lg"></div>
-                        <Search className="h-4 w-4 relative z-10" />
-                      </div>
-                      Search
-                    </div>
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                       <Package className="h-4 w-4" />
                       Assets
