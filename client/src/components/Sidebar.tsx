@@ -1,4 +1,4 @@
-import { ChevronDown, MessageSquarePlus, Search, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2, ArrowUpDown } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
@@ -259,8 +259,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const [isChatsOpen, setIsChatsOpen] = useState(true); // Start with chats open
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const { createNewChat } = useChatContext();
 
   const toggleSidebar = () => {
@@ -268,25 +266,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     if (!isExpanded) {
       setIsAssetsOpen(false); // Close assets dropdown when collapsing
       setIsChatsOpen(true); // Show chats when expanding
-      setIsSearchOpen(false); // Close search dropdown when collapsing
     }
     console.log('Sidebar toggled:', !isExpanded);
-  };
-
-  const handleSearchToggle = () => {
-    if (isExpanded) {
-      setIsSearchOpen(!isSearchOpen);
-      if (!isSearchOpen) {
-        setSearchQuery(''); // Clear search when opening
-        setIsAssetsOpen(false); // Close assets when opening search
-        setIsChatsOpen(false); // Close chats when opening search
-      }
-    }
-  };
-
-  const handleSearchClose = () => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
   };
 
   const handleNewChat = () => {
@@ -343,7 +324,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                   className={`w-full text-sidebar-foreground hover:bg-sidebar-accent justify-start gap-2`}
                   onClick={() => {
                     setIsChatsOpen(!isChatsOpen);
-                    setIsSearchOpen(false); // Close search when opening chats
                   }}
                   data-testid="button-chats-dropdown"
                 >
@@ -359,31 +339,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               </div>
             )}
 
-            {/* Search */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
-                  isExpanded ? 'justify-start gap-2' : 'justify-center'
-                } ${isSearchOpen ? 'bg-sidebar-accent' : ''}`}
-                onClick={handleSearchToggle}
-                data-testid="button-search"
-                title={!isExpanded ? 'Search' : ''}
-              >
-                <Search className="h-4 w-4" />
-                {isExpanded && 'Search'}
-              </Button>
-              
-              {isExpanded && (
-                <TokenSearchDropdown
-                  isOpen={isSearchOpen}
-                  onClose={handleSearchClose}
-                  searchQuery={searchQuery}
-                  onSearchQueryChange={setSearchQuery}
-                />
-              )}
-            </div>
-
             {/* Assets Dropdown */}
             <div>
               <Button
@@ -394,7 +349,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 onClick={() => {
                   if (isExpanded) {
                     setIsAssetsOpen(!isAssetsOpen);
-                    setIsSearchOpen(false); // Close search when opening assets
                     console.log('Assets dropdown toggled:', !isAssetsOpen);
                   }
                 }}
