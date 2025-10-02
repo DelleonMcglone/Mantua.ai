@@ -92,9 +92,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex flex-col items-center justify-center px-8 py-16 text-center">
-        
-
+      <main className="relative flex flex-col items-center justify-center px-8 py-16 text-center pb-96">
         {/* Logo */}
         <div className="mb-8">
           <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-16 h-16 mx-auto" />
@@ -126,8 +124,8 @@ export default function Landing() {
           Launch app
         </Button>
 
-        {/* App Preview */}
-        <div className="mt-20 max-w-5xl w-full">
+        {/* App Preview - Bleeding off bottom */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 max-w-5xl w-full px-8">
           <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
             <div className="bg-background rounded-lg border border-border overflow-hidden">
               {/* Preview Header */}
