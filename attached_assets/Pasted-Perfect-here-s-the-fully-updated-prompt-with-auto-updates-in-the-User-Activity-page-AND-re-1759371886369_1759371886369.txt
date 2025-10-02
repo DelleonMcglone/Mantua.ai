@@ -1,0 +1,84 @@
+Perfect ✅ — here’s the **fully updated prompt** with **auto-updates in the User Activity page AND real-time chat feedback**.
+
+---
+
+### 🟣 Replit Prompt: **User Activity Page Routing, States, Auto-Updates & Chat Feedback**
+
+Implement the **User Activity page** accessible from the sidebar.
+
+---
+
+**1. Routing**
+
+* When user clicks `User Activity` in the sidebar → navigate to `/user-activity`.
+* Display the User Activity page.
+
+---
+
+**2. Page Layout**
+
+* Title: `"Your activity"` with back arrow.
+* Subtext: `"View your recent transactions and interactions with Mantua protocol."`
+* **Portfolio Summary Cards**:
+
+  * Total portfolio value
+  * Overall gains/losses
+  * Transactions count
+* **Portfolio Value Over Time chart** (line/area chart).
+* **Recent Activity Table**:
+
+  * Columns: Activity, Assets, Amounts, Value, Date, Status
+  * Filters: All | Swaps | Liquidity pools
+
+---
+
+**3. States**
+
+* **Empty State** (no user actions):
+
+  * Portfolio value = `$0.00`
+  * Gains/losses = `$0.00`
+  * Transactions = `0`
+  * Chart flat at 0
+  * Empty table
+* **Populated State** (after user actions):
+
+  * Fill summary cards with calculated values.
+  * Chart updates with historical activity.
+  * Table shows transaction history (e.g., “Swap ETH to USDC, 0.2 ETH, $807.89, Completed”).
+
+---
+
+**4. Auto-Updates**
+
+* When a **Swap** or **Liquidity action** completes:
+
+  * Push a new row into the **Recent Activity table**.
+  * Update **Portfolio Summary cards** (total value, gains/losses, transactions count).
+  * Update the **Portfolio Value Over Time chart** with the new balance.
+* These updates should happen immediately after the action confirmation, no manual refresh required.
+
+---
+
+**5. Chat Feedback (New)**
+
+* When a swap or liquidity action is confirmed → also inject a chat message into the chatbot feed:
+
+  * Example:
+
+    * `"Activity updated: Swap ETH → USDC added to history"`
+    * `"Activity updated: Added liquidity to ETH/USDC pool"`
+* Chat message should appear **from the system/assistant role**, styled differently from user messages.
+* Clicking on the message should provide a shortcut link to the **User Activity page**.
+
+---
+
+**6. Styling**
+
+* Mantua theme (rounded cards, subtle shadows, purple chart gradient).
+* Completed transactions → green status pill.
+* Failed transactions (if added later) → red status pill.
+
+---
+
+⚡ Do you want me to also extend this so **Agent Activity** in the sidebar works the same way (auto-updates + chat feedback when agents perform actions), or should we keep that separate for now?

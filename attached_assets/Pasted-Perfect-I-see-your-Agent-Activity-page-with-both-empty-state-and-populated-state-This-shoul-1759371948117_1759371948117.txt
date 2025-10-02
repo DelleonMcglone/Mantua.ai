@@ -1,0 +1,93 @@
+Perfect ✅ — I see your **Agent Activity page** with both empty state and populated state. This should mirror the **User Activity flow** but focused on AI Agents.
+
+Here’s the **Replit prompt** to implement it cleanly:
+
+---
+
+### 🟣 Replit Prompt: **Agent Activity Page Routing, States, Auto-Updates & Chat Feedback**
+
+Implement the **Agent Activity page** accessible from the sidebar.
+
+---
+
+**1. Routing**
+
+* When user clicks `Agent Activity` in the sidebar → navigate to `/agent-activity`.
+* Display the Agent Activity page.
+
+---
+
+**2. Page Layout**
+
+* Title: `"Agent activity"` with back arrow.
+* Subtext: `"Monitor and manage your AI agents’ performance and actions."`
+* **Summary Cards**:
+
+  * Cumulative returns (e.g., 15.2%)
+  * Total value managed
+  * Commands processed / Transactions count
+* **Portfolio Value Over Time chart** (line/area chart).
+* **Active Agents Table**:
+
+  * Columns: Activity, Value, Date, Performance, Status
+  * Filters: All | Swaps | Liquidity pools
+* **Controls**:
+
+  * Button to **Pause agent activity** (bottom of page).
+
+---
+
+**3. States**
+
+* **Empty State** (no agent activity):
+
+  * All values = `$0.00` or `0`
+  * Chart flat at 0
+  * Empty agents table
+* **Populated State** (agents running actions):
+
+  * Show real values in summary cards.
+  * Chart updates with historical managed value.
+  * Active Agents table filled with transactions (e.g., “Swap 0.5 ETH for USDC”).
+  * Status badges:
+
+    * Green = Completed
+    * Yellow = Pending
+    * Red = Failed
+
+---
+
+**4. Auto-Updates**
+
+* When an **agent executes a swap or liquidity action**:
+
+  * Add a new row to the **Active Agents table**.
+  * Update **Cumulative returns**, **Total value managed**, and **Commands processed** cards.
+  * Update the **Portfolio Value Over Time chart** with new balance.
+* These updates should be real-time (immediately after agent confirmation).
+
+---
+
+**5. Chat Feedback**
+
+* Whenever an agent performs an action, also inject a message into the chatbot feed:
+
+  * Example:
+
+    * `"Agent executed: Swap 0.5 ETH → USDC (Completed)"`
+    * `"Agent pending: Added liquidity to ETH/USDC pool"`
+* These chat messages should be styled as **system/assistant messages**, not user input.
+* Include a **link/shortcut to Agent Activity page** in each message.
+
+---
+
+**6. Styling**
+
+* Mantua theme (rounded cards, purple accents, subtle shadows).
+* Portfolio chart styled with gradient fill.
+* Status pills: Completed (green), Pending (yellow), Failed (red).
+* “Pause Agent Activity” button = red outline, positioned at bottom.
+
+---
+
+⚡ Do you want me to also **connect Agent Activity with User Activity**, so whenever an agent performs a swap it shows up **in both pages** (Agent = who did it, User = portfolio impact)?
