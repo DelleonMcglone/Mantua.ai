@@ -1,0 +1,84 @@
+Got it ✅ — we’ll apply the **same pattern as the Swap flow** to Add Liquidity. Whether the user **clicks the + button → Add Liquidity** or **types "Add Liquidity"**, the Liquidity component should display automatically. If they specify tokens (e.g., `"Add Liquidity ETH/USDC"`) then the modal should prefill.
+
+Here’s the **Replit prompt** to cover this end-to-end:
+
+---
+
+### 🟣 Replit Prompt: **Add Liquidity Component Triggering & Prefill Behavior**
+
+Update chatbot behavior so the **Add Liquidity component** displays consistently when triggered by button or text input.
+
+---
+
+**1. Trigger Conditions**
+
+* If user clicks **+ → Add Liquidity** →
+
+  * Display info text:
+
+    ```
+    Provide liquidity into supported pools to earn fees and participate in yield farming.
+
+    • Add liquidity to ETH/USDC  
+    • Provide stablecoin liquidity into USDC/EURC pools  
+    • Use advanced hooks for custom strategies  
+
+    Available on Base Sepolia testnet with full mainnet feature parity.
+    ```
+  * Then immediately render the **Add Liquidity component**.
+
+* If user types **"Add Liquidity"** →
+
+  * Skip text response.
+  * Immediately **render the Add Liquidity component**.
+
+* If user types **"Add Liquidity ETH/USDC"** →
+
+  * Render Add Liquidity component with:
+
+    * Token 1 = ETH preselected
+    * Token 2 = USDC preselected
+
+* If user types **"Add Liquidity ETH/USDC using my custom hook"** →
+
+  * Render Add Liquidity component with:
+
+    * ETH/USDC preselected
+    * Hook dropdown set to **Custom Hook**
+    * Custom hook field expanded and ready for input
+
+---
+
+**2. Behavior**
+
+* Liquidity component should always render inline in chat (scrollable feed).
+* Once Add Liquidity is submitted:
+
+  * Show **transaction processing state** (“Adding liquidity…”).
+  * On success → show **confirmation + transaction summary**.
+  * Auto-update **User Activity** + **Agent Activity** (if agent-driven).
+
+---
+
+**3. Auto-Updates**
+
+* After successful add liquidity:
+
+  * Push new row into **User Activity table**.
+  * Update portfolio summary and chart.
+  * If action was triggered by an agent → also update **Agent Activity table**.
+* Also inject a chat message:
+
+  * `"Liquidity added: 1 ETH + 3000 USDC to ETH/USDC pool"`
+  * With link: **“View in User Activity”**
+
+---
+
+**4. Guard Logic**
+
+* Ensure only **one Liquidity component** renders per trigger.
+* Use `activeComponent === "liquidity"` state to avoid duplicates.
+
+---
+
+⚡ Do you also want me to extend this so the **"View Available Pools" button** in the suggestion flow (screenshot 1) also launches the Add Liquidity flow directly if the user selects a pool?
