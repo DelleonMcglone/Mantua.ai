@@ -27,7 +27,9 @@ The application features a multi-page architecture:
 - **Landing Page** (`/`): Marketing-focused entry point with hero section, feature descriptions, and "Launch App" call-to-action
 - **Main Application** (`/app`): Full DeFi assistant interface with sidebar navigation, chat functionality, and action buttons
 - **About Page** (`/about`): Scrollable markdown-style page with comprehensive information about Mantua.AI capabilities, example actions, and hooks overview
-- **Navigation Flow**: Landing page → Launch App button → Main application interface
+- **User Activity Page** (`/user-activity`): Comprehensive activity tracking dashboard showing portfolio value, transactions, and swap history
+- **Agent Activity Page** (`/agent-activity`): AI agent monitoring interface displaying managed value, performance metrics, and automated trading activity
+- **Navigation Flow**: Landing page → Launch App button → Main application interface with sidebar access to activity pages
 
 The landing page includes:
 - Header with social media icons (Discord, X, Farcaster), About link, theme toggle, and Launch App button
@@ -57,6 +59,35 @@ The backend uses a **Node.js/Express** server architecture:
 - **Fallback**: In-memory storage implementation for development/testing
 
 Current schema includes basic user management with username/password authentication.
+
+## Activity Tracking System
+The application includes comprehensive activity tracking for both user actions and AI agent operations:
+
+### User Activity
+- **Real-time tracking**: Automatically logs all swap and liquidity transactions
+- **Portfolio metrics**: Total value, gains/losses, transaction count
+- **Visual analytics**: Portfolio value overtime chart with purple gradient styling
+- **Activity history**: Filterable table showing swaps and liquidity pool interactions
+- **Status tracking**: Completed, pending, and failed transaction states
+
+### Agent Activity
+- **Performance monitoring**: Tracks cumulative returns and commands processed
+- **Value management**: Displays total value managed by AI agents
+- **Activity logging**: Records all agent-initiated transactions
+- **Agent controls**: Pause/resume agent activity functionality
+- **Empty state handling**: Clear messaging when no agent activities exist
+
+### Chat Integration
+- **Activity feedback**: Automatic chat messages when activities complete
+- **Quick navigation**: Chat messages include links to activity pages
+- **Real-time updates**: Activity context monitors and updates chat in real-time
+- **Message format**: "Activity Update: [action] added to history" with navigation link
+
+### Implementation Details
+- **ActivityContext**: Centralized state management for all activities
+- **ActivityChatFeedback**: Component monitoring activity messages and injecting into chat
+- **Auto-updates**: Charts and summaries update automatically as activities are added
+- **Data persistence**: Activities stored with unique IDs, timestamps, and metadata
 
 ## Authentication and Authorization
 Basic authentication structure is prepared but not fully implemented:
