@@ -1,0 +1,121 @@
+Perfect ✅ — here’s the **final refined Replit prompt** with the **About page rendered as a scrollable markdown-style page**:
+
+---
+
+### 🟣 Replit Prompt: **Navigation + Actions Update for Mantua.AI**
+
+Update the **sidebar, top nav, and + menu** to reflect the new structure and content.
+
+---
+
+**1. Remove Items from + Button Menu**
+
+* Remove:
+
+  * ❌ What can Mantua do?
+  * ❌ Learn about Hooks
+
+---
+
+**2. Reorder + Button Menu**
+
+* New order:
+
+  1. Swap
+  2. Add Liquidity
+  3. Analyze (rename from “Analyze Uniswap v4 contracts”)
+  4. Explore Agents
+
+---
+
+**3. Top Navigation Updates**
+
+* Change **Docs → About**.
+* When user selects **About**, route to `/about` page.
+
+**About Mantua.AI Page Requirements:**
+
+* Render content as a **scrollable markdown-style page** (not a chat message).
+* Support **bold headers, bullet points, and section dividers**.
+* Content:
+
+```
+# About Mantua.AI
+
+Mantua.AI is the programmable liquidity layer for DeFi.  
+It combines AI reasoning, Uniswap v4 hooks, and onchain agents to give you natural-language control over liquidity.  
+
+---
+
+## Example Actions
+
+### Swap
+Execute swaps with or without hooks.  
+- Swap ETH for USDC using a dynamic fee hook  
+- Swap ETH for cbBTC (standard swap, no hook)  
+
+### Deploy
+Spin up hooks and agents directly from chat.  
+- Create a new Uniswap v4 pool with a custom dynamic fee hook  
+- Launch an agent that can:  
+  • Request testnet funds via faucet  
+  • Manage wallet details and balance checks  
+  • Execute trades  
+
+### Understand
+Analyze contracts, pools, and hooks.  
+- What hooks are active in the ETH/USDC pool on Base?  
+- What ERC standards does contract 0x5932...627f implement?  
+- Show me the total liquidity in my deployed pool  
+
+### Interact
+Query balances and wallet info.  
+- How much ETH is in my wallet?  
+- What is the current value of my LP position in the ETH/USDC pool?  
+
+### Explore
+Access blockchain-level data and activity.  
+- What's the current gas price on Base?  
+- Show the last 10 transactions for my wallet  
+- Get details for transaction 0xdfc4...9e04  
+
+### Research
+Retrieve token, protocol, and market insights.  
+- What's the market price of ETH on Base?  
+- Compare TVL between ETH/USDC pools on Base vs Unichain  
+- Show me recent volume trends for cbBTC on Base  
+
+---
+
+## Hooks Overview
+
+Hooks are custom pieces of logic that extend Uniswap v4 pools and in some cases swaps.  
+They let developers and traders add intelligence, protection, and new features directly into liquidity.  
+
+**Examples of hooks:**  
+- **Dynamic Fee Hook**: Adjust fees automatically based on volatility.  
+- **TWAP Hook**: Smooth execution using time-weighted averages.  
+- **MEV Protection Hook**: Add protection against front-running.  
+- **Custom Hooks**: Deploy custom logic (whitelists, rewards, splits).  
+- **Pool-Level Insights**: Track LP activity and execution behavior.  
+```
+
+---
+
+**4. Community Section Updates**
+
+* Replace **Community** text with a **Discord icon**.
+* Add **X icon** and **Farcaster icon** next to Discord.
+* Each icon should link to the corresponding Mantua community pages (placeholders for now).
+
+---
+
+**5. Expected Behavior**
+
+* **+ button** shows only the four reordered items.
+* **About page** is a **scrollable markdown-style page** with sections, bold headers, and bullet points.
+* **Community section** in top nav shows Discord, X, and Farcaster icons side by side.
+
+---
+
+⚡ Do you also want me to make the **About page markdown renderer reusable**, so later you can drop in docs/tutorials in the same format without building a new page each time?
