@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Pause } from "lucide-react";
+import { ArrowLeft, Pause, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
@@ -16,7 +16,8 @@ export default function AgentActivity() {
     agentCumulativeReturns, 
     agentValueManaged, 
     agentCommandsProcessed,
-    agentChartData 
+    agentChartData,
+    addAgentActivity
   } = useActivity();
 
   const filteredActivities = agentActivities.filter(activity => {
@@ -45,6 +46,35 @@ export default function AgentActivity() {
 
   const handlePauseToggle = () => {
     setIsPaused(!isPaused);
+  };
+
+  const handleSimulateAgentSwap = () => {
+    // Simulate an agent executing a swap
+    const swapAmount = (Math.random() * 1 + 0.1).toFixed(1); // Random amount between 0.1 and 1.1
+    const tokens = [
+      { from: 'ETH', to: 'USDC', price: 1800 },
+      { from: 'USDC', to: 'ETH', price: 0.00055 },
+      { from: 'ETH', to: 'DAI', price: 1800 },
+      { from: 'WBTC', to: 'ETH', price: 15 }
+    ];
+    const selectedSwap = tokens[Math.floor(Math.random() * tokens.length)];
+    const swapValueUSD = parseFloat(swapAmount) * selectedSwap.price;
+    const executionTime = (Math.random() * 3 + 1).toFixed(1); // 1-4 seconds
+    
+    addAgentActivity(
+      {
+        activity: `Swap ${swapAmount} ${selectedSwap.from} for ${selectedSwap.to}`,
+        value: `$${swapValueUSD.toFixed(2)}`,
+        date: new Date().toLocaleDateString(),
+        performance: `${executionTime}s`,
+        status: 'Completed'
+      },
+      {
+        type: 'Swap',
+        assets: `${selectedSwap.from} → ${selectedSwap.to}`,
+        amounts: `${swapAmount} ${selectedSwap.from}`
+      }
+    );
   };
 
   return (
@@ -219,6 +249,24 @@ export default function AgentActivity() {
                 </tbody>
               </table>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Simulate Agent Swap Button */}
+        <Card data-testid="card-simulate-agent">
+          <CardContent className="p-6">
+            <Button
+              variant="default"
+              onClick={handleSimulateAgentSwap}
+              className="w-full"
+              data-testid="button-simulate-agent-swap"
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              Simulate Agent Swap
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Test dual-update: Agent activity + User portfolio
+            </p>
           </CardContent>
         </Card>
 
