@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface UserActivity {
   id: string;
@@ -26,12 +26,6 @@ export interface PortfolioData {
   value: number;
 }
 
-export interface ActivityMessage {
-  message: string;
-  type: 'user' | 'agent';
-  link: string;
-}
-
 interface ActivityContextType {
   // User Activity
   userActivities: UserActivity[];
@@ -43,58 +37,24 @@ interface ActivityContextType {
   
   // Agent Activity
   agentActivities: AgentActivity[];
-  addAgentActivity: (activity: Omit<AgentActivity, 'id' | 'timestamp'>, portfolioData?: { assets: string; amounts: string; type: 'Swap' | 'Liquidity' }) => void;
+  addAgentActivity: (activity: Omit<AgentActivity, 'id' | 'timestamp'>) => void;
   agentCumulativeReturns: number;
   agentValueManaged: number;
   agentCommandsProcessed: number;
   agentChartData: PortfolioData[];
   
   // Activity messages for chat
-  activityMessages: ActivityMessage[];
-  addActivityMessage: (message: ActivityMessage) => void;
+  activityMessages: string[];
+  addActivityMessage: (message: string) => void;
   clearActivityMessages: () => void;
 }
 
 const ActivityContext = createContext<ActivityContextType | undefined>(undefined);
 
 export function ActivityProvider({ children }: { children: ReactNode }) {
-  // Initialize from localStorage with error handling
-  const [userActivities, setUserActivities] = useState<UserActivity[]>(() => {
-    try {
-      const stored = localStorage.getItem('mantua_user_activities');
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Failed to load user activities from localStorage:', error);
-      return [];
-    }
-  });
-  const [agentActivities, setAgentActivities] = useState<AgentActivity[]>(() => {
-    try {
-      const stored = localStorage.getItem('mantua_agent_activities');
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Failed to load agent activities from localStorage:', error);
-      return [];
-    }
-  });
-  const [activityMessages, setActivityMessages] = useState<ActivityMessage[]>([]);
-  
-  // Persist to localStorage whenever activities change
-  useEffect(() => {
-    try {
-      localStorage.setItem('mantua_user_activities', JSON.stringify(userActivities));
-    } catch (error) {
-      console.error('Failed to save user activities to localStorage:', error);
-    }
-  }, [userActivities]);
-  
-  useEffect(() => {
-    try {
-      localStorage.setItem('mantua_agent_activities', JSON.stringify(agentActivities));
-    } catch (error) {
-      console.error('Failed to save agent activities to localStorage:', error);
-    }
-  }, [agentActivities]);
+  const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
+  const [agentActivities, setAgentActivities] = useState<AgentActivity[]>([]);
+  const [activityMessages, setActivityMessages] = useState<string[]>([]);
   
   // User Activity Functions
   const addUserActivity = (activity: Omit<UserActivity, 'id' | 'timestamp'>) => {
@@ -106,53 +66,24 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     setUserActivities(prev => [newActivity, ...prev]);
     
     // Add activity message for chat
-    addActivityMessage({
-      message: `Activity updated: ${activity.type} ${activity.assets} added to history`,
-      type: 'user',
-      link: '/user-activity'
-    });
+    const message = `Activity updated: ${activity.type} ${activity.assets} added to history`;
+    addActivityMessage(message);
   };
   
-  const addAgentActivity = (
-    activity: Omit<AgentActivity, 'id' | 'timestamp'>, 
-    portfolioData?: { assets: string; amounts: string; type: 'Swap' | 'Liquidity' }
-  ) => {
-    const timestamp = Date.now();
-    const newAgentActivity: AgentActivity = {
+  const addAgentActivity = (activity: Omit<AgentActivity, 'id' | 'timestamp'>) => {
+    const newActivity: AgentActivity = {
       ...activity,
-      id: `agent-${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp,
+      id: `agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
     };
-    
-    // Update agent activities
-    setAgentActivities(prev => [newAgentActivity, ...prev]);
-    
-    // If portfolio data provided, also update user activities (dual-logging)
-    if (portfolioData && activity.status === 'Completed') {
-      const newUserActivity: UserActivity = {
-        id: `user-agent-${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
-        type: portfolioData.type,
-        assets: portfolioData.assets,
-        amounts: portfolioData.amounts,
-        value: activity.value,
-        date: activity.date,
-        status: activity.status,
-        timestamp,
-      };
-      
-      // Update user activities
-      setUserActivities(prev => [newUserActivity, ...prev]);
-    }
+    setAgentActivities(prev => [newActivity, ...prev]);
     
     // Add activity message for chat
-    addActivityMessage({
-      message: `Agent executed: ${activity.activity} (${activity.status})`,
-      type: 'agent',
-      link: '/agent-activity'
-    });
+    const message = `Agent executed: ${activity.activity} (${activity.status})`;
+    addActivityMessage(message);
   };
   
-  const addActivityMessage = (message: ActivityMessage) => {
+  const addActivityMessage = (message: string) => {
     setActivityMessages(prev => [...prev, message]);
   };
   

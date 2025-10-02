@@ -61,7 +61,7 @@ The backend uses a **Node.js/Express** server architecture:
 Current schema includes basic user management with username/password authentication.
 
 ## Activity Tracking System
-The application includes comprehensive activity tracking for both user actions and AI agent operations with dual-logging integration:
+The application includes comprehensive activity tracking for both user actions and AI agent operations:
 
 ### User Activity
 - **Real-time tracking**: Automatically logs all swap and liquidity transactions
@@ -75,30 +75,19 @@ The application includes comprehensive activity tracking for both user actions a
 - **Value management**: Displays total value managed by AI agents
 - **Activity logging**: Records all agent-initiated transactions
 - **Agent controls**: Pause/resume agent activity functionality
-- **Simulation testing**: "Simulate Agent Swap" button for testing dual-logging
 - **Empty state handling**: Clear messaging when no agent activities exist
 
-### Dual-Logging Integration
-- **Synchronized updates**: Agent actions automatically create entries in both agent and user activity tables
-- **Value synchronization**: Total value managed (agent) equals total portfolio value (user) when all swaps are agent-driven
-- **Transaction mirroring**: Agent swaps appear in both dashboards with matching values and metadata
-- **Distinct feedback**: Chat messages distinguish between user actions ("View in User Activity") and agent actions ("View in Agent Activity")
-- **Unified metrics**: Charts and summaries update across both views when agent executes transactions
-
 ### Chat Integration
-- **Type-aware feedback**: Automatic chat messages distinguish user vs agent actions with appropriate links
-- **Quick navigation**: Chat messages include links to respective activity pages based on action type
+- **Activity feedback**: Automatic chat messages when activities complete
+- **Quick navigation**: Chat messages include links to activity pages
 - **Real-time updates**: Activity context monitors and updates chat in real-time
-- **Deduplication handling**: Repeated identical messages properly clear cache to allow consistent feedback
-- **Message format**: "[User/Agent] executed: [action] ([status])" with type-specific navigation links
+- **Message format**: "Activity Update: [action] added to history" with navigation link
 
 ### Implementation Details
-- **ActivityContext**: Centralized state management with dual-logging logic for all activities
-- **localStorage persistence**: Activities persist across navigation with error-resilient hydration
-- **ActivityChatFeedback**: Component monitoring activity messages with cache management for repeated actions
-- **ActivityMessage interface**: Includes type (user/agent) and link properties for proper routing
-- **Auto-updates**: Charts and summaries update automatically across both dashboards
-- **Data persistence**: Activities stored with unique IDs, timestamps, metadata, and localStorage backup
+- **ActivityContext**: Centralized state management for all activities
+- **ActivityChatFeedback**: Component monitoring activity messages and injecting into chat
+- **Auto-updates**: Charts and summaries update automatically as activities are added
+- **Data persistence**: Activities stored with unique IDs, timestamps, and metadata
 
 ## Authentication and Authorization
 Basic authentication structure is prepared but not fully implemented:

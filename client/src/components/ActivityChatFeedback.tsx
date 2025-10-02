@@ -1,47 +1,39 @@
 import { useEffect, useRef } from 'react';
 import { useActivity } from '@/contexts/ActivityContext';
 import { useChatContext } from '@/contexts/ChatContext';
+import { useLocation } from 'wouter';
 
 export function ActivityChatFeedback() {
   const { activityMessages, clearActivityMessages } = useActivity();
   const { addMessage, currentChat } = useChatContext();
+  const [, setLocation] = useLocation();
   const processedMessagesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!currentChat || activityMessages.length === 0) {
-      // Clear processed messages cache when no current chat or no messages
-      processedMessagesRef.current.clear();
-      return;
-    }
+    if (!currentChat || activityMessages.length === 0) return;
 
     // Process new activity messages
-    activityMessages.forEach((activityMsg, index) => {
-      const messageKey = `${activityMsg.message}-${index}`;
+    activityMessages.forEach((message, index) => {
+      const messageKey = `${message}-${index}`;
       
-      // Skip if already processed in this batch
+      // Skip if already processed
       if (processedMessagesRef.current.has(messageKey)) return;
-      
-      // Determine link text based on message type
-      const linkText = activityMsg.type === 'user' 
-        ? 'View in User Activity' 
-        : 'View in Agent Activity';
       
       // Add to chat as system message
       addMessage({
         sender: 'assistant',
-        content: `${activityMsg.message}\n\n[${linkText} →](${activityMsg.link})`
+        content: `Activity Update: ${message}\n\n[View Activity Details →](/user-activity)`
       });
       
-      // Mark as processed in this batch
+      // Mark as processed
       processedMessagesRef.current.add(messageKey);
     });
     
-    // Clear activity messages and reset processed cache after processing
+    // Clear activity messages after processing
     if (activityMessages.length > 0) {
       clearActivityMessages();
-      processedMessagesRef.current.clear();
     }
-  }, [activityMessages, currentChat, addMessage, clearActivityMessages]);
+  }, [activityMessages, currentChat, addMessage, clearActivityMessages, setLocation]);
 
   return null; // This component doesn't render anything
 }
