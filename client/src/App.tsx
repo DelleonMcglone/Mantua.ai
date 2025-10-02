@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThirdwebProviders } from "./providers/ThirdwebProvider";
 import { ChatProvider } from "@/contexts/ChatContext";
+import { ActivityProvider } from "@/contexts/ActivityContext";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -29,12 +30,14 @@ function Router() {
 function App() {
   return (
     <ThirdwebProviders>
-      <ChatProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ChatProvider>
+      <ActivityProvider>
+        <ChatProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ChatProvider>
+      </ActivityProvider>
     </ThirdwebProviders>
   );
 }

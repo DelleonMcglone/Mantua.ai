@@ -4,46 +4,33 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface AgentActivity {
-  id: string;
-  activity: string;
-  value: string;
-  date: string;
-  performance: string;
-  status: 'Completed' | 'Pending' | 'Failed';
-}
-
-// Mock data for demonstration
-const mockAgentActivities: AgentActivity[] = [];
-
-const mockChartData = [
-  { month: 'Jan', value: 0 },
-  { month: 'Feb', value: 0 },
-  { month: 'Mar', value: 0 },
-  { month: 'Apr', value: 0 },
-  { month: 'May', value: 0 },
-  { month: 'Jun', value: 0 },
-  { month: 'Jul', value: 0 },
-];
+import { useActivity, AgentActivity as AgentActivityType } from "@/contexts/ActivityContext";
 
 export default function AgentActivity() {
   const [, setLocation] = useLocation();
   const [activeFilter, setActiveFilter] = useState<'All' | 'Swaps' | 'Liquidity pools'>('All');
   const [isPaused, setIsPaused] = useState(false);
+  
+  const { 
+    agentActivities, 
+    agentCumulativeReturns, 
+    agentValueManaged, 
+    agentCommandsProcessed,
+    agentChartData 
+  } = useActivity();
 
-  const filteredActivities = mockAgentActivities.filter(activity => {
+  const filteredActivities = agentActivities.filter(activity => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Swaps') return activity.activity.includes('Swap');
     if (activeFilter === 'Liquidity pools') return activity.activity.includes('Liquidity');
     return true;
   });
 
-  const cumulativeReturns = "$0.00";
-  const totalValueManaged = "$0.00";
-  const commandsProcessed = 0;
+  const cumulativeReturns = `${agentCumulativeReturns.toFixed(1)}%`;
+  const totalValueManaged = `$${agentValueManaged.toFixed(2)}`;
+  const commandsProcessed = agentCommandsProcessed;
 
-  const getStatusColor = (status: AgentActivity['status']) => {
+  const getStatusColor = (status: AgentActivityType['status']) => {
     switch (status) {
       case 'Completed':
         return 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400';
@@ -134,7 +121,7 @@ export default function AgentActivity() {
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockChartData}>
+                <AreaChart data={agentChartData}>
                   <defs>
                     <linearGradient id="colorAgentValue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>

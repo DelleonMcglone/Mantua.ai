@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ArrowUpDown, Settings, ChevronUp, TrendingUp, Zap, CheckCircle, Info } from "lucide-react";
+import { useActivity } from "@/contexts/ActivityContext";
 
 // Import token logos
 import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
@@ -65,6 +66,9 @@ export default function Swap({
   
   // Show custom hook section if initially requested
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
+  
+  // Activity tracking
+  const { addUserActivity } = useActivity();
 
   // Update state when props change (for inline mode updates)
   useEffect(() => {
@@ -133,6 +137,16 @@ export default function Swap({
       // Simulate transaction processing
       setTimeout(() => {
         setTransactionState('completed');
+        
+        // Add activity to tracking
+        addUserActivity({
+          type: 'Swap',
+          assets: `${sellToken} to ${buyToken}`,
+          amounts: `${sellAmount} ${sellToken}`,
+          value: buyAmount.replace('$', ''),
+          date: new Date().toISOString().split('T')[0],
+          status: 'Completed'
+        });
       }, 5000);
     }, 2000);
   };

@@ -4,46 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface Activity {
-  id: string;
-  type: 'Swap' | 'Liquidity';
-  assets: string;
-  amounts: string;
-  value: string;
-  date: string;
-  status: 'Completed' | 'Pending' | 'Failed';
-}
-
-// Mock data for demonstration
-const mockActivities: Activity[] = [];
-
-const mockChartData = [
-  { month: 'Jan', value: 0 },
-  { month: 'Feb', value: 0 },
-  { month: 'Mar', value: 0 },
-  { month: 'Apr', value: 0 },
-  { month: 'May', value: 0 },
-  { month: 'Jun', value: 0 },
-  { month: 'Jul', value: 0 },
-];
+import { useActivity, UserActivity as UserActivityType } from "@/contexts/ActivityContext";
 
 export default function UserActivity() {
   const [, setLocation] = useLocation();
   const [activeFilter, setActiveFilter] = useState<'All' | 'Swaps' | 'Liquidity pools'>('All');
+  
+  const { 
+    userActivities, 
+    userPortfolioValue, 
+    userGainsLosses, 
+    userTransactionCount,
+    userChartData 
+  } = useActivity();
 
-  const filteredActivities = mockActivities.filter(activity => {
+  const filteredActivities = userActivities.filter(activity => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Swaps') return activity.type === 'Swap';
     if (activeFilter === 'Liquidity pools') return activity.type === 'Liquidity';
     return true;
   });
 
-  const totalValue = "$0.00";
-  const gainsLosses = "$0.00";
-  const transactionCount = 0;
+  const totalValue = `$${userPortfolioValue.toFixed(2)}`;
+  const gainsLosses = `$${userGainsLosses.toFixed(2)}`;
+  const transactionCount = userTransactionCount;
 
-  const getStatusColor = (status: Activity['status']) => {
+  const getStatusColor = (status: UserActivityType['status']) => {
     switch (status) {
       case 'Completed':
         return 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400';
@@ -130,7 +116,7 @@ export default function UserActivity() {
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockChartData}>
+                <AreaChart data={userChartData}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
