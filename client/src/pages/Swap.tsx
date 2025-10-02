@@ -596,7 +596,7 @@ export default function Swap({
           {transactionState === 'idle' && 'Submit swap'}
           {transactionState === 'swapping' && 'Swapping...'}
           {transactionState === 'processing' && 'Processing...'}
-          {transactionState === 'completed' && 'Swap Complete'}
+          {transactionState === 'error' && 'Try Again'}
         </Button>
 
         {/* Transaction Processing Bar */}

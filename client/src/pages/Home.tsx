@@ -1,10 +1,14 @@
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import MainContent from "@/components/MainContent";
+import { ActivityChatFeedback } from "@/components/ActivityChatFeedback";
 
 export default function Home() {
   return (
     <div className="flex h-screen w-full bg-background">
+      {/* Activity monitoring for chat feedback */}
+      <ActivityChatFeedback />
+      
       {/* Sidebar */}
       <Sidebar />
       
