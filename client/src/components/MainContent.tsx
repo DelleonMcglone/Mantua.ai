@@ -9,7 +9,7 @@ import { useChatContext } from '@/contexts/ChatContext';
 import { useLocation } from 'wouter';
 import type { ChatMessage } from '@/lib/chatManager';
 
-type ActionId = 'swap' | 'add-liquidity' | 'explore-agent' | 'what-can-mantua-do' | 'learn-about-hooks' | 'analyze-uniswap-v4';
+type ActionId = 'swap' | 'add-liquidity' | 'explore-agents' | 'analyze';
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
@@ -85,7 +85,7 @@ export default function MainContent() {
   const handleActionClick = (actionId: string) => {
     if (!currentChat) return; // No active chat to add messages to
 
-    if (actionId === 'explore-agent') {
+    if (actionId === 'explore-agents') {
       // Enter Agent mode
       updateAgentMode(true);
       return;
@@ -155,79 +155,7 @@ export default function MainContent() {
 
 **Get started with testnet tokens or use the faucet for initial funding.**`;
 
-      case 'what-can-mantua-do':
-        return `Mantua.AI is the programmable liquidity layer for DeFi.
-It combines AI reasoning, Uniswap v4 hooks, and onchain agents to give you natural-language control over liquidity.
-Here are some example actions you can perform with Mantua:
-
-Swap
-Execute swaps with or without hooks.
-- Swap ETH for USDC using a dynamic fee hook
-- Swap ETH for cbBTC (standard swap, no hook)
-
-Deploy
-Spin up hooks and agents directly from chat.
-- Create a new Uniswap v4 pool with a custom dynamic fee hook
-- Launch an agent that can:
-  • Request testnet funds via faucet
-  • Manage wallet details and balance checks
-  • Execute trades
-
-Understand
-Analyze contracts, pools, and hooks.
-- What hooks are active in the ETH/USDC pool on Base?
-- What ERC standards does contract 0x5932...627f implement?
-- Show me the total liquidity in my deployed pool
-
-Interact
-Query balances and wallet info.
-- How much ETH is in my wallet?
-- What is the current value of my LP position in the ETH/USDC pool?
-
-Explore
-Access blockchain-level data and activity.
-- What's the current gas price on Base?
-- Show the last 10 transactions for my wallet
-- Get details for transaction 0xdfc4...9e04
-
-Research
-Retrieve token, protocol, and market insights.
-- What's the market price of ETH on Base?
-- Compare TVL between ETH/USDC pools on Base vs Unichain
-- Show me recent volume trends for cbBTC on Base`;
-      
-      case 'learn-about-hooks':
-        return `Hooks are custom pieces of logic that extend Uniswap v4 pools and in some cases swaps.
-They let developers and traders add intelligence, protection, and new features directly into liquidity.
-Here are some examples of what you can do with hooks:
-
-Dynamic Fee Hook
-Adjust fees automatically based on market conditions.
-- Charge higher fees during volatility, lower fees during calm periods
-Example: Swap ETH for USDC using a dynamic fee hook
-
-TWAP (Time-Weighted Average Price) Hook
-Smooth out execution with oracle-like pricing.
-- Execute trades against an average price over time
-Example: Swap ETH for cbBTC with a TWAP hook enabled
-
-MEV Protection Hook
-Defend liquidity providers and traders from front-running.
-- Add guardrails against sandwich attacks
-Example: Enable MEV protection in an ETH/USDC pool
-
-Custom Hooks
-Design and deploy your own logic.
-- Add loyalty rewards or fee splits for LPs
-- Create hooks that restrict trades to whitelisted addresses
-- Combine multiple hooks into one pool for tailored behavior
-
-Pool-Level Insights
-Use hooks to unlock new data.
-- Track LP activity directly inside pools
-- View how hooks change swap execution and fee distribution`;
-      
-      case 'analyze-uniswap-v4':
+      case 'analyze':
         return `Uniswap v4 Overview (Base)
 What changed from v3 → v4: v4 introduces a singleton architecture via the PoolManager, so pools live inside one contract; and hooks let builders add programmable logic (dynamic fees, MEV protection, etc.) at the pool level. Gas usage is reduced with native "flash accounting," and liquidity positions move to ERC-1155 (vs v3's ERC-721). (Uniswap Docs)
 
@@ -261,7 +189,7 @@ Universal Router: 0x492E6456D9528771018DeB9E87ef7750EF184104
 Permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3
 Source: Uniswap v4 official deployments (Uniswap Docs)`;
       
-      case 'explore-agent':
+      case 'explore-agents':
         // This is handled separately in handleActionClick
         return "";
       

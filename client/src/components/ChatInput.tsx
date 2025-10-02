@@ -74,12 +74,10 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
 
     // Get the display text for the action
     const actionLabels: Record<string, string> = {
-      'what-can-mantua-do': 'What can Mantua do',
-      'learn-about-hooks': 'Learn about Hooks',
-      'analyze-uniswap-v4': 'Analyze Uniswap v4 contracts',
-      'explore-agent': 'Explore Agents',
       'swap': 'Swap',
-      'add-liquidity': 'Add Liquidity'
+      'add-liquidity': 'Add Liquidity',
+      'analyze': 'Analyze',
+      'explore-agents': 'Explore Agents'
     };
 
     // Inject user message
@@ -119,30 +117,6 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="w-64" data-testid="dropdown-quick-actions">
             <DropdownMenuItem
-              onClick={() => handleQuickAction('what-can-mantua-do')}
-              data-testid="dropdown-item-what-can-mantua-do"
-            >
-              What can Mantua do
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleQuickAction('learn-about-hooks')}
-              data-testid="dropdown-item-learn-about-hooks"
-            >
-              Learn about Hooks
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleQuickAction('analyze-uniswap-v4')}
-              data-testid="dropdown-item-analyze-uniswap-v4"
-            >
-              Analyze Uniswap v4 contracts
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleQuickAction('explore-agent')}
-              data-testid="dropdown-item-explore-agent"
-            >
-              Explore Agents
-            </DropdownMenuItem>
-            <DropdownMenuItem
               onClick={() => handleQuickAction('swap')}
               data-testid="dropdown-item-swap"
             >
@@ -153,6 +127,18 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
               data-testid="dropdown-item-add-liquidity"
             >
               Add Liquidity
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('analyze')}
+              data-testid="dropdown-item-analyze"
+            >
+              Analyze
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleQuickAction('explore-agents')}
+              data-testid="dropdown-item-explore-agents"
+            >
+              Explore Agents
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
