@@ -6,6 +6,8 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
+import UserActivity from "@/pages/UserActivity";
+import AgentActivity from "@/pages/AgentActivity";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +16,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/app" component={Home} />
       <Route path="/about" component={About} />
+      <Route path="/user-activity" component={UserActivity} />
+      <Route path="/agent-activity" component={AgentActivity} />
       {/* Chat routes - /chat/new and /chat/:id */}
       <Route path="/chat/:id" component={Home} />
       {/* Fallback to 404 */}

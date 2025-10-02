@@ -260,6 +260,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const [isChatsOpen, setIsChatsOpen] = useState(true); // Start with chats open
   const { createNewChat } = useChatContext();
+  const [, setLocation] = useLocation();
 
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
@@ -384,7 +385,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
                 isExpanded ? 'justify-start gap-2' : 'justify-center'
               }`}
-              onClick={() => console.log('User activity clicked')}
+              onClick={() => setLocation('/user-activity')}
               data-testid="button-user-activity"
               title={!isExpanded ? 'User activity' : ''}
             >
@@ -398,7 +399,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
                 isExpanded ? 'justify-start gap-2' : 'justify-center'
               }`}
-              onClick={() => console.log('Agent activity clicked')}
+              onClick={() => setLocation('/agent-activity')}
               data-testid="button-agent-activity"
               title={!isExpanded ? 'Agent activity' : ''}
             >
