@@ -39,7 +39,7 @@ export default function Landing() {
             variant="ghost"
             size="icon"
             data-testid="button-discord"
-            onClick={() => window.open('https://discord.gg/mantua', '_blank')}
+            onClick={() => window.open('https://discord.com/channels/1423172421967413311/1423172423150342218', '_blank')}
             title="Discord"
           >
             <SiDiscord className="h-4 w-4" />
@@ -48,7 +48,7 @@ export default function Landing() {
             variant="ghost"
             size="icon"
             data-testid="button-x"
-            onClick={() => window.open('https://x.com/mantua', '_blank')}
+            onClick={() => window.open('https://x.com/Mantua_AI', '_blank')}
             title="X (Twitter)"
           >
             <SiX className="h-4 w-4" />
@@ -57,7 +57,7 @@ export default function Landing() {
             variant="ghost"
             size="icon"
             data-testid="button-farcaster"
-            onClick={() => window.open('https://warpcast.com/mantua', '_blank')}
+            onClick={() => window.open('https://farcaster.xyz/mantuaprotocol.eth', '_blank')}
             title="Farcaster"
           >
             <svg className="h-4 w-4" viewBox="0 0 1000 1000" fill="currentColor">
