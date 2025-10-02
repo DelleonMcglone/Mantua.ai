@@ -6,10 +6,10 @@ interface ActionButtonsProps {
 
 export default function ActionButtons({ onActionClick }: ActionButtonsProps) {
   const actions = [
-    { label: "What can Mantua.AI do?", id: "what-mantua-do" },
-    { label: "Explore Agent", id: "explore-agent" },
-    { label: "Learn about Hooks", id: "learn-hooks" },
-    { label: "Analyze Uniswap v4 contracts", id: "analyze-uniswap-v4" },
+    { label: "Swap", id: "swap" },
+    { label: "Add Liquidity", id: "add-liquidity" },
+    { label: "Analyze", id: "analyze" },
+    { label: "Explore Agents", id: "explore-agents" },
   ];
 
   const handleActionClick = (actionId: string) => {
