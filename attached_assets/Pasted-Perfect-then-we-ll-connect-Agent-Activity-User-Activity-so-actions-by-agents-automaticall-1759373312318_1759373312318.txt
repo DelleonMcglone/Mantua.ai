@@ -1,0 +1,83 @@
+Perfect ✅ — then we’ll **connect Agent Activity + User Activity**, so actions by agents automatically update **both dashboards** (agent view + portfolio view).
+
+Here’s the **final combined Replit prompt** for you:
+
+---
+
+### 🟣 Replit Prompt: **Agent & User Activity Integration with Auto-Updates + Chat Feedback**
+
+---
+
+**1. Routing**
+
+* `User Activity` in sidebar → `/user-activity`.
+* `Agent Activity` in sidebar → `/agent-activity`.
+* Each page shows its respective dashboard.
+
+---
+
+**2. User Activity Page**
+
+* Summary cards: Total portfolio value, Gains/Losses, Transactions.
+* Portfolio Value Over Time chart.
+* Recent Activity Table (All | Swaps | Liquidity pools).
+* Auto-updates when user performs swaps/liquidity actions.
+
+---
+
+**3. Agent Activity Page**
+
+* Summary cards: Cumulative returns, Total value managed, Commands processed.
+* Portfolio Value Over Time chart.
+* Active Agents Table (All | Swaps | Liquidity pools).
+* Button: **Pause Agent Activity**.
+* Auto-updates when agents perform actions.
+
+---
+
+**4. Integration Between User & Agent Activity**
+
+* When an **agent executes a swap or liquidity action**:
+
+  1. Add entry to **Agent Activity table** (showing strategy, performance, execution time, status).
+  2. Also push corresponding entry to **User Activity table** (showing portfolio impact, token movement, value).
+  3. Update **both sets of summary cards** (agent metrics + portfolio metrics).
+  4. Update **both charts** with new balance/returns.
+
+Example:
+
+* Agent executes → `Swap 0.5 ETH → USDC`.
+* **Agent Activity** logs: `"Swap 0.5 ETH for USDC | $807.89 | 2.6s | Completed"`.
+* **User Activity** logs: `"Swap 0.5 ETH for USDC | $807.89 | Completed"`.
+* Portfolio and managed value both increment.
+
+---
+
+**5. Chat Feedback**
+
+* On every swap/liquidity action (manual or agent-driven), insert a chat message:
+
+  * User action: `"Activity updated: Swap ETH → USDC added to history"`
+  * Agent action: `"Agent executed: Swap 0.5 ETH → USDC (Completed)"`
+* Each message should include a **link/shortcut** to the relevant page:
+
+  * `"View in User Activity"`
+  * `"View in Agent Activity"`
+
+---
+
+**6. Styling**
+
+* Mantua theme (rounded cards, purple accents, gradient charts).
+* Status pills:
+
+  * Green = Completed
+  * Yellow = Pending
+  * Red = Failed
+* Real-time updates, no manual refresh.
+
+---
+
+⚡ This way, **User Activity = portfolio impact** and **Agent Activity = agent performance**, but both stay in sync.
+
+Do you also want me to add a **“Unified Activity Feed” in the sidebar** (merging both, with filters: All | User | Agents), or should we keep them separate for now?

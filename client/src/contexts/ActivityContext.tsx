@@ -26,6 +26,12 @@ export interface PortfolioData {
   value: number;
 }
 
+export interface ActivityMessage {
+  message: string;
+  type: 'user' | 'agent';
+  link: string;
+}
+
 interface ActivityContextType {
   // User Activity
   userActivities: UserActivity[];
@@ -37,15 +43,15 @@ interface ActivityContextType {
   
   // Agent Activity
   agentActivities: AgentActivity[];
-  addAgentActivity: (activity: Omit<AgentActivity, 'id' | 'timestamp'>) => void;
+  addAgentActivity: (activity: Omit<AgentActivity, 'id' | 'timestamp'>, portfolioData?: { assets: string; amounts: string; type: 'Swap' | 'Liquidity' }) => void;
   agentCumulativeReturns: number;
   agentValueManaged: number;
   agentCommandsProcessed: number;
   agentChartData: PortfolioData[];
   
   // Activity messages for chat
-  activityMessages: string[];
-  addActivityMessage: (message: string) => void;
+  activityMessages: ActivityMessage[];
+  addActivityMessage: (message: ActivityMessage) => void;
   clearActivityMessages: () => void;
 }
 
@@ -54,7 +60,7 @@ const ActivityContext = createContext<ActivityContextType | undefined>(undefined
 export function ActivityProvider({ children }: { children: ReactNode }) {
   const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
   const [agentActivities, setAgentActivities] = useState<AgentActivity[]>([]);
-  const [activityMessages, setActivityMessages] = useState<string[]>([]);
+  const [activityMessages, setActivityMessages] = useState<ActivityMessage[]>([]);
   
   // User Activity Functions
   const addUserActivity = (activity: Omit<UserActivity, 'id' | 'timestamp'>) => {
@@ -66,11 +72,17 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     setUserActivities(prev => [newActivity, ...prev]);
     
     // Add activity message for chat
-    const message = `Activity updated: ${activity.type} ${activity.assets} added to history`;
-    addActivityMessage(message);
+    addActivityMessage({
+      message: `Activity updated: ${activity.type} ${activity.assets} added to history`,
+      type: 'user',
+      link: '/user-activity'
+    });
   };
   
-  const addAgentActivity = (activity: Omit<AgentActivity, 'id' | 'timestamp'>) => {
+  const addAgentActivity = (
+    activity: Omit<AgentActivity, 'id' | 'timestamp'>, 
+    portfolioData?: { assets: string; amounts: string; type: 'Swap' | 'Liquidity' }
+  ) => {
     const newActivity: AgentActivity = {
       ...activity,
       id: `agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -78,12 +90,30 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     };
     setAgentActivities(prev => [newActivity, ...prev]);
     
+    // If portfolio data provided, also update user activities (dual-logging)
+    if (portfolioData && activity.status === 'Completed') {
+      const userActivity: UserActivity = {
+        id: `user-agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: portfolioData.type,
+        assets: portfolioData.assets,
+        amounts: portfolioData.amounts,
+        value: activity.value,
+        date: activity.date,
+        status: activity.status,
+        timestamp: Date.now(),
+      };
+      setUserActivities(prev => [userActivity, ...prev]);
+    }
+    
     // Add activity message for chat
-    const message = `Agent executed: ${activity.activity} (${activity.status})`;
-    addActivityMessage(message);
+    addActivityMessage({
+      message: `Agent executed: ${activity.activity} (${activity.status})`,
+      type: 'agent',
+      link: '/agent-activity'
+    });
   };
   
-  const addActivityMessage = (message: string) => {
+  const addActivityMessage = (message: ActivityMessage) => {
     setActivityMessages(prev => [...prev, message]);
   };
   
