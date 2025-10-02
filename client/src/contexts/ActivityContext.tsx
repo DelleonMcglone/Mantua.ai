@@ -126,13 +126,22 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       chartMonths.unshift(months[(currentMonth - chartMonths.length + 12) % 12]);
     }
     
+    // Calculate total value from completed activities
+    const totalValue = activities.reduce((sum, activity) => {
+      if (activity.status === 'Completed') {
+        const value = parseFloat(activity.value.replace(/[$,]/g, '')) || 0;
+        return sum + value;
+      }
+      return sum;
+    }, 0);
+    
     // Calculate cumulative value over time
     let cumulativeValue = 0;
     return chartMonths.map(month => {
       // In a real app, we'd filter activities by month
       // For now, distribute evenly
       if (activities.length > 0) {
-        cumulativeValue += agentValueManaged / chartMonths.length;
+        cumulativeValue += totalValue / chartMonths.length;
       }
       return { month, value: Math.round(cumulativeValue) };
     });

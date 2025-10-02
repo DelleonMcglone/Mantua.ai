@@ -22,7 +22,7 @@ export function ActivityChatFeedback() {
       // Add to chat as system message
       addMessage({
         sender: 'assistant',
-        content: `✅ ${message}\n\n[View Activity Details →](/user-activity)`
+        content: `Activity Update: ${message}\n\n[View Activity Details →](/user-activity)`
       });
       
       // Mark as processed
