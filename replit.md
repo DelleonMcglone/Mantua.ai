@@ -15,23 +15,30 @@ The frontend is built using **React 18** with **TypeScript** and follows a compo
 - **UI Library**: Shadcn/ui components built on top of Radix UI primitives
 - **Styling**: Tailwind CSS with custom design system implementing purple-themed color palette
 - **State Management**: TanStack React Query for server state management
-- **Routing**: Wouter for lightweight client-side routing with separate landing page and main application routes
-- **Component Structure**: Modular components organized by feature (Header, Sidebar, MainContent, ChatInput, ActionButtons, Landing)
+- **Routing**: Wouter for lightweight client-side routing with landing page, main application, and about page routes
+- **Component Structure**: Modular components organized by feature (Header, Sidebar, MainContent, ChatInput, ActionButtons, Landing, About)
+- **Quick Actions Menu**: Streamlined action menu with 4 options - Swap, Add Liquidity, Analyze, and Explore Agents
 
 The design system follows a cohesive purple color scheme (270° 85% 60% primary) with Inter font family and responsive layout patterns.
 
 ## Application Structure
-The application now features a dual-page architecture:
+The application features a multi-page architecture:
 
 - **Landing Page** (`/`): Marketing-focused entry point with hero section, feature descriptions, and "Launch App" call-to-action
 - **Main Application** (`/app`): Full DeFi assistant interface with sidebar navigation, chat functionality, and action buttons
+- **About Page** (`/about`): Scrollable markdown-style page with comprehensive information about Mantua.AI capabilities, example actions, and hooks overview
 - **Navigation Flow**: Landing page → Launch App button → Main application interface
 
 The landing page includes:
-- Header with Docs, Support links, theme toggle, and Launch App button
-- Hero section with "Built on Base" badge and main value proposition
+- Header with social media icons (Discord, X, Farcaster), About link, theme toggle, and Launch App button
+- Hero section with main value proposition
 - App preview mockup showing the main interface
 - Consistent purple branding and theme-aware logo switching
+
+The About page includes:
+- Detailed introduction to Mantua.AI as a programmable liquidity layer
+- Example Actions section covering: Swap, Deploy, Understand, Interact, Explore, Research
+- Hooks Overview section explaining dynamic fees, TWAP, MEV protection, and custom hooks
 
 ## Backend Architecture
 The backend uses a **Node.js/Express** server architecture:
