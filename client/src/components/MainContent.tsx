@@ -2,6 +2,7 @@ import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
+import AddLiquidityPage from "@/pages/AddLiquidity";
 import { useState, useEffect, useRef } from "react";
 import { useActiveAccount } from 'thirdweb/react';
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
   const [activeComponent, setActiveComponent] = useState<null | "swap" | "liquidity">(null);
   const [swapProps, setSwapProps] = useState<any>(null);
+  const [liquidityProps, setLiquidityProps] = useState<any>(null);
   const { currentChat, addMessage, updateAgentMode, createNewChat } = useChatContext();
   const [location] = useLocation();
   const account = useActiveAccount();
@@ -105,6 +107,15 @@ export default function MainContent() {
         setSwapProps({ sellToken: '', buyToken: '', showCustomHook: false });
         if (activeComponent !== 'swap') {
           setActiveComponent('swap');
+        }
+      }
+      
+      // For add-liquidity actions, set active component
+      if (actionId === 'add-liquidity') {
+        // Always set default props for button-triggered liquidity
+        setLiquidityProps({ token1: '', token2: '', showCustomHook: false });
+        if (activeComponent !== 'liquidity') {
+          setActiveComponent('liquidity');
         }
       }
     } else {
@@ -242,12 +253,40 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     return null;
   };
 
+  // Intent parsing for liquidity commands
+  const parseLiquidityIntent = (message: string) => {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Basic "add liquidity" command
+    if (lowerMessage === 'add liquidity' || lowerMessage === 'provide liquidity') {
+      return { type: 'liquidity', token1: '', token2: '', showCustomHook: false };
+    }
+    
+    // "Add Liquidity X/Y" or "Add Liquidity ETH/USDC" pattern
+    const liquidityPattern = /(?:add|provide)\s+liquidity\s+(\w+)\/(\w+)/i;
+    const liquidityMatch = message.match(liquidityPattern);
+    if (liquidityMatch) {
+      const [, token1, token2] = liquidityMatch;
+      const hasCustomHook = lowerMessage.includes('custom hook') || lowerMessage.includes('my custom hook');
+      return {
+        type: 'liquidity',
+        token1: token1.toUpperCase(),
+        token2: token2.toUpperCase(),
+        selectedHook: hasCustomHook ? 'custom' : '',
+        showCustomHook: hasCustomHook
+      };
+    }
+    
+    return null;
+  };
+
   // Handle chat input submission
   const handleChatSubmit = (message: string) => {
     if (!message.trim()) return; // Empty message
     
-    // Check for swap intent
+    // Check for swap and liquidity intents
     const swapIntent = parseSwapIntent(message.trim());
+    const liquidityIntent = parseLiquidityIntent(message.trim());
     
     // If no current chat but wallet is connected, create a new chat
     if (!currentChat && account) {
@@ -267,6 +306,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
             setSwapProps(swapIntent);
             if (activeComponent !== 'swap') {
               setActiveComponent('swap');
+            }
+          } else if (liquidityIntent) {
+            // For liquidity intents, always update props but guard component activation
+            setLiquidityProps(liquidityIntent);
+            if (activeComponent !== 'liquidity') {
+              setActiveComponent('liquidity');
             }
           } else {
             addMessage({
@@ -306,6 +351,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
           setSwapProps(swapIntent);
           if (activeComponent !== 'swap') {
             setActiveComponent('swap');
+          }
+        } else if (liquidityIntent) {
+          // For liquidity intents, always update props but guard component activation
+          setLiquidityProps(liquidityIntent);
+          if (activeComponent !== 'liquidity') {
+            setActiveComponent('liquidity');
           }
         } else {
           addMessage({
@@ -353,6 +404,22 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                         initialBuyToken={swapProps?.buyToken}
                         initialSelectedHook={swapProps?.selectedHook}
                         initialShowCustomHook={swapProps?.showCustomHook}
+                        inlineMode={true}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {activeComponent === 'liquidity' && (
+                <div className="flex justify-start">
+                  <div className="max-w-[90%] space-y-3">
+                    <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-liquidity-active">
+                      <AddLiquidityPage 
+                        initialToken1={liquidityProps?.token1}
+                        initialToken2={liquidityProps?.token2}
+                        initialSelectedHook={liquidityProps?.selectedHook}
+                        initialShowCustomHook={liquidityProps?.showCustomHook}
                         inlineMode={true}
                       />
                     </div>
