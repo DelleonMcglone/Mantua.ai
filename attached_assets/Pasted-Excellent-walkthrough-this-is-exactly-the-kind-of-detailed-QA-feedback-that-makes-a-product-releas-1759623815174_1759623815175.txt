@@ -1,0 +1,191 @@
+Excellent walkthrough — this is exactly the kind of detailed QA feedback that makes a product release-ready.
+
+Here’s how I’ll organize your notes into a **Developer Fix Plan** for Replit (or GitHub Issues format).
+
+---
+
+# 🧭 **Mantua.AI Post-Walkthrough Fix Plan**
+
+---
+
+## **1. About Page**
+
+**Issues & Requirements**
+
+* ✅ Header should remain visible and functional.
+* ✅ Add a **Back** button (returns user to previous screen or landing page).
+* ✅ Clicking the **Mantua logo** in header should navigate to **Landing Page**.
+* ✅ Replace About page content with updated copy below.
+
+**🧱 Final Content:**
+
+```
+About Mantua.AI  
+The programmable liquidity layer for DeFi.  
+Hooks for logic. Agents for action. AI for intelligence.
+
+---
+
+### What is Mantua.AI
+Mantua.AI is a natural language operating system for decentralized finance — a place where you can swap, manage liquidity, deploy hooks, and interact with smart contracts simply by typing what you want.
+Built on Base Sepolia & Unichain Sepolia, Mantua.AI connects the intelligence of AI with the autonomy of blockchain. It combines Uniswap v4 Hooks, AI Agents, and on-chain data reasoning to make DeFi intuitive, automated, and intelligent.
+
+### The Problem
+DeFi today is powerful but fragmented.
+Each task — swapping, adding liquidity, analyzing tokens, deploying contracts — requires juggling multiple dashboards, APIs, and wallets. Even experienced users spend time copying addresses, checking gas, and debugging failed transactions.
+For newcomers, it’s overwhelming. For builders, it’s inefficient. For investors, it’s slow.
+
+### Our Solution
+Mantua.AI turns complex DeFi workflows into natural conversations.
+
+Type it. “Swap 1 ETH for USDC using a dynamic fee hook.”  
+Understand it. Mantua’s AI parses your intent, simulates outcomes, and explains what’s happening.  
+Execute it. Your transaction is safely built and sent on-chain — on your approval.  
+
+No more guesswork, no more copy-pasting contract addresses. Just AI-powered precision, fully on-chain.
+
+### Who It’s For
+- **DeFi Power Users** — execute complex trades and liquidity strategies in seconds.  
+- **Developers & Builders** — experiment with hooks, agents, and contracts without boilerplate code.  
+- **Analysts & Researchers** — query on-chain data and token metrics conversationally.  
+- **Everyday Users** — learn, explore, and use DeFi safely through a friendly interface.
+
+### Why Mantua.AI Is Different
+⚙️ **Built on Hooks**: Programmable Uniswap v4 logic lets you customize how pools and swaps behave.  
+🤖 **Driven by Agents**: AI Agents automate DeFi strategies and remember your preferences.  
+🧠 **Powered by Intelligence**: Real-time blockchain data gives context and reasoning behind every action.  
+🔗 **On-Base and On-Chain**: Secure, transparent execution — every transaction verifiable on Base.  
+💬 **Conversational UX**: A chat interface that feels like ChatGPT, but with real DeFi execution power.
+
+### Our Vision
+Mantua.AI is more than an app — it’s the foundation for AI-native DeFi.  
+We’re building toward a world where liquidity is programmable, execution is autonomous, and intelligence is embedded into every transaction.  
+DeFi shouldn’t be hard — it should be smart.
+
+### Join the Movement
+💬 [Discord](https://discord.com/channels/1423172421967413311/1423172423150342218)  
+🐦 [X (Twitter)](https://x.com/Mantua_AI)  
+🌐 [Farcaster](https://farcaster.xyz/mantuaprotocol.eth)
+```
+
+---
+
+## **2. Chat History**
+
+**Issue**
+
+* Chat history can be accessed and old chats display correctly even when wallet is disconnected.
+
+**✅ Fix**
+
+* Add **wallet connection check** before allowing chat replay.
+* If disconnected → show message: “Reconnect your wallet to interact with saved chats.”
+
+---
+
+## **3. Portfolio Activity Chart**
+
+**Issue**
+
+* Time period buttons (24H, 7D, 1M, 3M, 1Y, Max) not functional.
+
+**✅ Fix**
+
+* Implement button logic to update chart data dynamically.
+* Default time range: **Max**.
+* Use same styling and layout across **Portfolio** and **Agent Activity**.
+
+---
+
+## **4. Agent Activity Chart**
+
+**Same as Portfolio**
+
+* Implement identical time range filter buttons.
+* Default = **Max**.
+
+---
+
+## **5. Settings**
+
+**✅ Fix**
+
+* Remove settings icon entirely from the UI.
+
+---
+
+## **6. “+” Button (Main Interaction Dropdown)**
+
+**Current Issues**
+
+* When clicked, the page **jumps**, and the first selection doesn’t work until it’s clicked a second time.
+* Mantua logo incorrectly appears above chatbot input.
+* Mode-based behavior (Analyze / Explore Agent / Add Liquidity / Swap) inconsistent.
+
+**✅ Fix Requirements**
+
+### General Behavior
+
+* When logged in → first display:
+  **“Welcome, [abbreviated wallet address]”**
+* Remove Mantua logo from above chat input.
+
+### Button Logic
+
+| Button            | Expected Behavior                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Explore Agent** | Enters Agent Mode. “Agent Mode Active” button appears. User can select Agent Actions or type agent commands. **Swap component must NOT appear.** |
+| **Analyze**       | Enters Analyze Mode. Swap component must NOT appear. User input and output follow AI analysis pattern (see sample response).                     |
+| **Swap**          | Shows Swap component only. Remove “Execute token swaps…” text block.                                                                             |
+| **Add Liquidity** | Shows Add Liquidity component only. Remove Uniswap v4 overview text block.                                                                       |
+
+---
+
+### **Analyze Mode Example Output**
+
+> *Input:* “Which chains had the highest TVL growth this week?”
+> *Output:*
+> “It looks like I’m currently unable to fetch live data from the API. However, you can check the chains with the highest TVL growth this week directly on DefiLlama’s Chains Leaderboard under the ‘7d Change’ column.
+> Once my data connection is restored, I’ll be able to generate a live table like this:
+> ... [table example] ...
+> Would you like a historical comparison or breakdown by protocol per chain once the connection is back?”
+
+---
+
+## **7. Component Cleanup**
+
+### **Remove from Add Liquidity Component**
+
+Remove all Uniswap v4 overview and contract address text.
+Only display the **Add Liquidity interface**.
+
+### **Remove from Swap Component**
+
+Remove the “Execute token swaps with intelligent routing…” text block.
+Only display the **Swap interface**.
+
+---
+
+# ⚙️ **Implementation Summary (Prompt for Replit)**
+
+> **Prompt:**
+> “Fix the following issues in Mantua.AI:
+>
+> 1. Keep header on About page with functional logo link + back button.
+> 2. Replace About page content with updated markdown text (see full copy above).
+> 3. Add wallet-connection validation to chat history.
+> 4. Implement time range filters (24H, 7D, 1M, 3M, 1Y, Max) for Portfolio & Agent Activity charts. Default = Max.
+> 5. Remove Settings icon.
+> 6. Fix + button dropdown logic (remove page jump, fix first-click behavior, remove Mantua logo from chat input).
+> 7. Implement proper mode behaviors:
+>
+> * Explore Agent = Agent mode (no Swap component).
+> * Analyze = Analyze mode (no Swap component).
+> * Add Liquidity = show Add Liquidity component only.
+> * Swap = show Swap component only.
+>
+> 8. Remove extra descriptive text blocks under Add Liquidity & Swap components.”
+
+---
+
+Would you like me to turn this into a **formatted GitHub Issues list** (each item as a separate issue card with titles, descriptions, and acceptance criteria)? It’ll make it easier for your devs to track and close them one by one.

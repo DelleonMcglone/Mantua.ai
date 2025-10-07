@@ -1,113 +1,159 @@
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
+import Header from "@/components/Header";
+
 export default function About() {
+  const [, setLocation] = useLocation();
+
+  const handleBack = () => {
+    window.history.length > 1 ? window.history.back() : setLocation('/');
+  };
+
   return (
-    <div className="h-full overflow-y-auto bg-background">
-      <div className="max-w-4xl mx-auto px-8 py-12">
-        {/* Title */}
-        <h1 className="text-4xl font-bold text-foreground mb-6" data-testid="text-about-title">
-          About Mantua.AI
-        </h1>
-        
-        {/* Introduction */}
-        <p className="text-lg text-foreground mb-8 leading-relaxed">
-          Mantua.AI is the programmable liquidity layer for DeFi.<br />
-          It combines AI reasoning, Uniswap v4 hooks, and onchain agents to give you natural-language control over liquidity.
-        </p>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-8 py-12">
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            className="mb-6 -ml-2"
+            onClick={handleBack}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
 
-        <hr className="border-border my-8" />
+          {/* Title */}
+          <h1 className="text-4xl font-bold text-foreground mb-4" data-testid="text-about-title">
+            About Mantua.AI
+          </h1>
+          
+          <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+            The programmable liquidity layer for DeFi.<br />
+            Hooks for logic. Agents for action. AI for intelligence.
+          </p>
 
-        {/* Example Actions Section */}
-        <h2 className="text-2xl font-bold text-foreground mb-6" data-testid="text-example-actions-title">
-          Example Actions
-        </h2>
+          <hr className="border-border my-8" />
 
-        {/* Swap */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-foreground mb-3">Swap</h3>
-          <p className="text-muted-foreground mb-2">Execute swaps with or without hooks.</p>
-          <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
-            <li>Swap ETH for USDC using a dynamic fee hook</li>
-            <li>Swap ETH for cbBTC (standard swap, no hook)</li>
+          {/* What is Mantua.AI */}
+          <h2 className="text-2xl font-bold text-foreground mb-4">What is Mantua.AI</h2>
+          <p className="text-foreground mb-6 leading-relaxed">
+            Mantua.AI is a natural language operating system for decentralized finance — a place where you can swap, manage liquidity, deploy hooks, and interact with smart contracts simply by typing what you want.
+          </p>
+          <p className="text-foreground mb-8 leading-relaxed">
+            Built on Base Sepolia & Unichain Sepolia, Mantua.AI connects the intelligence of AI with the autonomy of blockchain. It combines Uniswap v4 Hooks, AI Agents, and on-chain data reasoning to make DeFi intuitive, automated, and intelligent.
+          </p>
+
+          {/* The Problem */}
+          <h2 className="text-2xl font-bold text-foreground mb-4">The Problem</h2>
+          <p className="text-foreground mb-6 leading-relaxed">
+            DeFi today is powerful but fragmented.
+          </p>
+          <p className="text-foreground mb-8 leading-relaxed">
+            Each task — swapping, adding liquidity, analyzing tokens, deploying contracts — requires juggling multiple dashboards, APIs, and wallets. Even experienced users spend time copying addresses, checking gas, and debugging failed transactions.
+          </p>
+          <p className="text-foreground mb-8 leading-relaxed">
+            For newcomers, it's overwhelming. For builders, it's inefficient. For investors, it's slow.
+          </p>
+
+          {/* Our Solution */}
+          <h2 className="text-2xl font-bold text-foreground mb-4">Our Solution</h2>
+          <p className="text-foreground mb-6 leading-relaxed">
+            Mantua.AI turns complex DeFi workflows into natural conversations.
+          </p>
+          <div className="space-y-4 mb-8">
+            <p className="text-foreground leading-relaxed">
+              <strong>Type it.</strong> "Swap 1 ETH for USDC using a dynamic fee hook."
+            </p>
+            <p className="text-foreground leading-relaxed">
+              <strong>Understand it.</strong> Mantua's AI parses your intent, simulates outcomes, and explains what's happening.
+            </p>
+            <p className="text-foreground leading-relaxed">
+              <strong>Execute it.</strong> Your transaction is safely built and sent on-chain — on your approval.
+            </p>
+          </div>
+          <p className="text-foreground mb-8 leading-relaxed">
+            No more guesswork, no more copy-pasting contract addresses. Just AI-powered precision, fully on-chain.
+          </p>
+
+          {/* Who It's For */}
+          <h2 className="text-2xl font-bold text-foreground mb-4">Who It's For</h2>
+          <ul className="space-y-3 mb-8">
+            <li className="text-foreground leading-relaxed">
+              <strong>DeFi Power Users</strong> — execute complex trades and liquidity strategies in seconds.
+            </li>
+            <li className="text-foreground leading-relaxed">
+              <strong>Developers & Builders</strong> — experiment with hooks, agents, and contracts without boilerplate code.
+            </li>
+            <li className="text-foreground leading-relaxed">
+              <strong>Analysts & Researchers</strong> — query on-chain data and token metrics conversationally.
+            </li>
+            <li className="text-foreground leading-relaxed">
+              <strong>Everyday Users</strong> — learn, explore, and use DeFi safely through a friendly interface.
+            </li>
           </ul>
-        </div>
 
-        {/* Deploy */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-foreground mb-3">Deploy</h3>
-          <p className="text-muted-foreground mb-2">Spin up hooks and agents directly from chat.</p>
-          <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
-            <li>Create a new Uniswap v4 pool with a custom dynamic fee hook</li>
-            <li>Launch an agent that can:</li>
-            <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-8">
-              <li>Request testnet funds via faucet</li>
-              <li>Manage wallet details and balance checks</li>
-              <li>Execute trades</li>
-            </ul>
+          {/* Why Mantua.AI Is Different */}
+          <h2 className="text-2xl font-bold text-foreground mb-4">Why Mantua.AI Is Different</h2>
+          <ul className="space-y-3 mb-8">
+            <li className="text-foreground leading-relaxed">
+              ⚙️ <strong>Built on Hooks</strong>: Programmable Uniswap v4 logic lets you customize how pools and swaps behave.
+            </li>
+            <li className="text-foreground leading-relaxed">
+              🤖 <strong>Driven by Agents</strong>: AI Agents automate DeFi strategies and remember your preferences.
+            </li>
+            <li className="text-foreground leading-relaxed">
+              🧠 <strong>Powered by Intelligence</strong>: Real-time blockchain data gives context and reasoning behind every action.
+            </li>
+            <li className="text-foreground leading-relaxed">
+              🔗 <strong>On-Base and On-Chain</strong>: Secure, transparent execution — every transaction verifiable on Base.
+            </li>
+            <li className="text-foreground leading-relaxed">
+              💬 <strong>Conversational UX</strong>: A chat interface that feels like ChatGPT, but with real DeFi execution power.
+            </li>
           </ul>
+
+          {/* Our Vision */}
+          <h2 className="text-2xl font-bold text-foreground mb-4">Our Vision</h2>
+          <p className="text-foreground mb-6 leading-relaxed">
+            Mantua.AI is more than an app — it's the foundation for AI-native DeFi.
+          </p>
+          <p className="text-foreground mb-6 leading-relaxed">
+            We're building toward a world where liquidity is programmable, execution is autonomous, and intelligence is embedded into every transaction.
+          </p>
+          <p className="text-foreground mb-8 leading-relaxed">
+            DeFi shouldn't be hard — it should be smart.
+          </p>
+
+          {/* Join the Movement */}
+          <h2 className="text-2xl font-bold text-foreground mb-4">Join the Movement</h2>
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              onClick={() => window.open('https://discord.com/channels/1423172421967413311/1423172423150342218', '_blank')}
+              data-testid="button-discord-join"
+            >
+              💬 Discord
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => window.open('https://x.com/Mantua_AI', '_blank')}
+              data-testid="button-x-join"
+            >
+              🐦 X (Twitter)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => window.open('https://farcaster.xyz/mantuaprotocol.eth', '_blank')}
+              data-testid="button-farcaster-join"
+            >
+              🌐 Farcaster
+            </Button>
+          </div>
         </div>
-
-        {/* Understand */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-foreground mb-3">Understand</h3>
-          <p className="text-muted-foreground mb-2">Analyze contracts, pools, and hooks.</p>
-          <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
-            <li>What hooks are active in the ETH/USDC pool on Base?</li>
-            <li>What ERC standards does contract 0x5932...627f implement?</li>
-            <li>Show me the total liquidity in my deployed pool</li>
-          </ul>
-        </div>
-
-        {/* Interact */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-foreground mb-3">Interact</h3>
-          <p className="text-muted-foreground mb-2">Query balances and wallet info.</p>
-          <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
-            <li>How much ETH is in my wallet?</li>
-            <li>What is the current value of my LP position in the ETH/USDC pool?</li>
-          </ul>
-        </div>
-
-        {/* Explore */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-foreground mb-3">Explore</h3>
-          <p className="text-muted-foreground mb-2">Access blockchain-level data and activity.</p>
-          <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
-            <li>What's the current gas price on Base?</li>
-            <li>Show the last 10 transactions for my wallet</li>
-            <li>Get details for transaction 0xdfc4...9e04</li>
-          </ul>
-        </div>
-
-        {/* Research */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-foreground mb-3">Research</h3>
-          <p className="text-muted-foreground mb-2">Retrieve token, protocol, and market insights.</p>
-          <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
-            <li>What's the market price of ETH on Base?</li>
-            <li>Compare TVL between ETH/USDC pools on Base vs Unichain</li>
-            <li>Show me recent volume trends for cbBTC on Base</li>
-          </ul>
-        </div>
-
-        <hr className="border-border my-8" />
-
-        {/* Hooks Overview Section */}
-        <h2 className="text-2xl font-bold text-foreground mb-6" data-testid="text-hooks-overview-title">
-          Hooks Overview
-        </h2>
-
-        <p className="text-muted-foreground mb-4 leading-relaxed">
-          Hooks are custom pieces of logic that extend Uniswap v4 pools and in some cases swaps.<br />
-          They let developers and traders add intelligence, protection, and new features directly into liquidity.
-        </p>
-
-        <p className="text-foreground font-semibold mb-3">Examples of hooks:</p>
-        <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-          <li><strong className="text-foreground">Dynamic Fee Hook:</strong> Adjust fees automatically based on volatility.</li>
-          <li><strong className="text-foreground">TWAP Hook:</strong> Smooth execution using time-weighted averages.</li>
-          <li><strong className="text-foreground">MEV Protection Hook:</strong> Add protection against front-running.</li>
-          <li><strong className="text-foreground">Custom Hooks:</strong> Deploy custom logic (whitelists, rewards, splits).</li>
-          <li><strong className="text-foreground">Pool-Level Insights:</strong> Track LP activity and execution behavior.</li>
-        </ul>
       </div>
     </div>
   );

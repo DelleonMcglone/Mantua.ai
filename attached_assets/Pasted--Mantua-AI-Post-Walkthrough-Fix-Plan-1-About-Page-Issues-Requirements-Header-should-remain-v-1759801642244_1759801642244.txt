@@ -1,0 +1,446 @@
+🧭 Mantua.AI Post-Walkthrough Fix Plan
+
+1. About Page
+Issues & Requirements
+✅ Header should remain visible and functional.
+
+
+✅ Add a Back button (returns user to previous screen or landing page).
+
+
+✅ Clicking the Mantua logo in header should navigate to Landing Page.
+
+
+✅ Replace About page content with updated copy below.
+
+
+🧱 Final Content:
+About Mantua.AI  
+The programmable liquidity layer for DeFi.  
+Hooks for logic. Agents for action. AI for intelligence.
+
+---
+
+### What is Mantua.AI
+Mantua.AI is a natural language operating system for decentralized finance — a place where you can swap, manage liquidity, deploy hooks, and interact with smart contracts simply by typing what you want.
+Built on Base Sepolia & Unichain Sepolia, Mantua.AI connects the intelligence of AI with the autonomy of blockchain. It combines Uniswap v4 Hooks, AI Agents, and on-chain data reasoning to make DeFi intuitive, automated, and intelligent.
+
+### The Problem
+DeFi today is powerful but fragmented.
+Each task — swapping, adding liquidity, analyzing tokens, deploying contracts — requires juggling multiple dashboards, APIs, and wallets. Even experienced users spend time copying addresses, checking gas, and debugging failed transactions.
+For newcomers, it’s overwhelming. For builders, it’s inefficient. For investors, it’s slow.
+
+### Our Solution
+Mantua.AI turns complex DeFi workflows into natural conversations.
+
+Type it. “Swap 1 ETH for USDC using a dynamic fee hook.”  
+Understand it. Mantua’s AI parses your intent, simulates outcomes, and explains what’s happening.  
+Execute it. Your transaction is safely built and sent on-chain — on your approval.  
+
+No more guesswork, no more copy-pasting contract addresses. Just AI-powered precision, fully on-chain.
+
+### Who It’s For
+- **DeFi Power Users** — execute complex trades and liquidity strategies in seconds.  
+- **Developers & Builders** — experiment with hooks, agents, and contracts without boilerplate code.  
+- **Analysts & Researchers** — query on-chain data and token metrics conversationally.  
+- **Everyday Users** — learn, explore, and use DeFi safely through a friendly interface.
+
+### Why Mantua.AI Is Different
+⚙️ **Built on Hooks**: Programmable Uniswap v4 logic lets you customize how pools and swaps behave.  
+🤖 **Driven by Agents**: AI Agents automate DeFi strategies and remember your preferences.  
+🧠 **Powered by Intelligence**: Real-time blockchain data gives context and reasoning behind every action.  
+🔗 **On-Base and On-Chain**: Secure, transparent execution — every transaction verifiable on Base.  
+💬 **Conversational UX**: A chat interface that feels like ChatGPT, but with real DeFi execution power.
+
+### Our Vision
+Mantua.AI is more than an app — it’s the foundation for AI-native DeFi.  
+We’re building toward a world where liquidity is programmable, execution is autonomous, and intelligence is embedded into every transaction.  
+DeFi shouldn’t be hard — it should be smart.
+
+### Join the Movement
+💬 [Discord](https://discord.com/channels/1423172421967413311/1423172423150342218)  
+🐦 [X (Twitter)](https://x.com/Mantua_AI)  
+🌐 [Farcaster](https://farcaster.xyz/mantuaprotocol.eth)
+
+
+2. Chat History
+Issue
+Chat history can be accessed and old chats display correctly even when wallet is disconnected.
+
+
+✅ Fix
+Add wallet connection check before allowing chat replay.
+
+
+If disconnected → show message: “Reconnect your wallet to interact with saved chats.”
+
+
+
+3. Portfolio Activity Chart
+Issue
+Time period buttons (24H, 7D, 1M, 3M, 1Y, Max) not functional.
+
+
+✅ Fix
+Implement button logic to update chart data dynamically.
+
+
+Default time range: Max.
+
+
+Use same styling and layout across Portfolio and Agent Activity.
+
+
+
+4. Agent Activity Chart
+Same as Portfolio
+Implement identical time range filter buttons.
+
+
+Default = Max.
+
+
+
+5. Settings
+✅ Fix
+Remove settings icon entirely from the UI.
+
+
+
+6. “+” Button (Main Interaction Dropdown)
+Current Issues
+When clicked, the page jumps, and the first selection doesn’t work until it’s clicked a second time.
+
+
+Mantua logo incorrectly appears above chatbot input.
+
+
+Mode-based behavior (Analyze / Explore Agent / Add Liquidity / Swap) inconsistent.
+
+
+✅ Fix Requirements
+General Behavior
+When logged in → first display:
+ “Welcome, [abbreviated wallet address]”
+
+
+Remove Mantua logo from above chat input.
+
+
+Button Logic
+Button
+Expected Behavior
+Explore Agent
+Enters Agent Mode. “Agent Mode Active” button appears. User can select Agent Actions or type agent commands. Swap component must NOT appear.
+Analyze
+Enters Analyze Mode. Swap component must NOT appear. User input and output follow AI analysis pattern (see sample response).
+Swap
+Shows Swap component only. Remove “Execute token swaps…” text block.
+Add Liquidity
+Shows Add Liquidity component only. Remove Uniswap v4 overview text block.
+
+
+Analyze Mode Example Output
+Input: “Which chains had the highest TVL growth this week?”
+ Output:
+ “It looks like I’m currently unable to fetch live data from the API. However, you can check the chains with the highest TVL growth this week directly on DefiLlama’s Chains Leaderboard under the ‘7d Change’ column.
+ Once my data connection is restored, I’ll be able to generate a live table like this:
+ ... [table example] ...
+ Would you like a historical comparison or breakdown by protocol per chain once the connection is back?”
+
+7. Component Cleanup
+Remove from Add Liquidity Component
+Remove all Uniswap v4 overview and contract address text.
+ Only display the Add Liquidity interface.
+Remove from Swap Component
+Remove the “Execute token swaps with intelligent routing…” text block.
+ Only display the Swap interface.
+
+⚙️ Implementation Summary (Prompt for Replit)
+Prompt:
+ “Fix the following issues in Mantua.AI:
+Keep header on About page with functional logo link + back button.
+
+
+Replace About page content with updated markdown text (see full copy above).
+
+
+Add wallet-connection validation to chat history.
+
+
+Implement time range filters (24H, 7D, 1M, 3M, 1Y, Max) for Portfolio & Agent Activity charts. Default = Max.
+
+
+Remove Settings icon.
+
+
+Fix + button dropdown logic (remove page jump, fix first-click behavior, remove Mantua logo from chat input).
+
+
+Implement proper mode behaviors:
+
+
+Explore Agent = Agent mode (no Swap component).
+
+
+Analyze = Analyze mode (no Swap component).
+
+
+Add Liquidity = show Add Liquidity component only.
+
+
+Swap = show Swap component only.
+
+
+Remove extra descriptive text blocks under Add Liquidity & Swap components.”
+
+
+
+Would you like me to turn this into a formatted GitHub Issues list (each item as a separate issue card with titles, descriptions, and acceptance criteria)? It’ll make it easier for your devs to track and close them one by one.
+Perfect — here’s a final, ready-to-use Replit prompt that adds Unichain Sepolia alongside Base Sepolia (Testnet) with accurate details and the correct chain-switching behavior.
+
+⚙️ Prompt: Add Unichain Sepolia + Base Sepolia Chain Switching Support
+Add full chain selector and network detection support for Unichain Sepolia and Base Sepolia.
+
+Goal:
+When a user selects a network in the chain selector:
+- If they select “Base Sepolia”, display “Connected to Base Sepolia”.
+- If they select “Unichain Sepolia”, display “Connected to Unichain Sepolia”.
+
+---
+
+Base Testnet (Sepolia)
+Name: Base Sepolia
+Description: A public testnet for Base.
+RPC Endpoint: https://sepolia.base.org
+Flashblocks RPC Endpoint: https://sepolia-preconf.base.org
+Chain ID: 84532
+Currency Symbol: ETH
+Block Explorer: https://sepolia-explorer.base.org
+
+---
+
+Unichain Testnet (Sepolia)
+Name: Unichain Sepolia
+Description: A public testnet for Unichain.
+RPC Endpoint: https://sepolia.unichain.org
+Chain ID: 1301
+Currency Symbol: ETH
+Block Explorer: https://sepolia.uniscan.xyz
+
+---
+
+Implementation steps:
+
+1️⃣ Define both networks:
+```ts
+export const baseSepolia = {
+  id: 84532,
+  name: "Base Sepolia",
+  network: "base-sepolia",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://sepolia.base.org"] },
+    public: { http: ["https://sepolia.base.org"] },
+  },
+  blockExplorers: {
+    default: { name: "BaseScan", url: "https://sepolia-explorer.base.org" },
+  },
+};
+
+export const unichainSepolia = {
+  id: 1301,
+  name: "Unichain Sepolia",
+  network: "unichain-sepolia",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://sepolia.unichain.org"] },
+    public: { http: ["https://sepolia.unichain.org"] },
+  },
+  blockExplorers: {
+    default: { name: "Uniscan", url: "https://sepolia.uniscan.xyz" },
+  },
+};
+
+2️⃣ Configure Wagmi:
+const config = createConfig({
+  chains: [baseSepolia, unichainSepolia],
+  transports: {
+    [baseSepolia.id]: http("https://sepolia.base.org"),
+    [unichainSepolia.id]: http("https://sepolia.unichain.org"),
+  },
+});
+
+3️⃣ Add dynamic connection status:
+import { useChainId } from "wagmi";
+
+function NetworkStatus() {
+  const chainId = useChainId();
+
+  const message =
+    chainId === 84532
+      ? "Connected to Base Sepolia"
+      : chainId === 1301
+      ? "Connected to Unichain Sepolia"
+      : "Unknown Network";
+
+  return <p>{message}</p>;
+}
+
+4️⃣ Integrate into your chain selector:
+When user selects a network, call switchChain({ chainId }).
+
+
+Ensure the displayed message updates in real time.
+
+
+Behavior:
+ ✅ Selecting “Base Sepolia” → “Connected to Base Sepolia”
+ ✅ Selecting “Unichain Sepolia” → “Connected to Unichain Sepolia”
+ ✅ Unknown chains → “Unknown Network”
+
+Here’s a clean, Replit-ready bug-fix prompt covering all your latest issues for Swap, Add Liquidity, Chat, and Chain Selection.
+ You can copy-paste this directly as your Replit instruction.
+
+🧩 Prompt — Mantua.AI Bug Fix Update (Swap, Add Liquidity, Chat Persistence, Chain Selection)
+Swap Component
+When the Swap component opens, it should not be prefilled.
+
+
+It should only show tokens that are actually in the user’s wallet (sell side).
+
+
+The buy token field should remain empty until the user selects a token.
+
+
+In the “Select a swap hook (optional)” section:
+
+
+When Custom Hook is selected, remove the duplicate text that says:
+ “Enter a deployed hook contract address that implements beforeSwap, afterSwap or custom logic. Learn more about Uniswap v4 hooks →”.
+
+
+Ensure this message only appears once.
+
+
+In the swap modal, remove the following text elements entirely:
+
+
+“order routing”
+
+
+“No Hook added”
+
+
+Chat persistence:
+
+
+If a user selects any section in the sidebar (e.g. Swap, Add Liquidity, About, etc.) and then returns to the chat, the existing chat history must still be visible.
+
+
+The chat should only reset when the user explicitly selects “New Chat.”
+
+
+Swap completion output:
+
+
+Remove the following components and messages:
+
+
+“Swap completed successfully” component
+
+
+“Mantua suggests your next move” section
+
+
+Any follow-up message suggesting adding liquidity or estimated earnings
+
+
+Replace them with this simplified result:
+
+ Swapped [amount TokenA] to [TokenB]
+Transaction successful!
+You have received [amount TokenB]. [View Transaction →]
+
+
+
+Add Liquidity Component
+Remove the entire introductory text block:
+
+ Provide liquidity to earn fees and participate in DeFi protocols.
+
+Standard Liquidity:
+• Add liquidity to ETH/USDC pools
+• Earn trading fees from swaps
+• Withdraw anytime with accumulated rewards
+
+Hook-Enhanced Liquidity:
+• Dynamic fee pools that maximize returns
+• Automated rebalancing strategies
+• Custom liquidity management hooks
+
+Range Orders:
+• Set price ranges for concentrated liquidity
+• Maximize capital efficiency
+• Automated position management
+
+Get started with testnet tokens or use the faucet for initial funding.
+
+
+Change the text:
+
+
+From: “Add liquidity to ETH/USDC pool”
+
+
+To: “Add liquidity to a pool”
+
+
+Remove:
+
+
+“Enter a deployed hook contract address that implements beforeSwap, afterSwap or custom logic. Learn more about Uniswap v4 hooks →”
+
+
+After liquidity is added, under Pool Share, add:
+
+
+Hook Fee: [display actual hook fee value]
+
+
+Remove:
+
+
+“For yield farming and staking, here are the key considerations...”
+
+
+
+Chat Behavior
+When a user types or selects Analyze, the text in the input should be processed as an AI output response — even if the previous input was a swap or add liquidity command.
+
+
+The AI should respond contextually to whatever was entered.
+
+
+The hook status should always match the selected hook option (if a user selects Dynamic Fee Hook or Custom Hook, ensure the displayed status matches correctly).
+
+
+
+Chain Selection Requirement
+Users must select a chain (e.g., Base Sepolia or Unichain Sepolia) before performing:
+
+
+Swap
+
+
+Add Liquidity
+
+
+Agent actions
+
+
+Show a simple message if no chain is selected:
+
+
+ “Please select a chain before proceeding.”
+
