@@ -94,37 +94,31 @@ export default function MainContent() {
     }
     
     const actionContent = getActionContent(actionId as ActionId);
+    
+    // Add assistant response only if there's content
     if (actionContent) {
-      // Add assistant response immediately for action buttons
       addMessage({
         content: actionContent,
         sender: 'assistant'
       });
-      
-      // For swap actions, set active component (guard against duplicates)
-      if (actionId === 'swap') {
-        // Always set default props for button-triggered swap
-        setSwapProps({ sellToken: '', buyToken: '', showCustomHook: false });
-        if (activeComponent !== 'swap') {
-          setActiveComponent('swap');
-        }
+    }
+    
+    // Handle component activation for swap
+    if (actionId === 'swap') {
+      // Always set default props for button-triggered swap
+      setSwapProps({ sellToken: '', buyToken: '', showCustomHook: false });
+      if (activeComponent !== 'swap') {
+        setActiveComponent('swap');
       }
-      
-      // For add-liquidity actions, set active component
-      if (actionId === 'add-liquidity') {
-        // Always set default props for button-triggered liquidity
-        setLiquidityProps({ token1: '', token2: '', showCustomHook: false });
-        if (activeComponent !== 'liquidity') {
-          setActiveComponent('liquidity');
-        }
+    }
+    
+    // Handle component activation for add-liquidity
+    if (actionId === 'add-liquidity') {
+      // Always set default props for button-triggered liquidity
+      setLiquidityProps({ token1: '', token2: '', showCustomHook: false });
+      if (activeComponent !== 'liquidity') {
+        setActiveComponent('liquidity');
       }
-    } else {
-      console.error(`Unknown action ID: ${actionId}`);
-      // Add error message to chat
-      addMessage({
-        content: "Sorry, I don't understand that action. Please try one of the available options.",
-        sender: 'assistant'
-      });
     }
   };
 
@@ -132,39 +126,10 @@ export default function MainContent() {
   const getActionContent = (actionId: ActionId): string => {
     switch (actionId) {
       case 'swap':
-        return `Execute token swaps with intelligent routing and optional hooks.
-
-**Standard Swaps:**
-• Swap ETH for USDC with best execution
-• Swap USDC for cbBTC using optimal routes
-• Multi-hop swaps across liquidity pools
-
-**Hook-Enhanced Swaps:**
-• Dynamic fee swaps that adjust based on volatility
-• MEV-protected swaps with time-weighted pricing
-• Limit order swaps with automated execution
-
-**Available on Base Sepolia testnet with full mainnet feature parity.**`;
+        return ''; // No intro text for swap - just show component
 
       case 'add-liquidity':
-        return `Provide liquidity to earn fees and participate in DeFi protocols.
-
-**Standard Liquidity:**
-• Add liquidity to ETH/USDC pools
-• Earn trading fees from swaps
-• Withdraw anytime with accumulated rewards
-
-**Hook-Enhanced Liquidity:**
-• Dynamic fee pools that maximize returns
-• Automated rebalancing strategies
-• Custom liquidity management hooks
-
-**Range Orders:**
-• Set price ranges for concentrated liquidity
-• Maximize capital efficiency
-• Automated position management
-
-**Get started with testnet tokens or use the faucet for initial funding.**`;
+        return ''; // No intro text for add liquidity - just show component
 
       case 'analyze':
         return `Uniswap v4 Overview (Base)

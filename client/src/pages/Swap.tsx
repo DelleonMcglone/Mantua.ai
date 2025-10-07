@@ -166,126 +166,37 @@ export default function Swap({
   // If transaction completed, show success screen
   if (transactionState === 'completed') {
     return (
-      <div className={`${inlineMode ? 'w-full p-4 space-y-6' : 'max-w-md mx-auto p-6 space-y-6'}`}>
-        {/* Success Header */}
-        <Card className="border-green-500 bg-green-50 dark:bg-green-950/20">
+      <div className={`${inlineMode ? 'w-full p-4 space-y-4' : 'max-w-md mx-auto p-6 space-y-4'}`}>
+        <Card>
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-green-800 dark:text-green-200 mb-2">
-              Swap completed successfully
+            <h2 className="text-lg font-semibold text-foreground mb-2">
+              Swapped {sellAmount} {sellToken} to {buyToken}
             </h2>
-            <p className="text-lg text-green-700 dark:text-green-300">
-              You received 600 USDC for 0.2 ETH
+            <p className="text-foreground mb-2">Transaction successful!</p>
+            <p className="text-sm text-muted-foreground">
+              You have received {buyAmount} {buyToken}.{' '}
+              <a 
+                href={`https://sepolia-explorer.base.org/tx/${transactionHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+                data-testid="link-view-transaction"
+              >
+                View Transaction →
+              </a>
             </p>
           </CardContent>
         </Card>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-xs text-muted-foreground mb-1">Total value</div>
-              <div className="text-lg font-semibold text-green-600">$600.00</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-xs text-muted-foreground mb-1">Gas saved</div>
-              <div className="text-lg font-semibold text-green-600">$0.80</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-xs text-muted-foreground mb-1">Execution time</div>
-              <div className="text-lg font-semibold text-green-600">15 secs</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Updated Portfolio */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4" />
-              <CardTitle className="text-base">Your updated portfolio</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">USDC balance</span>
-              <div className="text-right">
-                <div className="font-medium">600.00 USDC</div>
-                <div className="text-xs text-muted-foreground">24h Change</div>
-              </div>
-              <div className="text-sm text-green-600 font-medium">+$45.20 (+1.5%)</div>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">ETH Balance</span>
-              <div className="text-right">
-                <div className="font-medium">0.8 ETH</div>
-                <div className="text-xs text-muted-foreground">Gas Spent Today</div>
-              </div>
-              <div className="text-sm text-muted-foreground">$3.12</div>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Total Value</span>
-              <div className="text-right">
-                <div className="font-medium">$3,000.00</div>
-                <div className="text-xs text-muted-foreground">Transactions</div>
-              </div>
-              <div className="text-sm text-muted-foreground">1 completed</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Mantua Suggestion */}
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-6">
-            <div className="flex items-start space-x-3">
-              <Info className="h-5 w-5 text-primary mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-medium text-primary mb-2">
-                  Mantua suggests your next move:
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Since you now have 600 USDC, you could add it to a liquidity pool to start earning 
-                  passive income. This would generate approximately $48/month in fees based on 
-                  current pool performance.
-                </p>
-                <Button 
-                  className="w-full"
-                  onClick={() => console.log('Navigate to liquidity pools')}
-                  data-testid="button-liquidity-suggestion"
-                >
-                  Tell me more about liquidity pools
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="flex space-x-3">
-          <Button 
-            variant="outline" 
-            onClick={resetSwap}
-            className="flex-1"
-            data-testid="button-new-swap"
-          >
-            New Swap
-          </Button>
-          <Button 
-            onClick={() => console.log('View transaction')}
-            className="flex-1"
-            data-testid="button-view-transaction"
-          >
-            View Transaction
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          onClick={resetSwap}
+          className="w-full"
+          data-testid="button-new-swap"
+        >
+          New Swap
+        </Button>
       </div>
     );
   }
@@ -504,25 +415,7 @@ export default function Swap({
               </div>
             )}
 
-            {/* No Hook Added State */}
-            {selectedHook === 'no-hook' && (
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-                <span className="text-sm text-muted-foreground">No Hook Added</span>
-                <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-white text-xs">+</span>
-                </div>
-              </div>
-            )}
           </div>
-
-          {/* Informational Text */}
-          <div className="text-sm text-muted-foreground">
-            Enter a deployed hook contract address that implements beforeSwap, afterSwap or custom logic.
-          </div>
-          
-          <a href="#" className="text-sm text-primary hover:underline block" data-testid="link-learn-hooks">
-            Learn more about Uniswap v4 hooks →
-          </a>
         </CardContent>
       </Card>
 
