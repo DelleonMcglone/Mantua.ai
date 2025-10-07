@@ -166,47 +166,30 @@ export default function AddLiquidity({
     const token2Data = TOKENS.find(t => t.symbol === token2);
     
     return (
-      <div className="w-full space-y-6 p-6" data-testid="liquidity-success-screen">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
-            <CheckCircle className="w-8 h-8 text-green-500" data-testid="icon-success" />
-          </div>
-          
-          <div>
-            <h2 className="text-2xl font-semibold mb-2" data-testid="text-success-title">Liquidity added successfully</h2>
-            <p className="text-muted-foreground" data-testid="text-success-description">
-              Added {amount1} {token1Data?.symbol} and {amount2.replace('$', '')} {token2Data?.symbol}
-            </p>
-          </div>
-        </div>
-
+      <div className={`${inlineMode ? 'w-full p-4 space-y-4' : 'max-w-md mx-auto p-6 space-y-4'}`} data-testid="liquidity-success-screen">
         <Card>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Add Liquidity:</span>
-              <span className="font-medium" data-testid="text-liquidity-amount">
-                {amount1} {token1Data?.symbol} + {amount2.replace('$', '')} {token2Data?.symbol}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Total Value:</span>
-              <span className="font-medium text-green-500" data-testid="text-total-value">$1,890.00</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Pool Share:</span>
-              <span className="font-medium" data-testid="text-pool-share">$9.00/day</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Network fee:</span>
-              <span className="font-medium" data-testid="text-network-fee">$12.50</span>
-            </div>
+          <CardContent className="p-6 text-center">
+            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" data-testid="icon-success" />
+            <h2 className="text-lg font-semibold text-foreground mb-2" data-testid="text-success-title">
+              Added {amount1} {token1Data?.symbol} and {amount2.replace('$', '')} {token2Data?.symbol} to pool
+            </h2>
+            <p className="text-foreground mb-2">Liquidity added successfully!</p>
+            <p className="text-sm text-muted-foreground">
+              <a 
+                href={`https://sepolia-explorer.base.org/tx/${transactionHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+                data-testid="link-view-transaction"
+              >
+                View Transaction →
+              </a>
+            </p>
           </CardContent>
         </Card>
 
         <Button 
+          variant="outline"
           className="w-full"
           onClick={handleAddMore}
           data-testid="button-add-more-liquidity"
