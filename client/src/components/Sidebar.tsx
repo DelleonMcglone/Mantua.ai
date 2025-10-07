@@ -1,4 +1,4 @@
-import { ChevronDown, MessageSquarePlus, Settings, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2, ArrowUpDown } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
@@ -405,20 +405,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             >
               <Bot className="h-4 w-4" />
               {isExpanded && 'Agent activity'}
-            </Button>
-
-            {/* Settings */}
-            <Button
-              variant="ghost"
-              className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
-                isExpanded ? 'justify-start gap-2' : 'justify-center'
-              }`}
-              onClick={() => console.log('Settings clicked')}
-              data-testid="button-settings"
-              title={!isExpanded ? 'Settings' : ''}
-            >
-              <Settings className="h-4 w-4" />
-              {isExpanded && 'Settings'}
             </Button>
           </div>
         </div>
