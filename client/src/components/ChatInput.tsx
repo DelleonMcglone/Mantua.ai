@@ -4,6 +4,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Send, Plus, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useActiveAccount } from 'thirdweb/react';
+import { useSwitchChain, useChainId } from 'wagmi';
+import { baseSepolia } from 'wagmi/chains';
+import { unichainSepolia } from '@/config/wagmi';
 
 interface ChatInputProps {
   onSubmit?: (message: string) => void;
@@ -15,9 +18,16 @@ interface ChatInputProps {
 
 export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAgentMode, onExitAgent }: ChatInputProps) {
   const [message, setMessage] = useState("");
-  const [selectedChain, setSelectedChain] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const account = useActiveAccount();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  
+  const getChainName = (id: number | undefined) => {
+    if (id === baseSepolia.id) return 'Base Sepolia';
+    if (id === unichainSepolia.id) return 'Unichain Sepolia';
+    return 'Select Chain';
+  };
 
   const handleSend = () => {
     if (message.trim()) {
@@ -92,11 +102,15 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
     }
   };
 
-  const handleChainSelect = (chain: string) => {
-    setSelectedChain(chain);
-    console.log('Chain selected:', chain);
+  const handleChainSelect = (chainName: string) => {
+    const chainToSwitch = chainName === 'Base Sepolia' ? baseSepolia : unichainSepolia;
+    
+    if (switchChain) {
+      switchChain({ chainId: chainToSwitch.id });
+    }
+    
     if (onChainSelect) {
-      onChainSelect(chain);
+      onChainSelect(chainName);
     }
   };
 
@@ -151,7 +165,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
               className="h-8 px-3 rounded-full bg-background/50 border-border/50 transition-all text-sm"
               data-testid="button-chain-selector"
             >
-              {selectedChain || "Chain Selector"}
+              {getChainName(chainId)}
               <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
           </DropdownMenuTrigger>

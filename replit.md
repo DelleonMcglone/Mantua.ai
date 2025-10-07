@@ -89,6 +89,17 @@ The application includes comprehensive activity tracking for both user actions a
 - **Auto-updates**: Charts and summaries update automatically as activities are added
 - **Data persistence**: Activities stored with unique IDs, timestamps, and metadata
 
+## Blockchain Network Support
+The application supports multiple blockchain networks for DeFi operations:
+
+- **Base Sepolia Testnet**: Primary testnet for development and testing (Chain ID: 84532)
+- **Unichain Sepolia Testnet**: Secondary testnet for Uniswap ecosystem testing (Chain ID: 1301)
+- **Network Switching**: Users can switch between supported networks via the chain selector in the chat input interface
+- **Wagmi Integration**: Network configuration managed through wagmi with support for Coinbase Wallet and WalletConnect connectors
+- **Block Explorers**: Base Sepolia uses Base Sepolia Explorer, Unichain Sepolia uses Uniscan
+
+The chain selector UI displays the current network and allows users to switch networks with a single click, automatically updating the wallet's active chain.
+
 ## Authentication and Authorization
 Basic authentication structure is prepared but not fully implemented:
 - User schema with username/password fields

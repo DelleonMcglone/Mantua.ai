@@ -1,9 +1,32 @@
 import { createConfig, http } from 'wagmi'
-import { base } from 'wagmi/chains'
+import { base, baseSepolia } from 'wagmi/chains'
 import { coinbaseWallet, walletConnect } from 'wagmi/connectors'
+import { defineChain } from 'viem'
+
+export const unichainSepolia = defineChain({
+  id: 1301,
+  name: 'Unichain Sepolia',
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://sepolia.unichain.org'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Uniscan',
+      url: 'https://sepolia.uniscan.xyz',
+    },
+  },
+  testnet: true,
+})
 
 export const wagmiConfig = createConfig({
-  chains: [base],
+  chains: [baseSepolia, unichainSepolia],
   connectors: [
     coinbaseWallet({
       appName: 'Mantua.AI',
@@ -13,7 +36,8 @@ export const wagmiConfig = createConfig({
     }),
   ],
   transports: {
-    [base.id]: http(),
+    [baseSepolia.id]: http(),
+    [unichainSepolia.id]: http(),
   },
 })
 
