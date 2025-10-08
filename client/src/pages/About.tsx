@@ -43,9 +43,7 @@ export default function About() {
           <p className="text-foreground mb-6 leading-relaxed">
             Mantua.AI is a natural language operating system for decentralized finance — a place where you can swap, manage liquidity, deploy hooks, and interact with smart contracts simply by typing what you want.
           </p>
-          <p className="text-foreground mb-8 leading-relaxed">
-            Built on Base Sepolia & Unichain Sepolia, Mantua.AI connects the intelligence of AI with the autonomy of blockchain. It combines Uniswap v4 Hooks, AI Agents, and on-chain data reasoning to make DeFi intuitive, automated, and intelligent.
-          </p>
+          <p className="text-foreground mb-8 leading-relaxed">Built on Base Sepolia, Mantua.AI connects the intelligence of AI with the autonomy of blockchain. It combines Uniswap v4 Hooks, AI Agents, and on-chain data reasoning to make DeFi intuitive, automated, and intelligent.</p>
 
           {/* The Problem */}
           <h2 className="text-2xl font-bold text-foreground mb-4">The Problem</h2>
