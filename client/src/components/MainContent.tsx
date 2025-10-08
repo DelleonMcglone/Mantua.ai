@@ -338,106 +338,117 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       {hasPrompted && currentChat ? (
         /* Full-width chat layout */
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Chat messages container */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0" data-testid="div-chat-messages">
-            <div className="max-w-4xl mx-auto space-y-4">
-              {chatMessages.map((message) => (
-                <div 
-                  key={message.id} 
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+            {/* Chat messages container */}
+            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0" data-testid="div-chat-messages">
+              <div className="max-w-4xl mx-auto space-y-4">
+                {chatMessages.map((message) => (
                   <div 
-                    className={`max-w-[70%] px-4 py-3 rounded-2xl ${
-                      message.sender === 'user' 
-                        ? 'bg-primary text-primary-foreground shadow-sm' 
-                        : 'bg-muted text-foreground shadow-sm'
-                    }`}
-                    data-testid={`message-${message.sender}-${message.id}`}
+                    key={message.id} 
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                  </div>
-                </div>
-              ))}
-              
-              {/* Render active component */}
-              {activeComponent === 'swap' && (
-                <div className="flex justify-start">
-                  <div className="max-w-[90%] space-y-3">
-                    <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-swap-active">
-                      <SwapPage 
-                        initialSellToken={swapProps?.sellToken}
-                        initialBuyToken={swapProps?.buyToken}
-                        initialSelectedHook={swapProps?.selectedHook}
-                        initialShowCustomHook={swapProps?.showCustomHook}
-                        inlineMode={true}
-                      />
+                    <div 
+                      className={`max-w-[70%] px-4 py-3 rounded-2xl ${
+                        message.sender === 'user' 
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'bg-muted text-foreground shadow-sm'
+                      }`}
+                      data-testid={`message-${message.sender}-${message.id}`}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                     </div>
                   </div>
-                </div>
-              )}
+                ))}
               
-              {activeComponent === 'liquidity' && (
-                <div className="flex justify-start">
-                  <div className="max-w-[90%] space-y-3">
-                    <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-liquidity-active">
-                      <AddLiquidityPage 
-                        initialToken1={liquidityProps?.token1}
-                        initialToken2={liquidityProps?.token2}
-                        initialSelectedHook={liquidityProps?.selectedHook}
-                        initialShowCustomHook={liquidityProps?.showCustomHook}
-                        inlineMode={true}
-                      />
+                {/* Render active component */}
+                {activeComponent === 'swap' && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] space-y-3">
+                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-swap-active">
+                        <SwapPage 
+                          initialSellToken={swapProps?.sellToken}
+                          initialBuyToken={swapProps?.buyToken}
+                          initialSelectedHook={swapProps?.selectedHook}
+                          initialShowCustomHook={swapProps?.showCustomHook}
+                          inlineMode={true}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+                )}
+                
+                {activeComponent === 'liquidity' && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] space-y-3">
+                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-liquidity-active">
+                        <AddLiquidityPage 
+                          initialToken1={liquidityProps?.token1}
+                          initialToken2={liquidityProps?.token2}
+                          initialSelectedHook={liquidityProps?.selectedHook}
+                          initialShowCustomHook={liquidityProps?.showCustomHook}
+                          inlineMode={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
-          </div>
-          
-          {/* Fixed input at bottom */}
-          <div className="border-t bg-background p-4">
-            <div className="max-w-4xl mx-auto space-y-3">
-              {/* Agent action buttons directly above input when in Agent mode */}
-              {isAgentMode && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <Button
-                    variant="outline"
-                    className="text-sm py-2"
-                    onClick={() => handleAgentAction('Request testnet funds via faucet')}
-                    data-testid="button-agent-faucet"
-                  >
-                    Request testnet funds via faucet
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="text-sm py-2"
-                    onClick={() => handleAgentAction('Manage wallet details and balance checks')}
-                    data-testid="button-agent-wallet"
-                  >
-                    Manage wallet details and balance checks
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="text-sm py-2"
-                    onClick={() => handleAgentAction('Execute token transfers and trades')}
-                    data-testid="button-agent-trades"
-                  >
-                    Execute token transfers and trades
-                  </Button>
-                </div>
-              )}
-              <div className="space-y-2">
-                <ChatInput 
-                  onSubmit={handleChatSubmit} 
-                  onQuickAction={handleActionClick}
-                  isAgentMode={isAgentMode}
-                  onExitAgent={exitAgentMode}
-                />
+            
+            {/* Fixed input at bottom */}
+            <div className="border-t bg-background p-4">
+              <div className="max-w-4xl mx-auto space-y-3">
+                {!account ? (
+                  /* Wallet disconnected - show reconnection message */
+                  <div className="text-center py-3">
+                    <p className="text-sm text-muted-foreground" data-testid="text-wallet-required">
+                      Reconnect your wallet to interact with saved chats.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Agent action buttons directly above input when in Agent mode */}
+                    {isAgentMode && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <Button
+                          variant="outline"
+                          className="text-sm py-2"
+                          onClick={() => handleAgentAction('Request testnet funds via faucet')}
+                          data-testid="button-agent-faucet"
+                        >
+                          Request testnet funds via faucet
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="text-sm py-2"
+                          onClick={() => handleAgentAction('Manage wallet details and balance checks')}
+                          data-testid="button-agent-wallet"
+                        >
+                          Manage wallet details and balance checks
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="text-sm py-2"
+                          onClick={() => handleAgentAction('Execute token transfers and trades')}
+                          data-testid="button-agent-trades"
+                        >
+                          Execute token transfers and trades
+                        </Button>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <ChatInput 
+                        onSubmit={handleChatSubmit} 
+                        onQuickAction={handleActionClick}
+                        isAgentMode={isAgentMode}
+                        onExitAgent={exitAgentMode}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
-        </div>
       ) : (
         /* Centered layout for States 1 & 2 */
         <div className="flex-1 flex flex-col items-center justify-center p-8">
