@@ -3,10 +3,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Send, Plus, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useActiveAccount } from 'thirdweb/react';
-import { useSwitchChain, useChainId } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
-import { unichainSepolia } from '@/config/wagmi';
+import { useActiveAccount, useSwitchActiveWalletChain, useActiveWalletChain } from 'thirdweb/react';
+import { baseSepolia, unichainSepolia } from '@/providers/ThirdwebProvider';
 
 interface ChatInputProps {
   onSubmit?: (message: string) => void;
@@ -21,8 +19,8 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
   const [selectedChain, setSelectedChain] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const account = useActiveAccount();
-  const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
+  const activeChain = useActiveWalletChain();
+  const switchChain = useSwitchActiveWalletChain();
   
   // Reset selected chain when wallet connects/disconnects
   useEffect(() => {
@@ -108,14 +106,18 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
     }
   };
 
-  const handleChainSelect = (chainName: string) => {
+  const handleChainSelect = async (chainName: string) => {
     const chainToSwitch = chainName === 'Base Sepolia' ? baseSepolia : unichainSepolia;
     
     // Update selected chain state
     setSelectedChain(chainName);
     
-    if (switchChain) {
-      switchChain({ chainId: chainToSwitch.id });
+    try {
+      await switchChain(chainToSwitch);
+    } catch (error) {
+      console.error('Failed to switch chain:', error);
+      // Revert the selected chain state if switch fails
+      setSelectedChain("");
     }
     
     if (onChainSelect) {

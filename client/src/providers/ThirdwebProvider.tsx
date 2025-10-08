@@ -19,6 +19,7 @@ const unichainSepolia = defineChain({
     symbol: 'ETH',
     decimals: 18,
   },
+  rpc: 'https://sepolia.unichain.org',
   blockExplorers: [{
     name: 'Uniscan',
     url: 'https://sepolia.uniscan.xyz',
@@ -34,4 +35,4 @@ export function ThirdwebProviders(props: { children: ReactNode }) {
   );
 }
 
-export { client, metamask, baseSepolia };
+export { client, metamask, baseSepolia, unichainSepolia };
