@@ -1,37 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, Plus, ChevronDown } from "lucide-react";
+import { Send, Plus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useActiveAccount, useSwitchActiveWalletChain, useActiveWalletChain } from 'thirdweb/react';
-import { baseSepolia, unichainSepolia } from '@/providers/ThirdwebProvider';
+import { useActiveAccount } from 'thirdweb/react';
 
 interface ChatInputProps {
   onSubmit?: (message: string) => void;
   onQuickAction?: (actionId: string) => void;
-  onChainSelect?: (chain: string) => void;
   isAgentMode?: boolean;
   onExitAgent?: () => void;
 }
 
-export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAgentMode, onExitAgent }: ChatInputProps) {
+export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExitAgent }: ChatInputProps) {
   const [message, setMessage] = useState("");
-  const [selectedChain, setSelectedChain] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const account = useActiveAccount();
-  const activeChain = useActiveWalletChain();
-  const switchChain = useSwitchActiveWalletChain();
-  
-  // Reset selected chain when wallet connects/disconnects
-  useEffect(() => {
-    setSelectedChain("");
-  }, [account?.address]);
-  
-  const getDisplayLabel = () => {
-    if (selectedChain === 'Base Sepolia') return 'Base Sepolia';
-    if (selectedChain === 'Unichain Sepolia') return 'Unichain Sepolia';
-    return 'Chain Selector';
-  };
 
   const handleSend = () => {
     if (message.trim()) {
@@ -106,25 +90,6 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
     }
   };
 
-  const handleChainSelect = async (chainName: string) => {
-    const chainToSwitch = chainName === 'Base Sepolia' ? baseSepolia : unichainSepolia;
-    
-    // Update selected chain state
-    setSelectedChain(chainName);
-    
-    try {
-      await switchChain(chainToSwitch);
-    } catch (error) {
-      console.error('Failed to switch chain:', error);
-      // Revert the selected chain state if switch fails
-      setSelectedChain("");
-    }
-    
-    if (onChainSelect) {
-      onChainSelect(chainName);
-    }
-  };
-
   return (
     <div className="relative w-full">
       <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
@@ -164,34 +129,6 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
               data-testid="dropdown-item-explore-agents"
             >
               Explore Agents
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Chain Selector dropdown */}
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="h-8 px-3 rounded-full bg-background/50 border-border/50 transition-all text-sm"
-              data-testid="button-chain-selector"
-            >
-              {getDisplayLabel()}
-              <ChevronDown className="h-3 w-3 ml-1" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="bottom" className="w-48" data-testid="dropdown-chain-selector">
-            <DropdownMenuItem
-              onClick={() => handleChainSelect('Base Sepolia')}
-              data-testid="dropdown-item-base-sepolia"
-            >
-              Base Sepolia
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleChainSelect('Unichain Sepolia')}
-              data-testid="dropdown-item-unichain-sepolia"
-            >
-              Unichain Sepolia
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
