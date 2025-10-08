@@ -1,0 +1,112 @@
+Excellent — here’s a clean, structured **Replit Fix Prompt** you can paste directly into your Replit agent to resolve all three issues (About page, Chatbot behavior, and + Button actions):
+
+---
+
+### 🧭 **Mantua.AI Post-Walkthrough Bug Fix Prompt**
+
+#### **1️⃣ About Page**
+
+**Issues**
+
+* Remove:
+  `Developers & Builders — experiment with hooks, agents, and contracts without boilerplate code.`
+* Update this line:
+  `🔗 On-Base and On-Chain: Secure, transparent execution — every transaction verifiable on Base.`
+  ➜ **Replace with:**
+  `🔗 On Base and Unichain: Secure, transparent execution — every transaction verifiable on Base and Unichain.`
+
+**Fix Implementation**
+
+* Locate `/src/pages/About.tsx` or equivalent component.
+* Remove the “Developers & Builders” line entirely.
+* Replace the “On-Base and On-Chain” line with the updated version above.
+* Ensure formatting (icons, spacing) matches the rest of the section.
+
+---
+
+#### **2️⃣ Chatbot Fixes**
+
+**Issues**
+
+* The **chain selector** defaults to “Base Sepolia” — it should default to a neutral “Chain Selector” placeholder.
+* When opened, the dropdown should allow choosing between **Base Sepolia** and **Unichain Sepolia** only.
+* Remove the **Mantua logo** from above the chatbot.
+* When user connects their wallet, show:
+  `Hi, [abbreviated wallet address]`
+  (e.g., `Hi, 0xAbc...1234`)
+* After the first user input, hide the greeting and start the chat history normally.
+
+**Fix Implementation**
+
+* In `ChatInterface.tsx` or wherever the chat UI is rendered:
+
+  * Replace the hardcoded default chain label `"Base Sepolia"` with `"Chain Selector"`.
+  * Modify dropdown options to only include:
+
+    * Base Sepolia (Chain ID 84532)
+    * Unichain Sepolia (Chain ID 1301)
+  * Remove `<MantuaLogo />` or any `<img>` element referencing it from the chat container.
+  * Implement state logic:
+
+    ```tsx
+    const [hasInteracted, setHasInteracted] = useState(false);
+    const address = useAbbreviatedAddress(useAccount()?.address);
+
+    return (
+      <div>
+        {!hasInteracted && address && (
+          <p className="text-gray-400">Hi, {address}</p>
+        )}
+        {hasInteracted && <ChatHistory />}
+      </div>
+    );
+    ```
+
+    * After the user submits the first message (`onSubmit` or `handleSend`), call `setHasInteracted(true)`.
+
+---
+
+#### **3️⃣ “+ Button” Action Bug**
+
+**Issues**
+
+* When clicking the **+ button** the first time, selecting actions like “Swap,” “Add Liquidity,” “Analyze,” or “Explore Agents” causes the **page to jump** and nothing happens.
+* The user has to click the **+ button again** for it to work.
+* After the first click, the **Mantua logo hovers above**, and the greeting (`Hi, [wallet]`) disappears — this should **not** happen.
+
+**Fix Implementation**
+
+* File: `ChatInput.tsx` or wherever `+` logic resides.
+* The likely issue: `setState` or DOM re-render during first toggle resets the button state before menu actions register.
+* Fix by ensuring stable toggle state:
+
+  ```tsx
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleToggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMenuOpen((prev) => !prev);
+  };
+
+  const handleActionClick = (action: string) => {
+    setIsMenuOpen(false);
+    // process action immediately
+    onActionSelect(action);
+  };
+  ```
+* Ensure dropdown rendering logic is **conditionally displayed** but **not remounted** (use `opacity` or `visibility` transitions, not conditional JSX unmounts).
+* Keep the greeting visible until the user sends their first input (not when the menu opens).
+
+---
+
+### ✅ **Acceptance Criteria**
+
+* About Page text is fully updated with Base + Unichain references.
+* Chain Selector defaults to “Chain Selector” and only lists Base Sepolia / Unichain Sepolia.
+* Mantua logo removed from chat top.
+* Greeting appears once (on connect) and hides only after user input.
+* * Button actions work on first click (no page jump, no extra logo hover).
+
+---
+
+Would you like me to include the **exact React code changes** for `ChatInput.tsx` and `ChainSelector.tsx` in a ready-to-paste format next? That would make this fix one-click deployable in Replit.
