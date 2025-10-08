@@ -1,0 +1,123 @@
+Perfect — I watched the Loom video, and that **“+ button jump”** is 100% a **layout reflow issue** caused by vertical movement when the dropdown mounts or changes the height of the parent container (your chat wrapper).
+
+Let’s fix *exactly what’s happening in your build* (since you’re using a Replit + Vite + Tailwind stack).
+
+---
+
+## ⚙️ Root Cause from Your Video
+
+* When the `+` button is clicked, the menu **appears above the input**, but the **entire chat container jumps upward**.
+* That means your dropdown (`absolute` menu) is **not anchored to a fixed parent**, or its parent is part of a flex layout (`flex-col items-center`) that gets re-rendered and changes height.
+
+We’ll fix this by ensuring:
+
+1. The dropdown never affects layout flow (true absolute positioning inside a `relative` container).
+2. The toggle doesn’t cause re-renders that push the chat UI.
+
+---
+
+## ✅ **Replit Fix Prompt — + Button Jump Fix**
+
+Paste this prompt into your Replit agent:
+
+---
+
+### 🧭 **Mantua.AI + Button Stability Fix**
+
+**Goal:**
+Fix the + button dropdown so it:
+
+* Opens instantly on the first click
+* Doesn’t cause the chatbot container to jump or reflow
+* Works on the first click, every time
+
+---
+
+### ✅ **Implementation Steps**
+
+#### 1️⃣ In `ChatInput.tsx`:
+
+Replace the outer wrapper:
+
+```tsx
+<div className="w-full flex flex-col items-center">
+```
+
+with:
+
+```tsx
+<div className="w-full relative">
+```
+
+and ensure the dropdown container is *absolutely positioned* inside that relative wrapper:
+
+```tsx
+<div
+  ref={menuRef}
+  className={`absolute bottom-12 right-3 w-44 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50 transition-all duration-150 ${
+    isMenuVisible
+      ? "opacity-100 pointer-events-auto translate-y-0"
+      : "opacity-0 pointer-events-none translate-y-2"
+  }`}
+>
+```
+
+🧠 **Explanation:**
+
+* `bottom-12 right-3`: pins the menu *above the input* instead of below (avoids flex parent pushing up)
+* `relative` parent ensures correct anchor point
+* `z-50` guarantees it layers on top, not inside layout flow
+* `translate-y-0 / translate-y-2` adds a smooth animation without vertical layout shift
+
+---
+
+#### 2️⃣ Prevent State-Induced Re-renders
+
+Ensure your toggle handler only flips visibility — not remounting the element:
+
+```tsx
+const toggleMenu = (e: React.MouseEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setMenuVisible((v) => !v);
+};
+```
+
+Do **not** wrap the whole chat input in a `form` that re-renders based on menu visibility.
+The dropdown should exist *outside* the flex form, not *inside* it.
+
+---
+
+#### 3️⃣ (Optional) Smooth Animation Enhancement
+
+If you want the same feel as ChatGPT’s “+” menu:
+
+```tsx
+transition-all duration-150 ease-out transform
+```
+
+This will give a small fade and upward motion, no jump.
+
+---
+
+#### 4️⃣ Verify
+
+After implementing:
+
+1. Connect wallet → see greeting.
+2. Click “+” once → menu fades in above input, chat doesn’t move.
+3. Select any action → triggers immediately.
+4. Click outside → menu closes smoothly.
+
+---
+
+### ✅ **Acceptance Criteria**
+
+* * button opens instantly with no jump or page shift.
+* Chat container height remains fixed.
+* Dropdown stays visually anchored above the input bar.
+* Selecting any action triggers immediately.
+
+---
+
+Would you like me to rewrite your **final `ChatInput.tsx`** with this layout-locked dropdown code so you can copy–paste directly into Replit?
