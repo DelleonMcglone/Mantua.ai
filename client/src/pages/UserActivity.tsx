@@ -21,67 +21,37 @@ export default function UserActivity() {
     userChartData 
   } = useActivity();
 
-  // Filter activities by time range
-  const getTimeRangeInMs = (range: TimeRange): number => {
-    const now = Date.now();
-    switch (range) {
-      case '24H': return 24 * 60 * 60 * 1000;
-      case '7D': return 7 * 24 * 60 * 60 * 1000;
-      case '1M': return 30 * 24 * 60 * 60 * 1000;
-      case '3M': return 90 * 24 * 60 * 60 * 1000;
-      case '1Y': return 365 * 24 * 60 * 60 * 1000;
-      case 'Max': return Infinity;
+  // Filter chart data by time range
+  const filteredChartData = useMemo(() => {
+    if (timeRange === 'Max') {
+      return userChartData; // Show all data for Max
     }
-  };
 
-  const timeRangeMs = getTimeRangeInMs(timeRange);
-  const cutoffTime = Date.now() - timeRangeMs;
+    // Chart data is monthly, so map ranges to appropriate month counts
+    const getDataPointCount = (range: TimeRange): number => {
+      switch (range) {
+        case '24H': return 1;  // Last day ≈ last month for monthly data
+        case '7D': return 1;   // Last week ≈ last month
+        case '1M': return 1;   // Last month
+        case '3M': return 3;   // Last 3 months
+        case '1Y': return Math.min(12, userChartData.length); // Last year (capped at available data)
+        default: return userChartData.length;
+      }
+    };
 
-  const timeFilteredActivities = userActivities.filter(
-    activity => activity.timestamp >= cutoffTime
-  );
+    const pointCount = getDataPointCount(timeRange);
+    
+    // Slice the chart data to show only recent points
+    return userChartData.slice(-pointCount);
+  }, [userChartData, timeRange]);
 
-  const filteredActivities = timeFilteredActivities.filter(activity => {
+  // Filter activities by type
+  const filteredActivities = userActivities.filter(activity => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Swaps') return activity.type === 'Swap';
     if (activeFilter === 'Liquidity pools') return activity.type === 'Liquidity';
     return true;
   });
-
-  // Calculate filtered chart data based on time range
-  const filteredChartData = useMemo(() => {
-    if (timeFilteredActivities.length === 0) {
-      return [{ month: 'Now', value: 0 }];
-    }
-
-    // Generate appropriate labels based on time range
-    const getChartLabels = (): string[] => {
-      if (timeRange === '24H') return Array.from({ length: 24 }, (_, i) => `${i}h`);
-      if (timeRange === '7D') return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      if (timeRange === '1M') return Array.from({ length: 30 }, (_, i) => `D${i + 1}`);
-      if (timeRange === '3M') return ['M1', 'M2', 'M3'];
-      if (timeRange === '1Y') return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return userChartData.map(d => d.month); // Max - use default
-    };
-
-    const labels = getChartLabels();
-    const totalValue = timeFilteredActivities.reduce((sum, activity) => {
-      if (activity.status === 'Completed') {
-        const value = parseFloat(activity.value.replace(/[$,]/g, '')) || 0;
-        return sum + value;
-      }
-      return sum;
-    }, 0);
-
-    // Distribute value across time periods
-    let cumulativeValue = 0;
-    return labels.map(label => {
-      if (timeFilteredActivities.length > 0) {
-        cumulativeValue += totalValue / labels.length;
-      }
-      return { month: label, value: Math.round(cumulativeValue) };
-    });
-  }, [timeFilteredActivities, timeRange, userChartData]);
 
   const totalValue = `$${userPortfolioValue.toFixed(2)}`;
   const gainsLosses = `$${userGainsLosses.toFixed(2)}`;
