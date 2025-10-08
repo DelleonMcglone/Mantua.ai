@@ -86,9 +86,6 @@ export default function About() {
               <strong>DeFi Power Users</strong> — execute complex trades and liquidity strategies in seconds.
             </li>
             <li className="text-foreground leading-relaxed">
-              <strong>Developers & Builders</strong> — experiment with hooks, agents, and contracts without boilerplate code.
-            </li>
-            <li className="text-foreground leading-relaxed">
               <strong>Analysts & Researchers</strong> — query on-chain data and token metrics conversationally.
             </li>
             <li className="text-foreground leading-relaxed">
@@ -109,7 +106,7 @@ export default function About() {
               🧠 <strong>Powered by Intelligence</strong>: Real-time blockchain data gives context and reasoning behind every action.
             </li>
             <li className="text-foreground leading-relaxed">
-              🔗 <strong>On-Base and On-Chain</strong>: Secure, transparent execution — every transaction verifiable on Base.
+              🔗 <strong>On Base and Unichain</strong>: Secure, transparent execution — every transaction verifiable on Base and Unichain.
             </li>
             <li className="text-foreground leading-relaxed">
               💬 <strong>Conversational UX</strong>: A chat interface that feels like ChatGPT, but with real DeFi execution power.

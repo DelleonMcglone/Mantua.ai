@@ -442,18 +442,6 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
         /* Centered layout for States 1 & 2 */
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="max-w-2xl w-full text-center space-y-8">
-            {/* Mantua Logo - only show when wallet is connected */}
-            {account && (
-              <div className="flex justify-center mb-8">
-                <img 
-                  src={isDark ? logoBlack : logoWhite} 
-                  alt="Mantua.AI" 
-                  className="w-16 h-16" 
-                  data-testid="img-mantua-logo"
-                />
-              </div>
-            )}
-
             {/* State 1: Not Connected - Show Hero Message */}
             {!account && (
               <div className="space-y-4">

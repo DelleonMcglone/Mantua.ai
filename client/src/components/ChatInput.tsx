@@ -26,7 +26,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
   const getChainName = (id: number | undefined) => {
     if (id === baseSepolia.id) return 'Base Sepolia';
     if (id === unichainSepolia.id) return 'Unichain Sepolia';
-    return 'Select Chain';
+    return 'Chain Selector';
   };
 
   const handleSend = () => {
@@ -129,7 +129,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
               <Plus className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-64" data-testid="dropdown-quick-actions">
+          <DropdownMenuContent align="start" side="bottom" className="w-64" data-testid="dropdown-quick-actions">
             <DropdownMenuItem
               onClick={() => handleQuickAction('swap')}
               data-testid="dropdown-item-swap"
@@ -169,7 +169,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
               <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-48" data-testid="dropdown-chain-selector">
+          <DropdownMenuContent align="start" side="bottom" className="w-48" data-testid="dropdown-chain-selector">
             <DropdownMenuItem
               onClick={() => handleChainSelect('Base Sepolia')}
               data-testid="dropdown-item-base-sepolia"
