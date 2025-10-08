@@ -89,6 +89,16 @@ The application includes comprehensive activity tracking for both user actions a
 - **Auto-updates**: Charts and summaries update automatically as activities are added
 - **Data persistence**: Activities stored with unique IDs, timestamps, and metadata
 
+## Chat History Access Control
+The application implements wallet-gated access for saved chat interactions:
+
+- **Read-Only Mode**: When wallet is disconnected, users can VIEW their chat history but cannot INTERACT
+- **Message Visibility**: Chat messages remain visible regardless of wallet connection status
+- **Input Gating**: Chat input and action buttons are hidden when wallet is disconnected
+- **Reconnection Prompt**: Message "Reconnect your wallet to interact with saved chats." displays when wallet is disconnected
+- **Seamless Reconnection**: When wallet reconnects, full chat functionality is automatically restored
+- **User Experience**: Allows users to review conversation history without requiring constant wallet connection, while preventing unauthorized interactions
+
 ## Blockchain Network Support
 The application operates exclusively on Base Sepolia testnet:
 
