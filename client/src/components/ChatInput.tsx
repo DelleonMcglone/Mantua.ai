@@ -105,7 +105,14 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
               <Plus className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="bottom" className="w-64" data-testid="dropdown-quick-actions">
+          <DropdownMenuContent 
+            align="start" 
+            side="bottom" 
+            sideOffset={8}
+            collisionPadding={16}
+            className="w-64" 
+            data-testid="dropdown-quick-actions"
+          >
             <DropdownMenuItem
               onClick={() => handleQuickAction('swap')}
               data-testid="dropdown-item-swap"
