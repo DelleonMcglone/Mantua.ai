@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ArrowLeft, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,10 +6,13 @@ import { useLocation } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useActivity, AgentActivity as AgentActivityType } from "@/contexts/ActivityContext";
 
+type TimeRange = '24H' | '7D' | '1M' | '3M' | '1Y' | 'Max';
+
 export default function AgentActivity() {
   const [, setLocation] = useLocation();
   const [activeFilter, setActiveFilter] = useState<'All' | 'Swaps' | 'Liquidity pools'>('All');
   const [isPaused, setIsPaused] = useState(false);
+  const [timeRange, setTimeRange] = useState<TimeRange>('Max');
   
   const { 
     agentActivities, 
@@ -19,12 +22,67 @@ export default function AgentActivity() {
     agentChartData 
   } = useActivity();
 
-  const filteredActivities = agentActivities.filter(activity => {
+  // Filter activities by time range
+  const getTimeRangeInMs = (range: TimeRange): number => {
+    const now = Date.now();
+    switch (range) {
+      case '24H': return 24 * 60 * 60 * 1000;
+      case '7D': return 7 * 24 * 60 * 60 * 1000;
+      case '1M': return 30 * 24 * 60 * 60 * 1000;
+      case '3M': return 90 * 24 * 60 * 60 * 1000;
+      case '1Y': return 365 * 24 * 60 * 60 * 1000;
+      case 'Max': return Infinity;
+    }
+  };
+
+  const timeRangeMs = getTimeRangeInMs(timeRange);
+  const cutoffTime = Date.now() - timeRangeMs;
+
+  const timeFilteredActivities = agentActivities.filter(
+    activity => activity.timestamp >= cutoffTime
+  );
+
+  const filteredActivities = timeFilteredActivities.filter(activity => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Swaps') return activity.activity.includes('Swap');
     if (activeFilter === 'Liquidity pools') return activity.activity.includes('Liquidity');
     return true;
   });
+
+  // Calculate filtered chart data based on time range
+  const filteredChartData = useMemo(() => {
+    if (timeFilteredActivities.length === 0) {
+      return [{ month: 'Now', value: 0 }];
+    }
+
+    // Generate appropriate labels based on time range
+    const getChartLabels = (): string[] => {
+      if (timeRange === '24H') return Array.from({ length: 24 }, (_, i) => `${i}h`);
+      if (timeRange === '7D') return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      if (timeRange === '1M') return Array.from({ length: 30 }, (_, i) => `D${i + 1}`);
+      if (timeRange === '3M') return ['M1', 'M2', 'M3'];
+      if (timeRange === '1Y') return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return agentChartData.map(d => d.month); // Max - use default
+    };
+
+    const labels = getChartLabels();
+    const totalValue = timeFilteredActivities.reduce((sum, activity) => {
+      if (activity.status === 'Completed') {
+        const value = parseFloat(activity.value.replace(/[$,]/g, '')) || 0;
+        return sum + value;
+      }
+      return sum;
+    }, 0);
+
+    // Distribute value across time periods
+    let cumulativeValue = 0;
+    return labels.map(label => {
+      if (timeFilteredActivities.length > 0) {
+        cumulativeValue += totalValue / labels.length;
+      }
+      return { month: label, value: Math.round(cumulativeValue) };
+    });
+  }, [timeFilteredActivities, timeRange, agentChartData]);
 
   const cumulativeReturns = `${agentCumulativeReturns.toFixed(1)}%`;
   const totalValueManaged = `$${agentValueManaged.toFixed(2)}`;
@@ -112,16 +170,36 @@ export default function AgentActivity() {
         {/* Portfolio Value Over Time Chart */}
         <Card data-testid="card-chart">
           <CardHeader>
-            <CardTitle className="text-base">Portfolio value overtime</CardTitle>
-            <div className="text-2xl font-semibold" data-testid="text-chart-value">
-              {totalValueManaged}
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <CardTitle className="text-base">Portfolio value overtime</CardTitle>
+                <div className="text-2xl font-semibold mt-2" data-testid="text-chart-value">
+                  {totalValueManaged}
+                </div>
+                <p className="text-xs text-muted-foreground">+0%</p>
+              </div>
+              
+              {/* Time Range Buttons */}
+              <div className="flex gap-1" data-testid="div-time-range-buttons">
+                {(['24H', '7D', '1M', '3M', '1Y', 'Max'] as TimeRange[]).map((range) => (
+                  <Button
+                    key={range}
+                    variant={timeRange === range ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTimeRange(range)}
+                    className="min-w-[3rem]"
+                    data-testid={`button-timerange-${range.toLowerCase()}`}
+                  >
+                    {range}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">+0%</p>
           </CardHeader>
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={agentChartData}>
+                <AreaChart data={filteredChartData}>
                   <defs>
                     <linearGradient id="colorAgentValue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
