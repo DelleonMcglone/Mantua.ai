@@ -104,7 +104,7 @@ export default function About() {
               🧠 <strong>Powered by Intelligence</strong>: Real-time blockchain data gives context and reasoning behind every action.
             </li>
             <li className="text-foreground leading-relaxed">
-              🔗 <strong>On Base and Unichain</strong>: Secure, transparent execution — every transaction verifiable on Base and Unichain.
+              🔗 <strong>On Base</strong>: Secure, transparent execution — every transaction verifiable on Base.
             </li>
             <li className="text-foreground leading-relaxed">
               💬 <strong>Conversational UX</strong>: A chat interface that feels like ChatGPT, but with real DeFi execution power.
