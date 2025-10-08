@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Send, Plus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useActiveAccount } from 'thirdweb/react';
@@ -14,7 +13,10 @@ interface ChatInputProps {
 
 export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExitAgent }: ChatInputProps) {
   const [message, setMessage] = useState("");
+  const [isMenuVisible, setMenuVisible] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const account = useActiveAccount();
 
   const handleSend = () => {
@@ -61,7 +63,16 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
     autoResizeTextarea();
   }, [message]);
 
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenuVisible((prev) => !prev);
+  };
+
   const handleQuickAction = (actionId: string) => {
+    // Close menu immediately
+    setMenuVisible(false);
+    
     if (!account) {
       // Inject system message if wallet not connected
       if (onSubmit) {
@@ -90,55 +101,96 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
     }
   };
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isMenuVisible) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
+      ) {
+        setMenuVisible(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMenuVisible]);
+
   return (
     <div className="relative w-full">
-      <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
-        {/* Plus button dropdown */}
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 rounded-full transition-all"
-              data-testid="button-quick-actions"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align="start" 
-            side="bottom" 
-            sideOffset={8}
-            collisionPadding={16}
-            className="w-64" 
-            data-testid="dropdown-quick-actions"
-          >
-            <DropdownMenuItem
+      <div className="relative flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
+        {/* Plus button */}
+        <Button
+          ref={buttonRef}
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 rounded-full transition-all"
+          onClick={toggleMenu}
+          data-testid="button-quick-actions"
+          aria-label="Open quick actions menu"
+          aria-expanded={isMenuVisible}
+          aria-haspopup="menu"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+
+        {/* Dropdown Menu - absolutely positioned & layout-locked */}
+        <div
+          ref={menuRef}
+          className={`absolute bottom-full left-0 mb-2 w-64 bg-popover border border-border rounded-lg shadow-lg z-50 transition-all duration-150 ease-out transform origin-bottom-left ${
+            isMenuVisible
+              ? "opacity-100 pointer-events-auto scale-100"
+              : "opacity-0 pointer-events-none scale-95"
+          }`}
+          data-testid="dropdown-quick-actions"
+          role="menu"
+          aria-label="Quick actions menu"
+          aria-hidden={!isMenuVisible}
+        >
+          <div className="p-1">
+            <button
               onClick={() => handleQuickAction('swap')}
+              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-swap"
+              role="menuitem"
+              tabIndex={isMenuVisible ? 0 : -1}
             >
               Swap
-            </DropdownMenuItem>
-            <DropdownMenuItem
+            </button>
+            <button
               onClick={() => handleQuickAction('add-liquidity')}
+              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-add-liquidity"
+              role="menuitem"
+              tabIndex={isMenuVisible ? 0 : -1}
             >
               Add Liquidity
-            </DropdownMenuItem>
-            <DropdownMenuItem
+            </button>
+            <button
               onClick={() => handleQuickAction('analyze')}
+              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-analyze"
+              role="menuitem"
+              tabIndex={isMenuVisible ? 0 : -1}
             >
               Analyze
-            </DropdownMenuItem>
-            <DropdownMenuItem
+            </button>
+            <button
               onClick={() => handleQuickAction('explore-agents')}
+              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-explore-agents"
+              role="menuitem"
+              tabIndex={isMenuVisible ? 0 : -1}
             >
               Explore Agents
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </button>
+          </div>
+        </div>
 
         <Textarea
           ref={textareaRef}
