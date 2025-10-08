@@ -18,14 +18,20 @@ interface ChatInputProps {
 
 export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAgentMode, onExitAgent }: ChatInputProps) {
   const [message, setMessage] = useState("");
+  const [selectedChain, setSelectedChain] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const account = useActiveAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
   
-  const getChainName = (id: number | undefined) => {
-    if (id === baseSepolia.id) return 'Base Sepolia';
-    if (id === unichainSepolia.id) return 'Unichain Sepolia';
+  // Reset selected chain when wallet connects/disconnects
+  useEffect(() => {
+    setSelectedChain("");
+  }, [account?.address]);
+  
+  const getDisplayLabel = () => {
+    if (selectedChain === 'Base Sepolia') return 'Base Sepolia';
+    if (selectedChain === 'Unichain Sepolia') return 'Unichain Sepolia';
     return 'Chain Selector';
   };
 
@@ -105,6 +111,9 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
   const handleChainSelect = (chainName: string) => {
     const chainToSwitch = chainName === 'Base Sepolia' ? baseSepolia : unichainSepolia;
     
+    // Update selected chain state
+    setSelectedChain(chainName);
+    
     if (switchChain) {
       switchChain({ chainId: chainToSwitch.id });
     }
@@ -165,7 +174,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
               className="h-8 px-3 rounded-full bg-background/50 border-border/50 transition-all text-sm"
               data-testid="button-chain-selector"
             >
-              {getChainName(chainId)}
+              {getDisplayLabel()}
               <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
           </DropdownMenuTrigger>

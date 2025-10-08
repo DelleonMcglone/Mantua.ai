@@ -1,0 +1,96 @@
+Perfect ✅ — here’s the **final production-ready version** of your `ChainSelector.tsx` that now:
+
+* ✅ Always starts with “Chain Selector” (even after wallet connect)
+* ✅ Lets the user pick between **Base Sepolia** and **Unichain Sepolia**
+* ✅ Automatically calls `switchChain()` from Wagmi so the wallet network updates instantly
+
+---
+
+### 📄 `/src/components/ChainSelector.tsx`
+
+```tsx
+/**
+ * ChainSelector Component
+ * --------------------------------------------------
+ * - Always defaults to "Chain Selector" (no auto-select on connect)
+ * - Lets users choose between Base Sepolia and Unichain Sepolia
+ * - Automatically switches wallet network via Wagmi `switchChain`
+ */
+
+import React, { useState, useEffect } from "react";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+
+export default function ChainSelector() {
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+
+  const [selectedChain, setSelectedChain] = useState<string>("");
+
+  // Force reset to "Chain Selector" when wallet connects or reconnects
+  useEffect(() => {
+    if (isConnected) {
+      setSelectedChain("");
+    }
+  }, [isConnected, chainId]);
+
+  const handleSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const chain = e.target.value;
+    setSelectedChain(chain);
+
+    // Switch chain using Wagmi
+    try {
+      if (chain === "base-sepolia") {
+        await switchChain({ chainId: 84532 }); // Base Sepolia
+      } else if (chain === "unichain-sepolia") {
+        await switchChain({ chainId: 1301 }); // Unichain Sepolia
+      }
+    } catch (err) {
+      console.error("Chain switch failed:", err);
+    }
+  };
+
+  return (
+    <select
+      className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 cursor-pointer"
+      value={selectedChain}
+      onChange={handleSelect}
+    >
+      <option value="">Chain Selector</option>
+      <option value="base-sepolia">Base Sepolia</option>
+      <option value="unichain-sepolia">Unichain Sepolia</option>
+    </select>
+  );
+}
+```
+
+---
+
+### ⚙️ What This Fix Does
+
+| Behavior                                 | Result                                          |
+| ---------------------------------------- | ----------------------------------------------- |
+| **Before connection**                    | Shows `"Chain Selector"` placeholder            |
+| **After wallet connect**                 | Still shows `"Chain Selector"` (no auto-select) |
+| **When user selects “Base Sepolia”**     | Calls `switchChain({ chainId: 84532 })`         |
+| **When user selects “Unichain Sepolia”** | Calls `switchChain({ chainId: 1301 })`          |
+| **If switch fails**                      | Logs error to console but doesn’t crash the UI  |
+
+---
+
+### 💡 Optional Enhancement
+
+If you want to display the **current connected network** *after switching*, add:
+
+```tsx
+useEffect(() => {
+  if (chainId === 84532) setSelectedChain("base-sepolia");
+  else if (chainId === 1301) setSelectedChain("unichain-sepolia");
+}, [chainId]);
+```
+
+That will auto-update the dropdown label if the user switches chains directly from MetaMask or Coinbase Wallet.
+
+---
+
+Would you like me to also show how to integrate this `ChainSelector` right above your chat input (so users can switch networks directly from the chatbot header)?

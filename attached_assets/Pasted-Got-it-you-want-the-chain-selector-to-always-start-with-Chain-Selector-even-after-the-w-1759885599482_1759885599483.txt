@@ -1,0 +1,66 @@
+Got it ✅ — you want **the chain selector to always start with “Chain Selector”**, even **after the wallet connects**, rather than auto-defaulting to Base Sepolia.
+
+That’s a small logic change — we’ll prevent Wagmi or the `useChainId()` hook from automatically setting Base Sepolia on connect.
+
+---
+
+### 🧩 Updated Logic (drop-in fix)
+
+Locate your **`ChainSelector.tsx`** and replace its internal state logic with this updated version 👇
+
+```tsx
+/**
+ * ChainSelector Component
+ * Always defaults to "Chain Selector" — even after wallet connection.
+ * User must explicitly select a chain.
+ */
+
+import React, { useState, useEffect } from "react";
+import { useChainId, useAccount } from "wagmi";
+
+export default function ChainSelector({ onSelect }: { onSelect: (chain: string) => void }) {
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
+  const [selectedChain, setSelectedChain] = useState<string>("");
+
+  // When wallet connects, do NOT auto-select chain
+  // Reset to placeholder to force manual selection
+  useEffect(() => {
+    if (isConnected) {
+      setSelectedChain("");
+    }
+  }, [isConnected, chainId]);
+
+  const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const chain = e.target.value;
+    setSelectedChain(chain);
+    onSelect(chain);
+  };
+
+  return (
+    <select
+      className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 cursor-pointer"
+      value={selectedChain}
+      onChange={handleSelect}
+    >
+      <option value="">Chain Selector</option>
+      <option value="base-sepolia">Base Sepolia</option>
+      <option value="unichain-sepolia">Unichain Sepolia</option>
+    </select>
+  );
+}
+```
+
+---
+
+### ✅ Behavior After This Fix
+
+| Wallet State                            | Displayed Label                          | User Action Required            |
+| --------------------------------------- | ---------------------------------------- | ------------------------------- |
+| **Disconnected**                        | `"Chain Selector"`                       | none                            |
+| **Connected (first time or reconnect)** | `"Chain Selector"`                       | user must choose chain manually |
+| **After Selection**                     | `"Base Sepolia"` or `"Unichain Sepolia"` | persists until user changes it  |
+
+---
+
+Would you like me to also wire this so that when the user selects a chain (e.g. Base Sepolia), it automatically **calls `switchChain`** from Wagmi to align the wallet network with their selection? That way the dropdown both displays and changes the wallet’s active chain.
