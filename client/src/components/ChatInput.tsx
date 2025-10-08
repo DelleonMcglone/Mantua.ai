@@ -127,7 +127,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
     <div className="relative w-full">
       <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
         {/* Plus button dropdown */}
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
               size="icon"
@@ -167,7 +167,7 @@ export default function ChatInput({ onSubmit, onQuickAction, onChainSelect, isAg
         </DropdownMenu>
 
         {/* Chain Selector dropdown */}
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
