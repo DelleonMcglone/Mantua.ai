@@ -462,14 +462,6 @@ export default function Swap({
                 </div>
                 <span className="text-sm font-medium">$22.04</span>
               </div>
-              
-              <div className="flex justify-between items-center" data-testid="row-order-routing">
-                <span className="text-sm text-muted-foreground">Order routing</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">Uniswap API</span>
-                  <span className="text-xs text-muted-foreground">(0.25%)</span>
-                </div>
-              </div>
             </div>
           )}
         </CardContent>
