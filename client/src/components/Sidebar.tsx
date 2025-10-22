@@ -187,9 +187,10 @@ function TokensSection({ isExpanded }: { isExpanded: boolean }) {
 function ChatListSection({ isExpanded }: { isExpanded: boolean }) {
   const { allChats, currentChat, switchToChat, deleteChat } = useChatContext();
   const [location] = useLocation();
+  const account = useActiveAccount();
 
   // Only show chat list in expanded mode and limit to recent chats
-  if (!isExpanded) return null;
+  if (!isExpanded || !account) return null;
 
   const recentChats = allChats.slice(0, 8); // Show up to 8 recent chats
 

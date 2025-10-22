@@ -99,6 +99,8 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
     if (onQuickAction) {
       onQuickAction(actionId);
     }
+
+    textareaRef.current?.focus();
   };
 
   // Close menu when clicking outside
@@ -127,6 +129,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
         {/* Plus button */}
         <Button
           ref={buttonRef}
+          type="button"
           size="icon"
           variant="ghost"
           className="h-8 w-8 rounded-full transition-all"
@@ -155,6 +158,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
           <div className="p-1">
             <button
               onClick={() => handleQuickAction('swap')}
+              type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-swap"
               role="menuitem"
@@ -164,6 +168,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
             </button>
             <button
               onClick={() => handleQuickAction('add-liquidity')}
+              type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-add-liquidity"
               role="menuitem"
@@ -173,6 +178,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
             </button>
             <button
               onClick={() => handleQuickAction('analyze')}
+              type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-analyze"
               role="menuitem"
@@ -182,6 +188,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
             </button>
             <button
               onClick={() => handleQuickAction('explore-agents')}
+              type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-explore-agents"
               role="menuitem"
@@ -207,6 +214,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
         {isAgentMode && (
           <Button
             size="sm"
+            type="button"
             className="text-xs bg-primary hover:bg-primary/80 text-primary-foreground rounded-full px-3 py-1 h-6"
             onClick={onExitAgent}
             data-testid="button-agent-mode"
@@ -217,6 +225,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
 
         <Button
           size="icon"
+          type="button"
           onClick={handleSend}
           disabled={!message.trim()}
           className="h-8 w-8 rounded-full bg-primary disabled:bg-muted disabled:text-muted-foreground/50 transition-all"

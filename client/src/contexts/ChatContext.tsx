@@ -1,15 +1,15 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useLocation } from 'wouter';
-import { ChatManager, Chat, ChatMessage } from '@/lib/chatManager';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useLocation } from "wouter";
+import { ChatManager, Chat, ChatMessage } from "@/lib/chatManager";
 
 interface ChatContextType {
   currentChat: Chat | null;
   allChats: Chat[];
   isLoading: boolean;
-  createNewChat: () => void;
+  createNewChat: () => Chat | null;
   switchToChat: (chatId: string) => void;
-  addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
-  updateAgentMode: (isAgentMode: boolean) => void;
+  addMessage: (message: Omit<ChatMessage, "id" | "timestamp">, chatId?: string) => void;
+  updateAgentMode: (isAgentMode: boolean, chatId?: string) => void;
   refreshChats: () => void;
   deleteChat: (chatId: string) => void;
 }
@@ -85,7 +85,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   };
 
-  const createNewChat = () => {
+  const createNewChat = (): Chat | null => {
     try {
       console.log(`[ChatContext] Creating new chat`);
       const newChat = chatManager.createNewChat();
@@ -99,8 +99,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
         console.log(`[ChatContext] Navigating to: ${currentPath}`);
         navigate(currentPath);
       }
+      return newChat;
     } catch (error) {
-      console.error('Error creating new chat:', error);
+      console.error("Error creating new chat:", error);
+      return null;
     }
   };
 
@@ -127,33 +129,46 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   };
 
-  const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
-    if (!currentChat) return;
-
+  const addMessage = (message: Omit<ChatMessage, "id" | "timestamp">, chatId?: string) => {
+    const targetChatId = chatId ?? currentChat?.id;
+    if (!targetChatId) return;
+    
     try {
-      chatManager.addMessageToChat(currentChat.id, message);
+      chatManager.addMessageToChat(targetChatId, message);
       
       // Reload the current chat and refresh all chats
-      const updatedChat = chatManager.loadChat(currentChat.id);
-      if (updatedChat) {
+      const updatedChat = chatManager.loadChat(targetChatId);
+      if (updatedChat && currentChat?.id === targetChatId) {
         setCurrentChat(updatedChat);
       }
       setAllChats(chatManager.getAllChats());
     } catch (error) {
-      console.error('Error adding message:', error);
+      console.error("Error adding message:", error);
     }
   };
 
-  const updateAgentMode = (isAgentMode: boolean) => {
-    if (!currentChat) return;
+  const updateAgentMode = (isAgentMode: boolean, chatId?: string) => {
+    const targetChatId = chatId ?? currentChat?.id;
+    if (!targetChatId) return;
 
     try {
-      chatManager.updateChatAgentMode(currentChat.id, isAgentMode);
+      chatManager.updateChatAgentMode(targetChatId, isAgentMode);
       
       // Update local state
-      setCurrentChat(prev => prev ? { ...prev, isAgentMode } : null);
+      if (currentChat?.id === targetChatId) {
+        setCurrentChat(prev =>
+          prev
+            ? {
+                ...prev,
+                isAgentMode,
+                updatedAt: new Date(),
+              }
+            : null,
+        );
+      }
+      setAllChats(chatManager.getAllChats());
     } catch (error) {
-      console.error('Error updating agent mode:', error);
+      console.error("Error updating agent mode:", error);
     }
   };
 

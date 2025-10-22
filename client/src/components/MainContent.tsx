@@ -4,11 +4,10 @@ import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
 import { useState, useEffect, useRef } from "react";
-import { useActiveAccount } from 'thirdweb/react';
+import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
-import { useChatContext } from '@/contexts/ChatContext';
-import { useLocation } from 'wouter';
-import type { ChatMessage } from '@/lib/chatManager';
+import { useChatContext } from "@/contexts/ChatContext";
+import { useLocation } from "wouter";
 
 type ActionId = 'swap' | 'add-liquidity' | 'explore-agents' | 'analyze';
 
@@ -21,11 +20,16 @@ export default function MainContent() {
   const [location] = useLocation();
   const account = useActiveAccount();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pendingChatIdRef = useRef<string | null>(null);
+  const previousChatIdRef = useRef<string | null>(null);
+
+  const isWalletConnected = Boolean(account);
 
   // Derived state from current chat
-  const hasPrompted = currentChat ? currentChat.messages.length > 0 : false;
-  const isAgentMode = currentChat ? currentChat.isAgentMode : false;
   const chatMessages = currentChat ? currentChat.messages : [];
+  const messageCount = chatMessages.length;
+  const hasPrompted = isWalletConnected && messageCount > 0;
+  const isAgentMode = Boolean(currentChat?.isAgentMode);
 
   // Debug logging
   useEffect(() => {
@@ -37,6 +41,12 @@ export default function MainContent() {
       location
     });
   }, [account, currentChat, chatMessages, hasPrompted, location]);
+
+  useEffect(() => {
+    if (currentChat?.id) {
+      pendingChatIdRef.current = currentChat.id;
+    }
+  }, [currentChat?.id]);
 
   const shortenedAddress = account
     ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
@@ -59,14 +69,38 @@ export default function MainContent() {
     return () => observer.disconnect();
   }, []);
 
-  // Note: We don't need to reset chat state when wallet disconnects
-  // since each chat maintains its own state through the chat context
-  // The wallet connection is checked in the UI rendering logic
-
-  // Auto-scroll to bottom when new messages are added
+  // Reset transient UI state when switching between chat threads
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+    const newChatId = currentChat?.id ?? null;
+
+    if (!newChatId) {
+      setActiveComponent(null);
+      setSwapProps(null);
+      setLiquidityProps(null);
+      previousChatIdRef.current = null;
+      return;
+    }
+
+    if (
+      previousChatIdRef.current &&
+      previousChatIdRef.current !== newChatId
+    ) {
+      setActiveComponent(null);
+      setSwapProps(null);
+      setLiquidityProps(null);
+    }
+
+    previousChatIdRef.current = newChatId;
+  }, [currentChat?.id]);
+
+  // Auto-scroll to bottom when new messages are added and the wallet is connected
+  useEffect(() => {
+    if (!isWalletConnected || !currentChat) return;
+    if (chatMessages.length === 0) return;
+
+    // Keep the most recent exchange in view without abrupt jumps
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, currentChat?.id, isWalletConnected]);
 
   // Mock assistant responses
   const getMockAssistantResponse = (userMessage: string): string => {
@@ -85,11 +119,12 @@ export default function MainContent() {
 
   // Handle action button clicks with predefined content
   const handleActionClick = (actionId: string) => {
-    if (!currentChat) return; // No active chat to add messages to
+    const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
+    if (!activeChatId) return; // No active chat to add messages to
 
     if (actionId === 'explore-agents') {
       // Enter Agent mode
-      updateAgentMode(true);
+      updateAgentMode(true, activeChatId);
       return;
     }
     
@@ -100,7 +135,7 @@ export default function MainContent() {
       addMessage({
         content: actionContent,
         sender: 'assistant'
-      });
+      }, activeChatId);
     }
     
     // Handle component activation for swap
@@ -178,17 +213,20 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
 
   // Handle agent action button clicks
   const handleAgentAction = (action: string) => {
-    if (!currentChat) return; // No active chat to add messages to
+    const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
+    if (!activeChatId) return; // No active chat to add messages to
     
     addMessage({
       content: `Executing agent action: ${action}`,
       sender: 'assistant'
-    });
+    }, activeChatId);
   };
 
   // Exit Agent mode
   const exitAgentMode = () => {
-    updateAgentMode(false);
+    const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
+    if (!activeChatId) return;
+    updateAgentMode(false, activeChatId);
   };
 
   // Intent parsing for swap commands
@@ -247,90 +285,66 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
 
   // Handle chat input submission
   const handleChatSubmit = (message: string) => {
-    if (!message.trim()) return; // Empty message
-    
-    // Check for swap and liquidity intents
-    const swapIntent = parseSwapIntent(message.trim());
-    const liquidityIntent = parseLiquidityIntent(message.trim());
-    
-    // If no current chat but wallet is connected, create a new chat
-    if (!currentChat && account) {
-      console.log('No current chat but wallet connected, creating new chat for message:', message);
-      createNewChat();
-      // The message will be processed in the next render cycle after chat is created
-      setTimeout(() => {
-        addMessage({
-          content: message.trim(),
-          sender: 'user'
-        });
-        
-        // Add appropriate response based on intent
-        setTimeout(() => {
-          if (swapIntent) {
-            // For swap intents, always update props but guard component activation
-            setSwapProps(swapIntent);
-            if (activeComponent !== 'swap') {
-              setActiveComponent('swap');
-            }
-          } else if (liquidityIntent) {
-            // For liquidity intents, always update props but guard component activation
-            setLiquidityProps(liquidityIntent);
-            if (activeComponent !== 'liquidity') {
-              setActiveComponent('liquidity');
-            }
-          } else {
-            addMessage({
-              content: getMockAssistantResponse(message),
-              sender: 'assistant'
-            });
-          }
-        }, 1000);
-      }, 100);
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) return; // Empty message
+
+    const swapIntent = parseSwapIntent(trimmedMessage);
+    const liquidityIntent = parseLiquidityIntent(trimmedMessage);
+
+    let chatForMessage = currentChat;
+
+    if (!chatForMessage) {
+      console.log(
+        `[MainContent] No active chat found, creating new chat for message: ${trimmedMessage}`,
+      );
+      const newChat = createNewChat();
+      if (!newChat) return;
+      chatForMessage = newChat;
+    }
+
+    const chatId = chatForMessage.id;
+    pendingChatIdRef.current = chatId;
+
+    const isSystemConnectPrompt =
+      trimmedMessage === "Please connect your wallet to continue.";
+
+    addMessage(
+      {
+        content: trimmedMessage,
+        sender: !isWalletConnected && isSystemConnectPrompt ? "assistant" : "user",
+      },
+      chatId,
+    );
+
+    if (!isWalletConnected) {
       return;
     }
-    
-    // If no current chat and no wallet, still allow system messages
-    if (!currentChat && !account) {
-      console.log('No wallet connected, but allowing system message:', message);
-      createNewChat();
-      setTimeout(() => {
-        addMessage({
-          content: message.trim(),
-          sender: message === "Please connect your wallet to continue." ? 'assistant' : 'user'
-        });
-      }, 100);
+
+    if (swapIntent) {
+      setSwapProps(swapIntent);
+      if (activeComponent !== "swap") {
+        setActiveComponent("swap");
+      }
       return;
     }
-    
-    // Normal case: current chat exists
-    if (currentChat) {
-      addMessage({
-        content: message.trim(),
-        sender: 'user'
-      });
-      
-      // Add appropriate response based on intent
-      setTimeout(() => {
-        if (swapIntent) {
-          // For swap intents, always update props but guard component activation
-          setSwapProps(swapIntent);
-          if (activeComponent !== 'swap') {
-            setActiveComponent('swap');
-          }
-        } else if (liquidityIntent) {
-          // For liquidity intents, always update props but guard component activation
-          setLiquidityProps(liquidityIntent);
-          if (activeComponent !== 'liquidity') {
-            setActiveComponent('liquidity');
-          }
-        } else {
-          addMessage({
-            content: getMockAssistantResponse(message),
-            sender: 'assistant'
-          });
-        }
-      }, 1000);
+
+    if (liquidityIntent) {
+      setLiquidityProps(liquidityIntent);
+      if (activeComponent !== "liquidity") {
+        setActiveComponent("liquidity");
+      }
+      return;
     }
+
+    setTimeout(() => {
+      addMessage(
+        {
+          content: getMockAssistantResponse(trimmedMessage),
+          sender: "assistant",
+        },
+        chatId,
+      );
+    }, 800);
   };
 
   return (
@@ -480,8 +494,8 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
               </div>
             )}
 
-            {/* Chat Input - Show when there's a current chat OR wallet is connected */}
-            {(currentChat || account) && (
+            {/* Chat Input - Only available when wallet is connected */}
+            {account && (
               <div className="space-y-6">
                 <ChatInput 
                   onSubmit={handleChatSubmit} 
