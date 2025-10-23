@@ -44,6 +44,125 @@ interface HookResolution {
   hookWarning?: string;
 }
 
+const SINGLE_WORD_ACTIONS = ["swap", "analyze", "agent", "explore"] as const;
+const MULTI_WORD_ACTIONS = ["add liquidity", "remove liquidity"] as const;
+const AFFIRMATIVE_RESPONSES = new Set(["yes", "y", "yeah", "yep", "sure", "confirm", "correct"]);
+const NEGATIVE_RESPONSES = new Set(["no", "n", "nope", "cancel"]);
+const DISALLOWED_TOKENS = new Set(["WETH", "DAI", "CBBTC"]);
+const UNSUPPORTED_TOKEN_MESSAGE = "WETH, DAI, and CBBTC are not currently supported on Mantua.AI.";
+
+interface ClarificationRequest {
+  suggestion: string;
+  normalizedSuggestion: string;
+  keyword: string;
+}
+
+function computeLevenshtein(a: string, b: string): number {
+  const lenA = a.length;
+  const lenB = b.length;
+  if (lenA === 0) return lenB;
+  if (lenB === 0) return lenA;
+
+  const matrix: number[][] = Array.from({ length: lenA + 1 }, () => new Array(lenB + 1).fill(0));
+
+  for (let i = 0; i <= lenA; i++) {
+    matrix[i][0] = i;
+  }
+  for (let j = 0; j <= lenB; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= lenA; i++) {
+    for (let j = 1; j <= lenB; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      );
+    }
+  }
+
+  return matrix[lenA][lenB];
+}
+
+function applyWordCasing(source: string | undefined, target: string): string {
+  if (!source) return target;
+  if (source === source.toUpperCase()) return target.toUpperCase();
+  if (source === source.toLowerCase()) return target.toLowerCase();
+  if (source[0] === source[0].toUpperCase()) {
+    return target.charAt(0).toUpperCase() + target.slice(1);
+  }
+  return target;
+}
+
+function detectCommandClarification(message: string): ClarificationRequest | null {
+  const trimmed = message.trim();
+  if (!trimmed) return null;
+
+  const words = trimmed.split(/\s+/);
+  const firstWord = words[0]?.toLowerCase() ?? "";
+
+  for (const keyword of SINGLE_WORD_ACTIONS) {
+    if (!firstWord || firstWord === keyword) continue;
+    const distance = computeLevenshtein(firstWord, keyword);
+    if (distance > 0 && distance < 2) {
+      const suggestionWords = [...words];
+      suggestionWords[0] = applyWordCasing(words[0], keyword);
+      const suggestion = suggestionWords.join(" ");
+      return {
+        suggestion,
+        normalizedSuggestion: suggestion.toLowerCase(),
+        keyword,
+      };
+    }
+  }
+
+  if (words.length >= 2) {
+    const normalizedPair = `${words[0].toLowerCase()} ${words[1].toLowerCase()}`;
+    for (const keyword of MULTI_WORD_ACTIONS) {
+      if (normalizedPair === keyword) continue;
+      const distance = computeLevenshtein(normalizedPair, keyword);
+      if (distance > 0 && distance < 2) {
+        const suggestionWords = [...words];
+        const [keywordFirst, keywordSecond] = keyword.split(" ");
+        suggestionWords[0] = applyWordCasing(words[0], keywordFirst);
+        suggestionWords[1] = applyWordCasing(words[1], keywordSecond);
+        const suggestion = suggestionWords.join(" ");
+        return {
+          suggestion,
+          normalizedSuggestion: suggestion.toLowerCase(),
+          keyword,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+function isAffirmativeResponse(message: string): boolean {
+  return AFFIRMATIVE_RESPONSES.has(message);
+}
+
+function isNegativeResponse(message: string): boolean {
+  return NEGATIVE_RESPONSES.has(message);
+}
+
+function isTokenUnsupported(token?: string): boolean {
+  if (!token) return false;
+  if (token === "cbBTC") return false;
+  return DISALLOWED_TOKENS.has(token.toUpperCase());
+}
+
+function canonicalizeTokenSymbol(token: string): string {
+  if (!token) return token;
+  if (token.toLowerCase() === "cbbtc") {
+    return "cbBTC";
+  }
+  return token.toUpperCase();
+}
+
 const HOOK_UNRECOGNIZED_MESSAGES: Record<HookContext, string> = {
   swap: `Unrecognized Hook — You asked to swap using a hook that isn't in Mantua's supported library yet.
 You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`,
@@ -83,6 +202,7 @@ export default function MainContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pendingChatIdRef = useRef<string | null>(null);
   const previousChatIdRef = useRef<string | null>(null);
+  const pendingClarificationsRef = useRef<Record<string, ClarificationRequest | undefined>>({}); // SWAP REGRESSION FIX: track clarification prompts
   const [swapIntentKey, setSwapIntentKey] = useState<number>(0); // SWAP: track swap intent resets
   const [liquidityIntentKey, setLiquidityIntentKey] = useState<number>(0); // LIQUIDITY FIX: track liquidity intent resets
 
@@ -158,6 +278,74 @@ export default function MainContent() {
     setActiveComponent(null);
     setLiquidityProps(null);
   }, []); // LIQUIDITY FIX: reset liquidity mode when dismissed
+
+  const handleSwapIntent = useCallback(
+    (intent: SwapIntentState, chatId: string) => {
+      if (isTokenUnsupported(intent.sellToken) || isTokenUnsupported(intent.buyToken)) {
+        addMessage(
+          {
+            content: UNSUPPORTED_TOKEN_MESSAGE,
+            sender: "assistant",
+          },
+          chatId,
+        );
+        return true;
+      }
+
+      if (activeComponent === "swap") {
+        mergeSwapIntent(intent);
+      } else {
+        activateSwap(intent);
+      }
+
+      if (intent.hookWarning) {
+        addMessage(
+          {
+            content: intent.hookWarning,
+            sender: "assistant",
+          },
+          chatId,
+        );
+      }
+
+      return true;
+    },
+    [activateSwap, activeComponent, addMessage, mergeSwapIntent],
+  ); // SWAP REGRESSION FIX: centralized swap intent handler
+
+  const handleLiquidityIntent = useCallback(
+    (intent: LiquidityIntentState, chatId: string) => {
+      if (isTokenUnsupported(intent.token1) || isTokenUnsupported(intent.token2)) {
+        addMessage(
+          {
+            content: UNSUPPORTED_TOKEN_MESSAGE,
+            sender: "assistant",
+          },
+          chatId,
+        );
+        return true;
+      }
+
+      if (activeComponent === "liquidity") {
+        mergeLiquidityIntent(intent);
+      } else {
+        activateLiquidity(intent);
+      }
+
+      if (intent.hookWarning) {
+        addMessage(
+          {
+            content: intent.hookWarning,
+            sender: "assistant",
+          },
+          chatId,
+        );
+      }
+
+      return true;
+    },
+    [activateLiquidity, activeComponent, addMessage, mergeLiquidityIntent],
+  ); // LIQUIDITY REGRESSION FIX: centralized liquidity intent handler
 
   const isWalletConnected = Boolean(account);
 
@@ -286,6 +474,69 @@ export default function MainContent() {
       activateLiquidity(); // LIQUIDITY FIX: normalize liquidity activation path
     }
   };
+
+  const processClarifiedCommand = (suggestedMessage: string, chatId: string) => {
+    const trimmedSuggestion = suggestedMessage.trim();
+    if (!trimmedSuggestion) return;
+
+    if (!isWalletConnected) {
+      addMessage(
+        {
+          content: "Please connect your wallet to continue.",
+          sender: "assistant",
+        },
+        chatId,
+      );
+      return;
+    }
+
+    const swapIntent = parseSwapIntent(trimmedSuggestion);
+    if (swapIntent) {
+      handleSwapIntent(swapIntent, chatId);
+      return;
+    }
+
+    const liquidityIntent = parseLiquidityIntent(trimmedSuggestion);
+    if (liquidityIntent) {
+      handleLiquidityIntent(liquidityIntent, chatId);
+      return;
+    }
+
+    const normalizedSuggestion = trimmedSuggestion.toLowerCase();
+    if (normalizedSuggestion === "analyze") {
+      handleActionClick("analyze");
+      return;
+    }
+
+    if (normalizedSuggestion === "explore" || normalizedSuggestion.startsWith("explore ")) {
+      handleActionClick("explore-agents");
+      return;
+    }
+
+    if (normalizedSuggestion === "agent") {
+      handleActionClick("explore-agents");
+      return;
+    }
+
+    if (normalizedSuggestion.startsWith("remove liquidity")) {
+      addMessage(
+        {
+          content: "Remove Liquidity flows aren't supported yet, but I'm tracking your request.",
+          sender: "assistant",
+        },
+        chatId,
+      );
+      return;
+    }
+
+    addMessage(
+      {
+        content: getMockAssistantResponse(trimmedSuggestion),
+        sender: "assistant",
+      },
+      chatId,
+    );
+  }; // SWAP REGRESSION FIX: resume intent execution after clarification
 
   // Get predefined content for action buttons
   const getActionContent = (actionId: ActionId): string => {
@@ -457,15 +708,15 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
 
     const withHookMatch = message.match(swapWithHookPattern);
     if (withHookMatch) {
-      sellToken = withHookMatch[1].toUpperCase();
-      buyToken = withHookMatch[2].toUpperCase();
+      sellToken = canonicalizeTokenSymbol(withHookMatch[1]);
+      buyToken = canonicalizeTokenSymbol(withHookMatch[2]);
       const explicitHookPhrase = withHookMatch[3];
       Object.assign(baseDetails, resolveHookDetails(explicitHookPhrase, "swap"));
     } else {
       const tokensOnlyMatch = message.match(swapTokensPattern);
       if (tokensOnlyMatch) {
-        sellToken = tokensOnlyMatch[1].toUpperCase();
-        buyToken = tokensOnlyMatch[2].toUpperCase();
+        sellToken = canonicalizeTokenSymbol(tokensOnlyMatch[1]);
+        buyToken = canonicalizeTokenSymbol(tokensOnlyMatch[2]);
       }
     }
 
@@ -498,15 +749,15 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
 
     const withHookMatch = message.match(liquidityWithHookPattern);
     if (withHookMatch) {
-      token1 = withHookMatch[1].toUpperCase();
-      token2 = withHookMatch[2].toUpperCase();
+      token1 = canonicalizeTokenSymbol(withHookMatch[1]);
+      token2 = canonicalizeTokenSymbol(withHookMatch[2]);
       const hookPhrase = withHookMatch[3];
       Object.assign(baseDetails, resolveHookDetails(hookPhrase, "liquidity"));
     } else {
       const tokensOnlyMatch = message.match(liquidityTokensPattern);
       if (tokensOnlyMatch) {
-        token1 = tokensOnlyMatch[1].toUpperCase();
-        token2 = tokensOnlyMatch[2].toUpperCase();
+        token1 = canonicalizeTokenSymbol(tokensOnlyMatch[1]);
+        token2 = canonicalizeTokenSymbol(tokensOnlyMatch[2]);
       }
     }
 
@@ -524,8 +775,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     const trimmedMessage = message.trim();
     if (!trimmedMessage) return; // Empty message
 
-    const swapIntent = parseSwapIntent(trimmedMessage);
-    const liquidityIntent = parseLiquidityIntent(trimmedMessage);
+    const normalizedMessage = trimmedMessage.toLowerCase();
 
     let chatForMessage = currentChat;
 
@@ -552,44 +802,72 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       chatId,
     );
 
+    const pendingClarification = pendingClarificationsRef.current[chatId];
+    let skipClarificationCheck = false;
+
+    if (pendingClarification) {
+      if (isAffirmativeResponse(normalizedMessage)) {
+        pendingClarificationsRef.current[chatId] = undefined;
+        addMessage(
+          {
+            content: `Confirmed - executing "${pendingClarification.suggestion}".`,
+            sender: "assistant",
+          },
+          chatId,
+        );
+        processClarifiedCommand(pendingClarification.suggestion, chatId);
+        return;
+      }
+
+      if (isNegativeResponse(normalizedMessage)) {
+        pendingClarificationsRef.current[chatId] = undefined;
+        addMessage(
+          {
+            content: "No problem - just let me know how you'd like to proceed.",
+            sender: "assistant",
+          },
+          chatId,
+        );
+        return;
+      }
+
+      if (normalizedMessage === pendingClarification.normalizedSuggestion) {
+        pendingClarificationsRef.current[chatId] = undefined;
+        skipClarificationCheck = true;
+      }
+    }
+
+    if (!skipClarificationCheck) {
+      const clarification = detectCommandClarification(trimmedMessage);
+      if (clarification) {
+        pendingClarificationsRef.current[chatId] = clarification;
+        addMessage(
+          {
+            content: `Did you mean "${clarification.suggestion}"?\nPlease confirm so I can get you to the correct action.`,
+            sender: "assistant",
+          },
+          chatId,
+        );
+        return;
+      }
+    }
+
     if (!isWalletConnected) {
       return;
     }
 
+    const swapIntent = parseSwapIntent(trimmedMessage);
     if (swapIntent) {
-      if (activeComponent === "swap") {
-        mergeSwapIntent(swapIntent); // SWAP REGRESSION FIX: keep swap visible on hook updates
-      } else {
-        activateSwap(swapIntent);
+      if (handleSwapIntent(swapIntent, chatId)) {
+        return;
       }
-      if (swapIntent.hookWarning) {
-        addMessage(
-          {
-            content: swapIntent.hookWarning,
-            sender: "assistant",
-          },
-          chatId,
-        ); // SWAP: surface unsupported hook guidance in chat
-      }
-      return;
     }
 
+    const liquidityIntent = parseLiquidityIntent(trimmedMessage);
     if (liquidityIntent) {
-      if (activeComponent === "liquidity") {
-        mergeLiquidityIntent(liquidityIntent); // LIQUIDITY REGRESSION FIX: keep liquidity panel mounted
-      } else {
-        activateLiquidity(liquidityIntent);
+      if (handleLiquidityIntent(liquidityIntent, chatId)) {
+        return;
       }
-      if (liquidityIntent.hookWarning) {
-        addMessage(
-          {
-            content: liquidityIntent.hookWarning,
-            sender: "assistant",
-          },
-          chatId,
-        ); // LIQUIDITY FIX: surface unsupported hook guidance in chat
-      }
-      return;
     }
 
     setTimeout(() => {

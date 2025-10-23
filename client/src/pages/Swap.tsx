@@ -36,8 +36,6 @@ const BASE_TOKENS: Token[] = [
   { symbol: 'USDC', name: 'USD Coin', logo: usdcLogo },
   { symbol: 'cbBTC', name: 'Coinbase Bitcoin', logo: cbbtcLogo },
   { symbol: 'EURC', name: 'Euro Coin', logo: eurcLogo },
-  { symbol: 'WETH', name: 'Wrapped Ether' },
-  { symbol: 'DAI', name: 'Dai Stablecoin' },
 ]; // SWAP FIX: Prefill & Wallet Balance
 
 const HOOK_OPTIONS = [
