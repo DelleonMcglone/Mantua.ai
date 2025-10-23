@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus } from "lucide-react";
+import { Send, Plus, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useActiveAccount } from 'thirdweb/react';
 
@@ -9,9 +9,26 @@ interface ChatInputProps {
   onQuickAction?: (actionId: string) => void;
   isAgentMode?: boolean;
   onExitAgent?: () => void;
+  isSwapModeActive?: boolean;
+  onSwapModeRequest?: () => void;
+  onSwapModeExit?: () => void;
+  isLiquidityModeActive?: boolean;
+  onLiquidityModeRequest?: () => void;
+  onLiquidityModeExit?: () => void;
 }
 
-export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExitAgent }: ChatInputProps) {
+export default function ChatInput({
+  onSubmit,
+  onQuickAction,
+  isAgentMode,
+  onExitAgent,
+  isSwapModeActive = false,
+  onSwapModeRequest,
+  onSwapModeExit,
+  isLiquidityModeActive = false,
+  onLiquidityModeRequest,
+  onLiquidityModeExit,
+}: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isMenuVisible, setMenuVisible] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -67,39 +84,31 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
     e.preventDefault();
     e.stopPropagation();
     setMenuVisible((prev) => !prev);
-  };
+  }; // SWAP FIX: Button trigger condition
 
-  const handleQuickAction = (actionId: string) => {
-    // Close menu immediately
+  const triggerQuickAction = (actionId: string) => {
     setMenuVisible(false);
-    
+
     if (!account) {
-      // Inject system message if wallet not connected
       if (onSubmit) {
         onSubmit("Please connect your wallet to continue.");
       }
       return;
     }
 
-    // Get the display text for the action
     const actionLabels: Record<string, string> = {
-      'swap': 'Swap',
-      'add-liquidity': 'Add Liquidity',
-      'analyze': 'Analyze',
-      'explore-agents': 'Explore Agents'
+      swap: "Swap",
+      "add-liquidity": "Add Liquidity",
+      analyze: "Analyze",
+      "explore-agents": "Explore Agents",
     };
 
-    // Inject user message
     const userMessage = actionLabels[actionId] || actionId;
     if (onSubmit) {
       onSubmit(userMessage);
     }
 
-    // Trigger the action for assistant response
-    if (onQuickAction) {
-      onQuickAction(actionId);
-    }
-
+    onQuickAction?.(actionId);
     textareaRef.current?.focus();
   };
 
@@ -123,6 +132,32 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuVisible]);
 
+  useEffect(() => {
+    if (!isSwapModeActive && !isLiquidityModeActive) {
+      setMenuVisible(false);
+    }
+  }, [isSwapModeActive, isLiquidityModeActive]); // SWAP FIX: collapse quick actions when exiting structured flows
+
+  const handleSwapModeExit = () => {
+    onSwapModeExit?.();
+    setMenuVisible(false);
+  };
+
+  const handleLiquidityModeExit = () => {
+    onLiquidityModeExit?.();
+    setMenuVisible(false);
+  }; // LIQUIDITY FIX: exit add-liquidity mode from badge
+
+  const handleQuickActionSelect = (actionId: string) => {
+    if (actionId === "swap") {
+      onSwapModeRequest?.(); // SWAP FIX: Button trigger condition
+    }
+    if (actionId === "add-liquidity") {
+      onLiquidityModeRequest?.(); // LIQUIDITY FIX: Button trigger condition
+    }
+    triggerQuickAction(actionId);
+  };
+
   return (
     <div className="relative w-full">
       <div className="relative flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
@@ -142,6 +177,36 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
           <Plus className="h-4 w-4" />
         </Button>
 
+        {isSwapModeActive && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="group h-8 rounded-full px-4 text-sm font-medium"
+            onClick={handleSwapModeExit}
+            aria-pressed={isSwapModeActive}
+            data-testid="button-swap-mode-active"
+          >
+            <span className="group-hover:hidden">Swap</span>
+            <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
+          </Button>
+        )}
+
+        {isLiquidityModeActive && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="group h-8 rounded-full px-4 text-sm font-medium"
+            onClick={handleLiquidityModeExit}
+            aria-pressed={isLiquidityModeActive}
+            data-testid="button-liquidity-mode-active"
+          >
+            <span className="group-hover:hidden">Add Liquidity</span>
+            <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
+          </Button>
+        )}
+
         {/* Dropdown Menu - absolutely positioned & layout-locked */}
         <div
           ref={menuRef}
@@ -157,7 +222,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
         >
           <div className="p-1">
             <button
-              onClick={() => handleQuickAction('swap')}
+              onClick={() => handleQuickActionSelect('swap')}
               type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-swap"
@@ -167,7 +232,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
               Swap
             </button>
             <button
-              onClick={() => handleQuickAction('add-liquidity')}
+              onClick={() => handleQuickActionSelect('add-liquidity')}
               type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-add-liquidity"
@@ -177,7 +242,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
               Add Liquidity
             </button>
             <button
-              onClick={() => handleQuickAction('analyze')}
+              onClick={() => handleQuickActionSelect('analyze')}
               type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-analyze"
@@ -187,7 +252,7 @@ export default function ChatInput({ onSubmit, onQuickAction, isAgentMode, onExit
               Analyze
             </button>
             <button
-              onClick={() => handleQuickAction('explore-agents')}
+              onClick={() => handleQuickActionSelect('explore-agents')}
               type="button"
               className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               data-testid="dropdown-item-explore-agents"

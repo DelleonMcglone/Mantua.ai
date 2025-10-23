@@ -1,12 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ArrowUpDown, Settings, ChevronUp, TrendingUp, Zap, CheckCircle, Info } from "lucide-react";
+import { ChevronDown, ArrowUpDown, Settings, ChevronUp, TrendingUp, Zap, CheckCircle } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
+import { useActiveAccount } from "thirdweb/react";
+import { useBalance } from "wagmi";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Import token logos
 import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
@@ -17,16 +26,17 @@ import eurcLogo from '@assets/Frame 352 (3)_1758910679715.png';
 interface Token {
   symbol: string;
   name: string;
-  balance?: string;
-  logo: string;
+  logo?: string;
 }
 
-const TOKENS: Token[] = [
-  { symbol: 'ETH', name: 'Ethereum', balance: '0.034', logo: ethereumLogo },
-  { symbol: 'USDC', name: 'USD Coin', balance: '0.034', logo: usdcLogo },
-  { symbol: 'cbBTC', name: 'Coinbase Bitcoin', balance: '0.0', logo: cbbtcLogo },
-  { symbol: 'EURC', name: 'Euro Coin', balance: '0.0', logo: eurcLogo }
-];
+const BASE_TOKENS: Token[] = [
+  { symbol: 'ETH', name: 'Ethereum', logo: ethereumLogo },
+  { symbol: 'USDC', name: 'USD Coin', logo: usdcLogo },
+  { symbol: 'cbBTC', name: 'Coinbase Bitcoin', logo: cbbtcLogo },
+  { symbol: 'EURC', name: 'Euro Coin', logo: eurcLogo },
+  { symbol: 'WETH', name: 'Wrapped Ether' },
+  { symbol: 'DAI', name: 'Dai Stablecoin' },
+]; // SWAP FIX: Prefill & Wallet Balance
 
 const HOOK_OPTIONS = [
   { value: 'no-hook', label: 'No Hook' },
@@ -41,21 +51,38 @@ interface SwapProps {
   initialBuyToken?: string;
   initialSelectedHook?: string;
   initialShowCustomHook?: boolean;
+  initialHookWarning?: string;
+  shouldOpenCustomHookModal?: boolean;
   inlineMode?: boolean;
+  onSwapSuccess?: (payload: SwapResultPayload) => void;
+  onSwapDismiss?: () => void;
 }
 
-export default function Swap({ 
-  initialSellToken = 'ETH',
-  initialBuyToken = 'USDC', 
-  initialSelectedHook = 'no-hook',
+interface SwapResultPayload {
+  sellToken: string;
+  buyToken: string;
+  sellAmount: string;
+  buyAmount: string;
+  transactionHash: string;
+}
+
+export default function Swap({
+  initialSellToken,
+  initialBuyToken,
+  initialSelectedHook = "no-hook",
   initialShowCustomHook = false,
-  inlineMode = false
+  initialHookWarning,
+  shouldOpenCustomHookModal = false,
+  inlineMode = false,
+  onSwapSuccess,
+  onSwapDismiss,
 }: SwapProps = {}) {
-  const [sellToken, setSellToken] = useState(initialSellToken || 'ETH');
-  const [buyToken, setBuyToken] = useState(initialBuyToken || 'USDC');
-  const [sellAmount, setSellAmount] = useState('0.5');
-  const [buyAmount, setBuyAmount] = useState('$208.90');
+  const [sellToken, setSellToken] = useState(initialSellToken ?? "");
+  const [buyToken, setBuyToken] = useState(initialBuyToken ?? "");
+  const [sellAmount, setSellAmount] = useState("");
+  const [buyAmount, setBuyAmount] = useState("");
   const [selectedHook, setSelectedHook] = useState(initialSelectedHook || 'no-hook');
+  const [tokenOptions, setTokenOptions] = useState<Token[]>(BASE_TOKENS); // SWAP FIX: Prefill & Wallet Balance
   const [customHookAddress, setCustomHookAddress] = useState('');
   const [isValidatingHook, setIsValidatingHook] = useState(false);
   const [isHookValidated, setIsHookValidated] = useState(false);
@@ -66,34 +93,205 @@ export default function Swap({
   
   // Show custom hook section if initially requested
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
+  const [hookWarningMessage, setHookWarningMessage] = useState(initialHookWarning ?? ""); // SWAP: display unresolved hook guidance
+  const [isCustomHookModalOpen, setIsCustomHookModalOpen] = useState(shouldOpenCustomHookModal); // SWAP: custom hook loader modal state
+  const customModalConfirmedRef = useRef(false); // SWAP: track modal confirmation intent
   
   // Activity tracking
   const { addUserActivity } = useActivity();
+  const explorerBaseUrl =
+    import.meta.env.MODE === "production"
+      ? "https://basescan.org/tx/"
+      : "https://sepolia-explorer.base.org/tx/"; // SWAP: align explorer links with environment
+  const account = useActiveAccount();
+  const nativeBalanceQuery = useBalance({
+    address: account?.address as `0x${string}` | undefined,
+    query: {
+      enabled: Boolean(account?.address),
+      refetchInterval: 15000,
+    },
+  }); // SWAP FIX: Prefill & Wallet Balance
+
+  const formatBalanceValue = useCallback((rawValue?: string) => {
+    if (!rawValue) return "0.0";
+    const parsed = Number(rawValue);
+    if (Number.isNaN(parsed)) {
+      return "0.0";
+    }
+    const precision = parsed >= 1 ? 2 : 4;
+    return parsed.toFixed(precision).replace(/\.?0+$/, "");
+  }, []); // SWAP FIX: Prefill & Wallet Balance
+
+  const nativeTokenSymbol = useMemo(
+    () => nativeBalanceQuery.data?.symbol?.toUpperCase() ?? null,
+    [nativeBalanceQuery.data?.symbol],
+  ); // SWAP FIX: Prefill & Wallet Balance
+
+  const getDisplayBalance = useCallback(
+    (symbol: string): string => {
+      if (!account?.address) return "0.0";
+      const normalizedSymbol = symbol.toUpperCase();
+      if (nativeTokenSymbol && normalizedSymbol === nativeTokenSymbol) {
+        return formatBalanceValue(nativeBalanceQuery.data?.formatted);
+      }
+      return "0.0";
+    },
+    [account?.address, formatBalanceValue, nativeBalanceQuery.data?.formatted, nativeTokenSymbol],
+  ); // SWAP FIX: Prefill & Wallet Balance
+
+  const sellTokenBalance = useMemo(
+    () => getDisplayBalance(sellToken),
+    [getDisplayBalance, sellToken],
+  ); // SWAP FIX: Prefill & Wallet Balance
+
+  const buyTokenBalance = useMemo(
+    () => getDisplayBalance(buyToken),
+    [getDisplayBalance, buyToken],
+  ); // SWAP FIX: Prefill & Wallet Balance
+
+  const swapTitle =
+    sellToken && buyToken ? `Swap ${sellToken} for ${buyToken}` : "Set up your swap"; // SWAP FIX: clarify empty state
+  const sellBalanceLabel = sellToken ? `${sellTokenBalance} ${sellToken}` : "—"; // SWAP FIX: sanitize balance display
+  const buyBalanceLabel = buyToken ? `${buyTokenBalance} ${buyToken}` : "—"; // SWAP FIX: sanitize balance display
+  const canUseSellMax =
+    Boolean(sellToken) && !Number.isNaN(Number(sellTokenBalance)) && Number(sellTokenBalance) > 0; // SWAP FIX: gate max control
+  const shouldShowDetails = Boolean(sellToken && buyToken); // SWAP FIX: defer details until tokens selected
+
+  const ensureTokenOption = useCallback((symbol?: string) => {
+    if (!symbol) return;
+    const normalized = symbol.toUpperCase();
+    setTokenOptions((current) => {
+      if (current.some((token) => token.symbol === normalized)) {
+        return current;
+      }
+
+      return [
+        ...current,
+        {
+          symbol: normalized,
+          name: normalized,
+        },
+      ];
+    });
+  }, []); // SWAP FIX: Prefill & Wallet Balance
+
+  const getTokenMeta = useCallback(
+    (symbol: string): Token => {
+      const normalized = symbol.toUpperCase();
+      return (
+        tokenOptions.find((token) => token.symbol === normalized) ?? {
+          symbol: normalized,
+          name: normalized,
+        }
+      );
+    },
+    [tokenOptions],
+  ); // SWAP FIX: Prefill & Wallet Balance
+
+  const renderTokenBadge = (token: Token) => (
+    <div className="flex items-center space-x-2">
+      {token.logo ? (
+        <img src={token.logo} alt={token.symbol} className="w-5 h-5 rounded-full" />
+      ) : (
+        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground">
+          {token.symbol?.slice(0, 3) ?? "?"}
+        </div>
+      )}
+      <span>{token.symbol}</span>
+    </div>
+  ); // SWAP FIX: Prefill & Wallet Balance
 
   // Update state when props change (for inline mode updates)
   useEffect(() => {
-    if (initialSellToken) setSellToken(initialSellToken);
-    if (initialBuyToken) setBuyToken(initialBuyToken);
-    if (initialSelectedHook) setSelectedHook(initialSelectedHook);
-    setShowCustomHook(initialShowCustomHook || initialSelectedHook === 'custom');
-  }, [initialSellToken, initialBuyToken, initialSelectedHook, initialShowCustomHook]);
+    ensureTokenOption(initialSellToken);
+    ensureTokenOption(initialBuyToken);
+
+    setSellToken(initialSellToken ?? "");
+    setBuyToken(initialBuyToken ?? "");
+    setSelectedHook(initialSelectedHook || "no-hook");
+
+    const shouldShowCustom = initialShowCustomHook || initialSelectedHook === "custom";
+    setShowCustomHook(shouldShowCustom);
+    if (!shouldShowCustom) {
+      setCustomHookAddress("");
+      setIsHookValidated(false);
+    }
+  }, [ensureTokenOption, initialSellToken, initialBuyToken, initialSelectedHook, initialShowCustomHook]);
+
+  useEffect(() => {
+    setHookWarningMessage(initialHookWarning ?? "");
+  }, [initialHookWarning]); // SWAP: surface latest hook status
+
+  useEffect(() => {
+    if (shouldOpenCustomHookModal) {
+      customModalConfirmedRef.current = false;
+      setSelectedHook("custom");
+      setShowCustomHook(true);
+      setIsCustomHookModalOpen(true);
+    }
+  }, [shouldOpenCustomHookModal]); // SWAP: trigger custom hook modal via intents
+
+  useEffect(() => {
+    return () => {
+      onSwapDismiss?.();
+    };
+  }, [onSwapDismiss]); // SWAP: notify parent when swap component unmounts
 
   const handleMaxClick = () => {
-    const token = TOKENS.find(t => t.symbol === sellToken);
-    if (token?.balance) {
-      setSellAmount(token.balance);
-    }
-  };
+    if (!sellToken) return; // SWAP FIX: guard empty-state max
+    const numericBalance = Number(sellTokenBalance);
+    if (!sellTokenBalance || Number.isNaN(numericBalance) || numericBalance <= 0) return;
+    setSellAmount(sellTokenBalance);
+  }; // SWAP FIX: Prefill & Wallet Balance
 
   const handleSwapTokens = () => {
-    const tempToken = sellToken;
+    const previousSellToken = sellToken;
     setSellToken(buyToken);
-    setBuyToken(tempToken);
-    
-    const tempAmount = sellAmount;
-    setSellAmount(buyAmount.replace('$', ''));
-    setBuyAmount(`$${tempAmount}`);
-  };
+    setBuyToken(previousSellToken);
+    ensureTokenOption(buyToken);
+    ensureTokenOption(previousSellToken);
+
+    const previousSellAmount = sellAmount;
+    setSellAmount(buyAmount);
+    setBuyAmount(previousSellAmount);
+  }; // SWAP FIX: Prefill & Wallet Balance
+
+  const handleHookChange = (hookKey: string) => {
+    setSelectedHook(hookKey);
+    setHookWarningMessage("");
+
+    if (hookKey === "custom") {
+      setShowCustomHook(true);
+      return;
+    }
+
+    setShowCustomHook(false);
+    setCustomHookAddress("");
+    setIsHookValidated(false);
+  }; // SWAP: normalize hook selection updates
+
+  const handleCustomModalOpenChange = (open: boolean) => {
+    if (!open && !customModalConfirmedRef.current) {
+      handleHookChange("no-hook");
+    }
+    if (!open) {
+      customModalConfirmedRef.current = false;
+    }
+    setIsCustomHookModalOpen(open);
+  }; // SWAP: reset state if modal dismissed without confirmation
+
+  const handleCustomModalConfirm = () => {
+    customModalConfirmedRef.current = true;
+    setIsCustomHookModalOpen(false);
+    setShowCustomHook(true);
+    setHookWarningMessage("");
+  }; // SWAP: persist custom hook workflow
+
+  const handleCustomModalCancel = () => {
+    customModalConfirmedRef.current = false;
+    handleHookChange("no-hook");
+    setIsCustomHookModalOpen(false);
+  }; // SWAP: exit custom hook workflow gracefully
 
   const validateHookAddress = async () => {
     if (!customHookAddress.trim()) return;
@@ -109,6 +307,7 @@ export default function Swap({
       if (isValid) {
         setIsHookValidated(true);
         setHookError('');
+        setHookWarningMessage("");
       } else {
         setIsHookValidated(false);
         setHookError('Invalid hook address.');
@@ -121,18 +320,20 @@ export default function Swap({
     setCustomHookAddress('');
     setIsHookValidated(false);
     setHookError('');
-    setSelectedHook('no-hook');
+    setHookWarningMessage("");
+    handleHookChange('no-hook');
   };
 
   const handleSwapSubmit = async () => {
     if (transactionState !== 'idle') return;
     
     setTransactionState('swapping');
+    const mockTransactionHash = '0x1234567890abcdef...';
     
     // Simulate swap initiation
     setTimeout(() => {
       setTransactionState('processing');
-      setTransactionHash('0x1234567890abcdef...');
+      setTransactionHash(mockTransactionHash);
       
       // Simulate transaction processing
       setTimeout(() => {
@@ -147,6 +348,14 @@ export default function Swap({
           date: new Date().toISOString().split('T')[0],
           status: 'Completed'
         });
+
+        onSwapSuccess?.({
+          sellToken,
+          buyToken,
+          sellAmount,
+          buyAmount: buyAmount.replace(/^\$/, ''),
+          transactionHash: mockTransactionHash,
+        }); // SWAP: mirror confirmation into chat history
       }, 5000);
     }, 2000);
   };
@@ -159,9 +368,9 @@ export default function Swap({
   const resetSwap = () => {
     setTransactionState('idle');
     setTransactionHash('');
-    setSellAmount('0.5');
-    setBuyAmount('$208.90');
-  };
+    setSellAmount('');
+    setBuyAmount('');
+  }; // SWAP FIX: Prefill & Wallet Balance
 
   // If transaction completed, show success screen
   if (transactionState === 'completed') {
@@ -177,7 +386,7 @@ export default function Swap({
             <p className="text-sm text-muted-foreground">
               You have received {buyAmount} {buyToken}.{' '}
               <a 
-                href={`https://sepolia-explorer.base.org/tx/${transactionHash}`}
+                href={`${explorerBaseUrl}${transactionHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
@@ -202,10 +411,40 @@ export default function Swap({
   }
 
   return (
-    <div className={`${inlineMode ? 'w-full p-4 space-y-6' : 'max-w-md mx-auto p-6 space-y-6'}`}>
+    <>
+      <Dialog open={isCustomHookModalOpen} onOpenChange={handleCustomModalOpenChange}>
+        <DialogContent className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Load custom swap hook</DialogTitle>
+            {/* SWAP FIX: Custom hook modal cleanup */}
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Hook contract address</Label>
+            <Input
+              placeholder="0x..."
+              value={customHookAddress}
+              onChange={(event) => setCustomHookAddress(event.target.value)}
+              data-testid="input-modal-custom-hook"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={handleCustomModalCancel} data-testid="button-cancel-custom-hook">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCustomModalConfirm}
+              disabled={!customHookAddress.trim()}
+              data-testid="button-confirm-custom-hook"
+            >
+              Load Hook
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <div className={`${inlineMode ? 'w-full p-4 space-y-6' : 'max-w-md mx-auto p-6 space-y-6'}`}>
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-foreground mb-2" data-testid="text-swap-title">
-          Swap {sellToken} for {buyToken}
+          {swapTitle}
         </h1>
       </div>
 
@@ -216,7 +455,7 @@ export default function Swap({
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium text-muted-foreground">Sell</Label>
               <span className="text-sm text-muted-foreground">
-                Balance: {TOKENS.find(t => t.symbol === sellToken)?.symbol} {TOKENS.find(t => t.symbol === sellToken)?.balance || '0.0'}
+                Balance: {sellBalanceLabel}
               </span>
             </div>
             
@@ -230,28 +469,24 @@ export default function Swap({
                 data-testid="input-sell-amount"
               />
               
-              <Select value={sellToken} onValueChange={setSellToken}>
+              <Select
+                value={sellToken || ""}
+                onValueChange={(next) => {
+                  ensureTokenOption(next);
+                  setSellToken(next);
+                }}
+              >
                 <SelectTrigger className="w-32" data-testid="select-sell-token">
-                  <div className="flex items-center space-x-2">
-                    <img 
-                      src={TOKENS.find(t => t.symbol === sellToken)?.logo} 
-                      alt={sellToken}
-                      className="w-5 h-5 rounded-full" 
-                    />
-                    <span>{sellToken}</span>
-                  </div>
+                  {sellToken ? (
+                    renderTokenBadge(getTokenMeta(sellToken))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Select</span>
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {TOKENS.map((token) => (
+                  {tokenOptions.map((token) => (
                     <SelectItem key={token.symbol} value={token.symbol}>
-                      <div className="flex items-center space-x-2">
-                        <img 
-                          src={token.logo} 
-                          alt={token.symbol}
-                          className="w-5 h-5 rounded-full" 
-                        />
-                        <span>{token.symbol}</span>
-                      </div>
+                      {renderTokenBadge(token)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -261,15 +496,14 @@ export default function Swap({
                 variant="outline"
                 size="sm"
                 onClick={handleMaxClick}
+                disabled={!canUseSellMax}
                 data-testid="button-max"
               >
                 Max
               </Button>
             </div>
             
-            <div className="text-xs text-muted-foreground">
-              0.0567 {sellToken}
-            </div>
+            {/* SWAP FIX: Prefill & Wallet Balance - removed static sell token helper */}
           </div>
 
           {/* Swap Arrow */}
@@ -290,7 +524,7 @@ export default function Swap({
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium text-muted-foreground">Buy</Label>
               <span className="text-sm text-muted-foreground">
-                Balance: {TOKENS.find(t => t.symbol === buyToken)?.symbol} {TOKENS.find(t => t.symbol === buyToken)?.balance || '0.0'}
+                Balance: {buyBalanceLabel}
               </span>
             </div>
             
@@ -304,36 +538,28 @@ export default function Swap({
                 data-testid="input-buy-amount"
               />
               
-              <Select value={buyToken} onValueChange={setBuyToken}>
+              <Select
+                value={buyToken || ""}
+                onValueChange={(next) => {
+                  ensureTokenOption(next);
+                  setBuyToken(next);
+                }}
+              >
                 <SelectTrigger className="w-32" data-testid="select-buy-token">
-                  <div className="flex items-center space-x-2">
-                    <img 
-                      src={TOKENS.find(t => t.symbol === buyToken)?.logo} 
-                      alt={buyToken}
-                      className="w-5 h-5 rounded-full" 
-                    />
-                    <span>{buyToken}</span>
-                  </div>
+                  {buyToken ? (
+                    renderTokenBadge(getTokenMeta(buyToken))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Select</span>
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {TOKENS.map((token) => (
+                  {tokenOptions.map((token) => (
                     <SelectItem key={token.symbol} value={token.symbol}>
-                      <div className="flex items-center space-x-2">
-                        <img 
-                          src={token.logo} 
-                          alt={token.symbol}
-                          className="w-5 h-5 rounded-full" 
-                        />
-                        <span>{token.symbol}</span>
-                      </div>
+                      {renderTokenBadge(token)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="text-xs text-muted-foreground">
-              Balance: {TOKENS.find(t => t.symbol === buyToken)?.symbol} {TOKENS.find(t => t.symbol === buyToken)?.balance || '0.034'}
             </div>
           </div>
 
@@ -341,7 +567,16 @@ export default function Swap({
           <div className="space-y-3">
             <Label className="text-sm font-medium text-muted-foreground">Select a swap hook (optional)</Label>
             
-            <Select value={selectedHook} onValueChange={setSelectedHook}>
+            {hookWarningMessage && (
+              <div
+                className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                data-testid="text-hook-warning"
+              >
+                {hookWarningMessage}
+              </div>
+            )}
+
+            <Select value={selectedHook} onValueChange={handleHookChange}>
               <SelectTrigger data-testid="select-hook">
                 <SelectValue placeholder="Select a hook..." />
               </SelectTrigger>
@@ -355,7 +590,7 @@ export default function Swap({
             </Select>
 
             {/* Custom Hook Address Input */}
-            {selectedHook === 'custom' && (
+            {showCustomHook && (
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Add custom address</Label>
                 <div className="flex items-center space-x-2">
@@ -404,14 +639,7 @@ export default function Swap({
                     {hookError}
                   </div>
                 )}
-                
-                <div className="text-sm text-muted-foreground">
-                  Enter a deployed hook contract address that implements beforeSwap, afterSwap or custom logic.
-                </div>
-                
-                <a href="#" className="text-sm text-primary hover:underline">
-                  Learn more about Uniswap v4 hooks →
-                </a>
+                {/* SWAP FIX: Custom hook modal cleanup - removed helper copy */}
               </div>
             )}
 
@@ -420,52 +648,54 @@ export default function Swap({
       </Card>
 
       {/* Swap Details Panel */}
-      <Card>
-        <CardContent className="p-4">
-          <Button
-            variant="ghost"
-            onClick={() => setShowSwapDetails(!showSwapDetails)}
-            className="w-full flex items-center justify-between p-2"
-            data-testid="button-swap-details"
-          >
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">1 USDC = 0.00032 ETH</span>
-              <span className="text-xs text-muted-foreground">($1.00)</span>
-            </div>
-            {showSwapDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+      {shouldShowDetails && (
+        <Card>
+          <CardContent className="p-4">
+            <Button
+              variant="ghost"
+              onClick={() => setShowSwapDetails(!showSwapDetails)}
+              className="w-full flex items-center justify-between p-2"
+              data-testid="button-swap-details"
+            >
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">1 USDC = 0.00032 ETH</span>
+                <span className="text-xs text-muted-foreground">($1.00)</span>
+              </div>
+              {showSwapDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
 
-          {showSwapDetails && (
-            <div className="mt-4 space-y-3 border-t pt-4">
-              <div className="flex justify-between items-center" data-testid="row-price-impact">
-                <span className="text-sm text-muted-foreground">Price impact</span>
-                <span className="text-sm font-medium">~0.2%</span>
-              </div>
-              
-              <div className="flex justify-between items-center" data-testid="row-slippage">
-                <span className="text-sm text-muted-foreground">Max. slippage</span>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="secondary" className="text-xs">Auto</Badge>
-                  <span className="text-sm font-medium">5%</span>
+            {showSwapDetails && (
+              <div className="mt-4 space-y-3 border-t pt-4">
+                <div className="flex justify-between items-center" data-testid="row-price-impact">
+                  <span className="text-sm text-muted-foreground">Price impact</span>
+                  <span className="text-sm font-medium">~0.2%</span>
+                </div>
+                
+                <div className="flex justify-between items-center" data-testid="row-slippage">
+                  <span className="text-sm text-muted-foreground">Max. slippage</span>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary" className="text-xs">Auto</Badge>
+                    <span className="text-sm font-medium">5%</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center" data-testid="row-fee">
+                  <span className="text-sm text-muted-foreground">Fee (0.25%)</span>
+                  <span className="text-sm font-medium">$0.77</span>
+                </div>
+                
+                <div className="flex justify-between items-center" data-testid="row-network-cost">
+                  <div className="flex items-center space-x-1">
+                    <Zap className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Network cost</span>
+                  </div>
+                  <span className="text-sm font-medium">$22.04</span>
                 </div>
               </div>
-              
-              <div className="flex justify-between items-center" data-testid="row-fee">
-                <span className="text-sm text-muted-foreground">Fee (0.25%)</span>
-                <span className="text-sm font-medium">$0.77</span>
-              </div>
-              
-              <div className="flex justify-between items-center" data-testid="row-network-cost">
-                <div className="flex items-center space-x-1">
-                  <Zap className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Network cost</span>
-                </div>
-                <span className="text-sm font-medium">$22.04</span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Submit Button */}
       <div className="space-y-3">
@@ -512,5 +742,6 @@ export default function Swap({
         )}
       </div>
     </div>
+    </>
   );
 }

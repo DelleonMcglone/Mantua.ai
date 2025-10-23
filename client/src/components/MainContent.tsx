@@ -3,25 +3,126 @@ import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useLocation } from "wouter";
 
 type ActionId = 'swap' | 'add-liquidity' | 'explore-agents' | 'analyze';
+type HookContext = "swap" | "liquidity";
+
+interface SwapIntentState {
+  sellToken?: string;
+  buyToken?: string;
+  selectedHook?: string;
+  showCustomHook?: boolean;
+  showCustomHookModal?: boolean;
+  hookWarning?: string;
+}
+
+interface SwapSuccessPayload {
+  sellToken: string;
+  buyToken: string;
+  sellAmount: string;
+  buyAmount: string;
+  transactionHash: string;
+}
+
+interface LiquidityIntentState {
+  token1?: string;
+  token2?: string;
+  selectedHook?: string;
+  showCustomHook?: boolean;
+  hookWarning?: string;
+}
+
+interface HookResolution {
+  selectedHook?: string;
+  showCustomHook?: boolean;
+  showCustomHookModal?: boolean;
+  hookWarning?: string;
+}
+
+const HOOK_UNRECOGNIZED_MESSAGES: Record<HookContext, string> = {
+  swap: `Unrecognized Hook — You asked to swap using a hook that isn't in Mantua's supported library yet.
+You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`,
+  liquidity: `You asked to Add Liquidity using a hook that isn't in Mantua's supported library yet.
+You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`,
+}; // SWAP FIX: unify unsupported hook messaging
+
+const SUPPORTED_HOOKS = [
+  { keyword: "dynamic fee", value: "dynamic-fee" },
+  { keyword: "twamm", value: "twamm" },
+  { keyword: "mev protection", value: "mev-protection" },
+]; // SWAP FIX: Unrecognized hook handler
+
+const swapDefaults: Readonly<SwapIntentState> = {
+  sellToken: "",
+  buyToken: "",
+  selectedHook: "no-hook",
+  showCustomHook: false,
+  showCustomHookModal: false,
+}; // SWAP: baseline swap configuration
+
+const liquidityDefaults: Readonly<LiquidityIntentState> = {
+  token1: "",
+  token2: "",
+  selectedHook: "no-hook",
+  showCustomHook: false,
+}; // LIQUIDITY FIX: baseline liquidity configuration
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
   const [activeComponent, setActiveComponent] = useState<null | "swap" | "liquidity">(null);
-  const [swapProps, setSwapProps] = useState<any>(null);
-  const [liquidityProps, setLiquidityProps] = useState<any>(null);
+  const [swapProps, setSwapProps] = useState<SwapIntentState | null>(null);
+  const [liquidityProps, setLiquidityProps] = useState<LiquidityIntentState | null>(null); // LIQUIDITY FIX: track liquidity intent props
   const { currentChat, addMessage, updateAgentMode, createNewChat } = useChatContext();
   const [location] = useLocation();
   const account = useActiveAccount();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pendingChatIdRef = useRef<string | null>(null);
   const previousChatIdRef = useRef<string | null>(null);
+  const [swapIntentKey, setSwapIntentKey] = useState<number>(0); // SWAP: track swap intent resets
+  const [liquidityIntentKey, setLiquidityIntentKey] = useState<number>(0); // LIQUIDITY FIX: track liquidity intent resets
+
+  const activateSwap = useCallback(
+    (nextProps?: SwapIntentState) => {
+      const mergedProps: SwapIntentState = {
+        ...swapDefaults,
+        ...nextProps,
+      };
+      setSwapProps(mergedProps);
+      setSwapIntentKey((key) => key + 1);
+      setLiquidityProps(null); // SWAP FIX: ensure single active flow
+      setActiveComponent("swap");
+    },
+    [],
+  ); // SWAP: centralize swap activation
+
+  const exitSwapMode = useCallback(() => {
+    setActiveComponent(null);
+    setSwapProps(null);
+  }, []); // SWAP: reset swap mode when dismissed
+
+  const activateLiquidity = useCallback(
+    (nextProps?: LiquidityIntentState) => {
+      const mergedProps: LiquidityIntentState = {
+        ...liquidityDefaults,
+        ...nextProps,
+      };
+      setLiquidityProps(mergedProps);
+      setLiquidityIntentKey((key) => key + 1);
+      setSwapProps(null); // LIQUIDITY FIX: clear swap state when liquidity is active
+      setActiveComponent("liquidity");
+    },
+    [],
+  ); // LIQUIDITY FIX: centralize liquidity activation
+
+  const exitLiquidityMode = useCallback(() => {
+    setActiveComponent(null);
+    setLiquidityProps(null);
+  }, []); // LIQUIDITY FIX: reset liquidity mode when dismissed
 
   const isWalletConnected = Boolean(account);
 
@@ -30,6 +131,8 @@ export default function MainContent() {
   const messageCount = chatMessages.length;
   const hasPrompted = isWalletConnected && messageCount > 0;
   const isAgentMode = Boolean(currentChat?.isAgentMode);
+  const isSwapModeActive = activeComponent === "swap"; // SWAP: synchronize swap mode state
+  const isLiquidityModeActive = activeComponent === "liquidity"; // LIQUIDITY FIX: synchronize add-liquidity mode
 
   // Debug logging
   useEffect(() => {
@@ -140,20 +243,12 @@ export default function MainContent() {
     
     // Handle component activation for swap
     if (actionId === 'swap') {
-      // Always set default props for button-triggered swap
-      setSwapProps({ sellToken: '', buyToken: '', showCustomHook: false });
-      if (activeComponent !== 'swap') {
-        setActiveComponent('swap');
-      }
+      activateSwap(); // SWAP FIX: normalize swap activation path
     }
     
     // Handle component activation for add-liquidity
     if (actionId === 'add-liquidity') {
-      // Always set default props for button-triggered liquidity
-      setLiquidityProps({ token1: '', token2: '', showCustomHook: false });
-      if (activeComponent !== 'liquidity') {
-        setActiveComponent('liquidity');
-      }
+      activateLiquidity(); // LIQUIDITY FIX: normalize liquidity activation path
     }
   };
 
@@ -229,58 +324,164 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     updateAgentMode(false, activeChatId);
   };
 
-  // Intent parsing for swap commands
-  const parseSwapIntent = (message: string) => {
-    const lowerMessage = message.toLowerCase().trim();
-    
-    // Basic "swap" command
-    if (lowerMessage === 'swap') {
-      return { type: 'swap', sellToken: '', buyToken: '', showCustomHook: false };
-    }
-    
-    // "Swap X for Y" pattern
-    const swapForPattern = /swap\s+(\w+)\s+for\s+(\w+)/i;
-    const swapForMatch = message.match(swapForPattern);
-    if (swapForMatch) {
-      const [, sellToken, buyToken] = swapForMatch;
-      const hasCustomHook = lowerMessage.includes('custom hook') || lowerMessage.includes('my custom hook');
+  // SWAP FIX: derive hook metadata from free-form phrases (shared with liquidity flow)
+  const resolveHookDetails = (phrase: string, context: HookContext): HookResolution => {
+    const normalized = phrase.toLowerCase();
+    const unsupportedMessage = HOOK_UNRECOGNIZED_MESSAGES[context];
+
+    if (normalized.includes("hook not in library")) {
       return {
-        type: 'swap',
-        sellToken: sellToken.toUpperCase(),
-        buyToken: buyToken.toUpperCase(),
-        selectedHook: hasCustomHook ? 'custom' : '',
-        showCustomHook: hasCustomHook
+        selectedHook: "no-hook",
+        showCustomHook: false,
+        hookWarning: unsupportedMessage,
       };
     }
-    
-    return null;
+
+    if (normalized.includes("my custom hook")) {
+      return {
+        selectedHook: "custom",
+        showCustomHook: true,
+        showCustomHookModal: context === "swap",
+      };
+    }
+
+    if (normalized.includes("custom hook")) {
+      return {
+        selectedHook: "custom",
+        showCustomHook: true,
+      };
+    }
+
+    const supportedHook = SUPPORTED_HOOKS.find(({ keyword }) => normalized.includes(keyword)); // SWAP FIX: Unrecognized hook handler
+    if (supportedHook) {
+      return { selectedHook: supportedHook.value };
+    }
+
+    const genericHookMatch =
+      normalized.match(/(?:swap|add\s+liquidity|provide\s+liquidity)(?:\s+[a-z0-9\/]+)*\s+with\s+([a-z0-9\s-]+)/i) ??
+      normalized.match(/with\s+([a-z0-9\s-]+)/i);
+    // SWAP FIX: Unrecognized hook handler
+
+    if (genericHookMatch) {
+      const requestedHookRaw = genericHookMatch[1].trim();
+      if (requestedHookRaw) {
+        const cleanedRequested = requestedHookRaw.replace(/hook$/, "").trim();
+        const isSupported = SUPPORTED_HOOKS.some(({ keyword }) =>
+          cleanedRequested.includes(keyword),
+        );
+        const isCustomRequest = cleanedRequested.includes("custom");
+        if (!isSupported && !isCustomRequest) {
+          return {
+            selectedHook: "no-hook",
+            showCustomHook: false,
+            hookWarning: unsupportedMessage,
+          }; // SWAP FIX: Unrecognized hook handler
+        }
+      }
+    }
+
+    const contextPrefixes =
+      context === "swap"
+        ? ["swap"]
+        : ["add liquidity", "provide liquidity"];
+
+    if (!contextPrefixes.some((prefix) => normalized.startsWith(prefix))) {
+      const fragment = normalized.trim();
+      if (fragment) {
+        const cleanedFragment = fragment.replace(/hook$/, "").trim();
+        const isSupportedFragment = SUPPORTED_HOOKS.some(({ keyword }) =>
+          cleanedFragment.includes(keyword),
+        );
+        const isCustomFragment = cleanedFragment.includes("custom");
+        if (!isSupportedFragment && !isCustomFragment) {
+          return {
+            selectedHook: "no-hook",
+            showCustomHook: false,
+            hookWarning: unsupportedMessage,
+          }; // SWAP FIX: Unrecognized hook handler
+        }
+      }
+    }
+
+    return {};
   };
 
-  // Intent parsing for liquidity commands
-  const parseLiquidityIntent = (message: string) => {
+  // Intent parsing for swap commands
+  const parseSwapIntent = (message: string): SwapIntentState | null => {
     const lowerMessage = message.toLowerCase().trim();
-    
-    // Basic "add liquidity" command
-    if (lowerMessage === 'add liquidity' || lowerMessage === 'provide liquidity') {
-      return { type: 'liquidity', token1: '', token2: '', showCustomHook: false };
+    if (!lowerMessage.startsWith("swap")) {
+      return null;
     }
-    
-    // "Add Liquidity X/Y" or "Add Liquidity ETH/USDC" pattern
-    const liquidityPattern = /(?:add|provide)\s+liquidity\s+(\w+)\/(\w+)/i;
-    const liquidityMatch = message.match(liquidityPattern);
-    if (liquidityMatch) {
-      const [, token1, token2] = liquidityMatch;
-      const hasCustomHook = lowerMessage.includes('custom hook') || lowerMessage.includes('my custom hook');
-      return {
-        type: 'liquidity',
-        token1: token1.toUpperCase(),
-        token2: token2.toUpperCase(),
-        selectedHook: hasCustomHook ? 'custom' : '',
-        showCustomHook: hasCustomHook
-      };
+
+    const baseDetails = resolveHookDetails(lowerMessage, "swap");
+    let sellToken = swapDefaults.sellToken;
+    let buyToken = swapDefaults.buyToken;
+
+    const swapWithHookPattern = /swap\s+([a-zA-Z0-9]+)\s+for\s+([a-zA-Z0-9]+)\s+with\s+(.+)/i;
+    const swapTokensPattern = /swap\s+([a-zA-Z0-9]+)\s+for\s+([a-zA-Z0-9]+)/i;
+
+    const withHookMatch = message.match(swapWithHookPattern);
+    if (withHookMatch) {
+      sellToken = withHookMatch[1].toUpperCase();
+      buyToken = withHookMatch[2].toUpperCase();
+      const explicitHookPhrase = withHookMatch[3];
+      Object.assign(baseDetails, resolveHookDetails(explicitHookPhrase, "swap"));
+    } else {
+      const tokensOnlyMatch = message.match(swapTokensPattern);
+      if (tokensOnlyMatch) {
+        sellToken = tokensOnlyMatch[1].toUpperCase();
+        buyToken = tokensOnlyMatch[2].toUpperCase();
+      }
     }
-    
-    return null;
+
+    return {
+      sellToken,
+      buyToken,
+      selectedHook: baseDetails.selectedHook ?? swapDefaults.selectedHook,
+      showCustomHook: baseDetails.showCustomHook ?? swapDefaults.showCustomHook,
+      showCustomHookModal: baseDetails.showCustomHookModal ?? false,
+      hookWarning: baseDetails.hookWarning,
+    };
+  };
+
+  // LIQUIDITY FIX: intent parsing for add liquidity commands
+  const parseLiquidityIntent = (message: string): LiquidityIntentState | null => {
+    const lowerMessage = message.toLowerCase().trim();
+    const startsWithAdd = lowerMessage.startsWith("add liquidity");
+    const startsWithProvide = lowerMessage.startsWith("provide liquidity");
+
+    if (!startsWithAdd && !startsWithProvide) {
+      return null;
+    }
+
+    const baseDetails = resolveHookDetails(lowerMessage, "liquidity");
+    let token1 = liquidityDefaults.token1;
+    let token2 = liquidityDefaults.token2;
+
+    const liquidityWithHookPattern = /(?:add|provide)\s+liquidity(?:\s+to)?\s+([a-zA-Z0-9]+)\/([a-zA-Z0-9]+)\s+with\s+(.+)/i;
+    const liquidityTokensPattern = /(?:add|provide)\s+liquidity(?:\s+to)?\s+([a-zA-Z0-9]+)\/([a-zA-Z0-9]+)/i;
+
+    const withHookMatch = message.match(liquidityWithHookPattern);
+    if (withHookMatch) {
+      token1 = withHookMatch[1].toUpperCase();
+      token2 = withHookMatch[2].toUpperCase();
+      const hookPhrase = withHookMatch[3];
+      Object.assign(baseDetails, resolveHookDetails(hookPhrase, "liquidity"));
+    } else {
+      const tokensOnlyMatch = message.match(liquidityTokensPattern);
+      if (tokensOnlyMatch) {
+        token1 = tokensOnlyMatch[1].toUpperCase();
+        token2 = tokensOnlyMatch[2].toUpperCase();
+      }
+    }
+
+    return {
+      token1,
+      token2,
+      selectedHook: baseDetails.selectedHook ?? liquidityDefaults.selectedHook,
+      showCustomHook: baseDetails.showCustomHook ?? liquidityDefaults.showCustomHook,
+      hookWarning: baseDetails.hookWarning,
+    };
   };
 
   // Handle chat input submission
@@ -321,17 +522,29 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     }
 
     if (swapIntent) {
-      setSwapProps(swapIntent);
-      if (activeComponent !== "swap") {
-        setActiveComponent("swap");
+      activateSwap(swapIntent);
+      if (swapIntent.hookWarning) {
+        addMessage(
+          {
+            content: swapIntent.hookWarning,
+            sender: "assistant",
+          },
+          chatId,
+        ); // SWAP: surface unsupported hook guidance in chat
       }
       return;
     }
 
     if (liquidityIntent) {
-      setLiquidityProps(liquidityIntent);
-      if (activeComponent !== "liquidity") {
-        setActiveComponent("liquidity");
+      activateLiquidity(liquidityIntent);
+      if (liquidityIntent.hookWarning) {
+        addMessage(
+          {
+            content: liquidityIntent.hookWarning,
+            sender: "assistant",
+          },
+          chatId,
+        ); // LIQUIDITY FIX: surface unsupported hook guidance in chat
       }
       return;
     }
@@ -346,6 +559,44 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       );
     }, 800);
   };
+
+  const ensureSwapShortcut = useCallback(() => {
+    if (isSwapModeActive) return;
+    activateSwap(); // SWAP: enable swap mode from quick shortcut
+  }, [activateSwap, isSwapModeActive]);
+
+  const ensureLiquidityShortcut = useCallback(() => {
+    if (isLiquidityModeActive) return;
+    activateLiquidity(); // LIQUIDITY FIX: enable liquidity mode from quick shortcut
+  }, [activateLiquidity, isLiquidityModeActive]);
+
+  const handleSwapSuccess = useCallback(
+    (payload: SwapSuccessPayload) => {
+      const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
+      if (!activeChatId) return;
+
+      const explorerBase =
+        import.meta.env.MODE === "production"
+          ? "https://basescan.org/tx/"
+          : "https://sepolia-explorer.base.org/tx/"; // SWAP: auto-select explorer per environment
+
+      const sanitizedBuyAmount =
+        payload.buyAmount.replace(/^\$/, "").trim() || payload.buyAmount;
+
+      const swapSummary = `Swapped ${payload.sellAmount} ${payload.sellToken} to ${payload.buyToken}.
+Transaction successful!
+You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction →](${explorerBase}${payload.transactionHash})`;
+
+      addMessage(
+        {
+          content: swapSummary,
+          sender: "assistant",
+        },
+        activeChatId,
+      ); // SWAP: persist simplified swap recap
+    },
+    [addMessage, currentChat?.id],
+  );
 
   return (
     <main className="flex-1 flex flex-col bg-background min-h-0">
@@ -378,12 +629,17 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                   <div className="flex justify-start">
                     <div className="max-w-[90%] space-y-3">
                       <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-swap-active">
-                        <SwapPage 
-                          initialSellToken={swapProps?.sellToken}
-                          initialBuyToken={swapProps?.buyToken}
-                          initialSelectedHook={swapProps?.selectedHook}
-                          initialShowCustomHook={swapProps?.showCustomHook}
+                        <SwapPage
+                          key={swapIntentKey}
+                          initialSellToken={swapProps?.sellToken ?? swapDefaults.sellToken}
+                          initialBuyToken={swapProps?.buyToken ?? swapDefaults.buyToken}
+                          initialSelectedHook={swapProps?.selectedHook ?? swapDefaults.selectedHook}
+                          initialShowCustomHook={swapProps?.showCustomHook ?? swapDefaults.showCustomHook}
+                          initialHookWarning={swapProps?.hookWarning}
+                          shouldOpenCustomHookModal={Boolean(swapProps?.showCustomHookModal)}
                           inlineMode={true}
+                          onSwapSuccess={handleSwapSuccess}
+                          onSwapDismiss={exitSwapMode}
                         />
                       </div>
                     </div>
@@ -394,11 +650,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                   <div className="flex justify-start">
                     <div className="max-w-[90%] space-y-3">
                       <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-liquidity-active">
-                        <AddLiquidityPage 
+                        <AddLiquidityPage
+                          key={liquidityIntentKey}
                           initialToken1={liquidityProps?.token1}
                           initialToken2={liquidityProps?.token2}
-                          initialSelectedHook={liquidityProps?.selectedHook}
-                          initialShowCustomHook={liquidityProps?.showCustomHook}
+                          initialSelectedHook={liquidityProps?.selectedHook ?? liquidityDefaults.selectedHook}
+                          initialShowCustomHook={liquidityProps?.showCustomHook ?? liquidityDefaults.showCustomHook}
                           inlineMode={true}
                         />
                       </div>
@@ -456,6 +713,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                         onQuickAction={handleActionClick}
                         isAgentMode={isAgentMode}
                         onExitAgent={exitAgentMode}
+                        isSwapModeActive={isSwapModeActive}
+                        isLiquidityModeActive={isLiquidityModeActive}
+                        onSwapModeRequest={ensureSwapShortcut}
+                        onSwapModeExit={exitSwapMode}
+                        onLiquidityModeRequest={ensureLiquidityShortcut}
+                        onLiquidityModeExit={exitLiquidityMode}
                       />
                     </div>
                   </>
@@ -502,6 +765,12 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
                   onQuickAction={handleActionClick}
                   isAgentMode={isAgentMode}
                   onExitAgent={exitAgentMode}
+                  isSwapModeActive={isSwapModeActive}
+                  isLiquidityModeActive={isLiquidityModeActive}
+                  onSwapModeRequest={ensureSwapShortcut}
+                  onSwapModeExit={exitSwapMode}
+                  onLiquidityModeRequest={ensureLiquidityShortcut}
+                  onLiquidityModeExit={exitLiquidityMode}
                 />
               </div>
             )}

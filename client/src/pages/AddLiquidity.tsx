@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, CheckCircle, X, AlertCircle } from "lucide-react";
+import { CheckCircle, X } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
+import { useActiveAccount } from "thirdweb/react";
+import { useBalance } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 
 import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
 import usdcLogo from '@assets/Frame 352_1758910679715.png';
@@ -16,16 +19,22 @@ import eurcLogo from '@assets/Frame 352 (3)_1758910679715.png';
 interface Token {
   symbol: string;
   name: string;
-  balance?: string;
   logo: string;
+  address?: `0x${string}`;
+  decimals?: number;
 }
 
 const TOKENS: Token[] = [
-  { symbol: 'ETH', name: 'Ethereum', balance: '0.034', logo: ethereumLogo },
-  { symbol: 'USDC', name: 'USD Coin', balance: '0.034', logo: usdcLogo },
-  { symbol: 'cbBTC', name: 'Coinbase Bitcoin', balance: '0.0', logo: cbbtcLogo },
-  { symbol: 'EURC', name: 'Euro Coin', balance: '0.0', logo: eurcLogo }
+  { symbol: "ETH", name: "Ethereum", logo: ethereumLogo },
+  { symbol: "USDC", name: "USD Coin", logo: usdcLogo, address: "0xf175520C52418DFe19C8098071a252da48Cd1C19", decimals: 6 },
+  { symbol: "cbBTC", name: "Coinbase Bitcoin", logo: cbbtcLogo },
+  { symbol: "EURC", name: "Euro Coin", logo: eurcLogo, address: "0xD9aAEc86B65D86f6A7B5A4307eA3D0eA1B3E2D51", decimals: 6 },
 ];
+
+const TOKEN_MAP = TOKENS.reduce<Record<string, Token>>((acc, token) => {
+  acc[token.symbol] = token;
+  return acc;
+}, {}); // LIQUIDITY FIX: quick lookup for token metadata
 
 const FEE_TIERS = [
   { value: '0.01', label: '0.01% - best for very stable pairs' },
@@ -52,17 +61,17 @@ interface AddLiquidityProps {
 }
 
 export default function AddLiquidity({ 
-  initialToken1 = 'ETH',
-  initialToken2 = 'USDC',
+  initialToken1,
+  initialToken2,
   initialSelectedHook = 'no-hook',
   initialShowCustomHook = false,
   poolName,
   inlineMode = false
 }: AddLiquidityProps = {}) {
-  const [token1, setToken1] = useState(initialToken1 || 'ETH');
-  const [token2, setToken2] = useState(initialToken2 || 'USDC');
-  const [amount1, setAmount1] = useState('0.5');
-  const [amount2, setAmount2] = useState('$208.90');
+  const [token1, setToken1] = useState(initialToken1 ?? '');
+  const [token2, setToken2] = useState(initialToken2 ?? '');
+  const [amount1, setAmount1] = useState('');
+  const [amount2, setAmount2] = useState('');
   const [feeTier, setFeeTier] = useState('0.30');
   const [selectedHook, setSelectedHook] = useState(initialSelectedHook || 'no-hook');
   const [customHookAddress, setCustomHookAddress] = useState('');
@@ -75,25 +84,70 @@ export default function AddLiquidity({
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
   
   const { addUserActivity } = useActivity();
+  const account = useActiveAccount();
+
+  const token1Config = useMemo(() => (token1 ? TOKEN_MAP[token1] : undefined), [token1]);
+  const token2Config = useMemo(() => (token2 ? TOKEN_MAP[token2] : undefined), [token2]);
+  const isWalletConnected = Boolean(account?.address); // LIQUIDITY FIX: respond to wallet status
+
+  const formatBalanceValue = useCallback((rawValue?: string) => {
+    if (!rawValue) return "0.0";
+    const parsed = Number(rawValue);
+    if (Number.isNaN(parsed)) return "0.0";
+    const precision = parsed >= 1 ? 2 : 4;
+    return parsed.toFixed(precision).replace(/\.?0+$/, "");
+  }, []); // LIQUIDITY FIX: normalize numeric formatting
+
+  const token1BalanceQuery = useBalance({
+    address: account?.address as `0x${string}` | undefined,
+    token: token1Config?.address as `0x${string}` | undefined,
+    chainId: baseSepolia.id,
+    query: {
+      enabled: Boolean(isWalletConnected && token1),
+      refetchInterval: 15000,
+    },
+  });
+
+  const token2BalanceQuery = useBalance({
+    address: account?.address as `0x${string}` | undefined,
+    token: token2Config?.address as `0x${string}` | undefined,
+    chainId: baseSepolia.id,
+    query: {
+      enabled: Boolean(isWalletConnected && token2),
+      refetchInterval: 15000,
+    },
+  });
+
+  const token1BalanceValue =
+    token1 && isWalletConnected
+      ? formatBalanceValue(token1BalanceQuery.data?.formatted)
+      : "0.0";
+  const token2BalanceValue =
+    token2 && isWalletConnected
+      ? formatBalanceValue(token2BalanceQuery.data?.formatted)
+      : "0.0";
+
+  const token1BalanceDisplay = token1 ? `${token1BalanceValue} ${token1}` : "—";
+  const token2BalanceDisplay = token2 ? `${token2BalanceValue} ${token2}` : "—";
+  const canMaxToken1 = Boolean(token1) && Number(token1BalanceValue) > 0;
+  const canMaxToken2 = Boolean(token2) && Number(token2BalanceValue) > 0;
 
   useEffect(() => {
-    if (initialToken1) setToken1(initialToken1);
-    if (initialToken2) setToken2(initialToken2);
-    if (initialSelectedHook) setSelectedHook(initialSelectedHook);
+    setToken1(initialToken1 ?? '');
+    setToken2(initialToken2 ?? '');
+    setSelectedHook(initialSelectedHook || 'no-hook');
     setShowCustomHook(initialShowCustomHook || initialSelectedHook === 'custom');
   }, [initialToken1, initialToken2, initialSelectedHook, initialShowCustomHook]);
 
   const handleMaxClick = (tokenNumber: 1 | 2) => {
-    const tokenSymbol = tokenNumber === 1 ? token1 : token2;
-    const token = TOKENS.find(t => t.symbol === tokenSymbol);
-    if (token?.balance) {
-      if (tokenNumber === 1) {
-        setAmount1(token.balance);
-      } else {
-        setAmount2(token.balance);
-      }
+    if (tokenNumber === 1) {
+      if (!canMaxToken1) return;
+      setAmount1(token1BalanceValue);
+      return;
     }
-  };
+    if (!canMaxToken2) return;
+    setAmount2(token2BalanceValue);
+  }; // LIQUIDITY FIX: drive max controls from live balances
 
   const validateHookAddress = async () => {
     if (!customHookAddress.trim()) return;
@@ -140,11 +194,13 @@ export default function AddLiquidity({
         const token1Data = TOKENS.find(t => t.symbol === token1);
         const token2Data = TOKENS.find(t => t.symbol === token2);
         const totalValueUSD = '$1,890.00';
+        const sanitizedAmount1 = amount1 || '0.0';
+        const sanitizedAmount2 = amount2 || '0.0';
         
         addUserActivity({
           type: 'Liquidity',
           assets: `${token1Data?.symbol} / ${token2Data?.symbol}`,
-          amounts: `${amount1} ${token1Data?.symbol} + ${amount2.replace('$', '')} ${token2Data?.symbol}`,
+          amounts: `${sanitizedAmount1} ${token1Data?.symbol} + ${sanitizedAmount2} ${token2Data?.symbol}`,
           value: totalValueUSD,
           date: new Date().toLocaleDateString(),
           status: 'Completed'
@@ -155,8 +211,8 @@ export default function AddLiquidity({
 
   const handleAddMore = () => {
     setTransactionState('idle');
-    setAmount1('0.5');
-    setAmount2('$208.90');
+    setAmount1('');
+    setAmount2('');
     setCustomHookAddress('');
     setIsHookValidated(false);
   };
@@ -171,7 +227,7 @@ export default function AddLiquidity({
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" data-testid="icon-success" />
             <h2 className="text-lg font-semibold text-foreground mb-2" data-testid="text-success-title">
-              Added {amount1} {token1Data?.symbol} and {amount2.replace('$', '')} {token2Data?.symbol} to pool
+              Added {(amount1 || '0.0')} {token1Data?.symbol} and {(amount2 || '0.0')} {token2Data?.symbol} to pool
             </h2>
             <p className="text-foreground mb-2">Liquidity added successfully!</p>
             <p className="text-sm text-muted-foreground">
@@ -207,7 +263,7 @@ export default function AddLiquidity({
     <div className="w-full space-y-6 p-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold" data-testid="text-add-liquidity-title">
-          {poolName || `Add liquidity to ${token1}/${token2} pool`}
+          {poolName || "Add liquidity to a pool."}
         </h2>
         <p className="text-sm text-muted-foreground" data-testid="text-add-liquidity-subtitle">
           Choose tokens you want to provide liquidity for. You can select tokens on all supported networks.
@@ -219,7 +275,7 @@ export default function AddLiquidity({
           <div className="flex items-center justify-between">
             <Label className="text-muted-foreground">Token 1</Label>
             <span className="text-sm text-muted-foreground">
-              Balance: {token1Data?.symbol} {token1Data?.balance}
+              Balance: {token1BalanceDisplay}
             </span>
           </div>
           
@@ -233,9 +289,9 @@ export default function AddLiquidity({
               data-testid="input-token1-amount"
             />
             
-            <Select value={token1} onValueChange={setToken1}>
+            <Select value={token1 || ""} onValueChange={setToken1}>
               <SelectTrigger className="w-32" data-testid="select-token1">
-                <SelectValue />
+                <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 {TOKENS.map((token) => (
@@ -253,6 +309,7 @@ export default function AddLiquidity({
               variant="outline" 
               size="sm"
               onClick={() => handleMaxClick(1)}
+              disabled={!canMaxToken1}
               data-testid="button-max-token1"
             >
               Max
@@ -264,7 +321,7 @@ export default function AddLiquidity({
           <div className="flex items-center justify-between">
             <Label className="text-muted-foreground">Token 2</Label>
             <span className="text-sm text-muted-foreground">
-              Balance: {token2Data?.symbol} {token2Data?.balance}
+              Balance: {token2BalanceDisplay}
             </span>
           </div>
           
@@ -278,9 +335,9 @@ export default function AddLiquidity({
               data-testid="input-token2-amount"
             />
             
-            <Select value={token2} onValueChange={setToken2}>
+            <Select value={token2 || ""} onValueChange={setToken2}>
               <SelectTrigger className="w-32" data-testid="select-token2">
-                <SelectValue />
+                <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 {TOKENS.map((token) => (
@@ -298,6 +355,7 @@ export default function AddLiquidity({
               variant="outline" 
               size="sm"
               onClick={() => handleMaxClick(2)}
+              disabled={!canMaxToken2}
               data-testid="button-max-token2"
             >
               Max
@@ -392,20 +450,6 @@ export default function AddLiquidity({
                 {hookError && (
                   <p className="text-sm text-destructive" data-testid="message-hook-error">{hookError}</p>
                 )}
-                
-                <p className="text-xs text-muted-foreground">
-                  Enter a deployed hook contact address that implements beforeSwap, afterSwap or custom logic.
-                </p>
-                
-                <a 
-                  href="https://docs.uniswap.org/contracts/v4/hooks" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                  data-testid="link-learn-hooks"
-                >
-                  Learn more about Uniswap v4 hooks →
-                </a>
               </div>
             </div>
           )}
