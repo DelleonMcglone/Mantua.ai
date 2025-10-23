@@ -86,13 +86,31 @@ export default function MainContent() {
   const [swapIntentKey, setSwapIntentKey] = useState<number>(0); // SWAP: track swap intent resets
   const [liquidityIntentKey, setLiquidityIntentKey] = useState<number>(0); // LIQUIDITY FIX: track liquidity intent resets
 
+  const mergeSwapIntent = useCallback(
+    (nextProps: SwapIntentState) => {
+      setSwapProps((current) => {
+        const base = current ?? swapDefaults;
+        return {
+          ...base,
+          sellToken: nextProps.sellToken || base.sellToken,
+          buyToken: nextProps.buyToken || base.buyToken,
+          selectedHook: nextProps.selectedHook ?? base.selectedHook,
+          showCustomHook: nextProps.showCustomHook ?? base.showCustomHook,
+          showCustomHookModal: nextProps.showCustomHookModal ?? base.showCustomHookModal ?? false,
+          hookWarning: nextProps.hookWarning,
+        };
+      });
+    },
+    [],
+  ); // SWAP REGRESSION FIX: merge swap intent without unmounting
+
   const activateSwap = useCallback(
     (nextProps?: SwapIntentState) => {
-      const mergedProps: SwapIntentState = {
+      const initialIntent: SwapIntentState = {
         ...swapDefaults,
         ...nextProps,
       };
-      setSwapProps(mergedProps);
+      setSwapProps(initialIntent);
       setSwapIntentKey((key) => key + 1);
       setLiquidityProps(null); // SWAP FIX: ensure single active flow
       setActiveComponent("swap");
@@ -105,13 +123,30 @@ export default function MainContent() {
     setSwapProps(null);
   }, []); // SWAP: reset swap mode when dismissed
 
+  const mergeLiquidityIntent = useCallback(
+    (nextProps: LiquidityIntentState) => {
+      setLiquidityProps((current) => {
+        const base = current ?? liquidityDefaults;
+        return {
+          ...base,
+          token1: nextProps.token1 || base.token1,
+          token2: nextProps.token2 || base.token2,
+          selectedHook: nextProps.selectedHook ?? base.selectedHook,
+          showCustomHook: nextProps.showCustomHook ?? base.showCustomHook,
+          hookWarning: nextProps.hookWarning,
+        };
+      });
+    },
+    [],
+  ); // LIQUIDITY REGRESSION FIX: merge liquidity intent without unmounting
+
   const activateLiquidity = useCallback(
     (nextProps?: LiquidityIntentState) => {
-      const mergedProps: LiquidityIntentState = {
+      const initialIntent: LiquidityIntentState = {
         ...liquidityDefaults,
         ...nextProps,
       };
-      setLiquidityProps(mergedProps);
+      setLiquidityProps(initialIntent);
       setLiquidityIntentKey((key) => key + 1);
       setSwapProps(null); // LIQUIDITY FIX: clear swap state when liquidity is active
       setActiveComponent("liquidity");
@@ -522,7 +557,11 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     }
 
     if (swapIntent) {
-      activateSwap(swapIntent);
+      if (activeComponent === "swap") {
+        mergeSwapIntent(swapIntent); // SWAP REGRESSION FIX: keep swap visible on hook updates
+      } else {
+        activateSwap(swapIntent);
+      }
       if (swapIntent.hookWarning) {
         addMessage(
           {
@@ -536,7 +575,11 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     }
 
     if (liquidityIntent) {
-      activateLiquidity(liquidityIntent);
+      if (activeComponent === "liquidity") {
+        mergeLiquidityIntent(liquidityIntent); // LIQUIDITY REGRESSION FIX: keep liquidity panel mounted
+      } else {
+        activateLiquidity(liquidityIntent);
+      }
       if (liquidityIntent.hookWarning) {
         addMessage(
           {

@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { CheckCircle, X } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useActiveAccount } from "thirdweb/react";
@@ -127,10 +126,15 @@ export default function AddLiquidity({
       ? formatBalanceValue(token2BalanceQuery.data?.formatted)
       : "0.0";
 
-  const token1BalanceDisplay = token1 ? `${token1BalanceValue} ${token1}` : "—";
-  const token2BalanceDisplay = token2 ? `${token2BalanceValue} ${token2}` : "—";
   const canMaxToken1 = Boolean(token1) && Number(token1BalanceValue) > 0;
   const canMaxToken2 = Boolean(token2) && Number(token2BalanceValue) > 0;
+  const hookStatusLabel = useMemo(() => {
+    if (selectedHook === "custom") {
+      return isHookValidated ? "Custom Hook" : "Custom Hook (validate address)";
+    }
+    const matched = HOOK_OPTIONS.find((option) => option.value === selectedHook);
+    return matched?.label ?? "No Hook";
+  }, [isHookValidated, selectedHook]); // LIQUIDITY REGRESSION FIX: hook status label
 
   useEffect(() => {
     setToken1(initialToken1 ?? '');
@@ -265,18 +269,17 @@ export default function AddLiquidity({
         <h2 className="text-2xl font-semibold" data-testid="text-add-liquidity-title">
           {poolName || "Add liquidity to a pool."}
         </h2>
-        <p className="text-sm text-muted-foreground" data-testid="text-add-liquidity-subtitle">
-          Choose tokens you want to provide liquidity for. You can select tokens on all supported networks.
-        </p>
+        <p className="text-sm text-muted-foreground space-y-1" data-testid="text-add-liquidity-subtitle">
+          <span className="block">Choose tokens you want to provide liquidity for.</span>
+          <span className="block">You can select tokens on all supported networks.</span>
+          <span className="block">To choose token pairs you want to provide liquidity for.</span>
+        </p> {/* LIQUIDITY REGRESSION FIX: refreshed instructional guidance */}
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-muted-foreground">Token 1</Label>
-            <span className="text-sm text-muted-foreground">
-              Balance: {token1BalanceDisplay}
-            </span>
           </div>
           
           <div className="flex gap-3">
@@ -320,9 +323,6 @@ export default function AddLiquidity({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-muted-foreground">Token 2</Label>
-            <span className="text-sm text-muted-foreground">
-              Balance: {token2BalanceDisplay}
-            </span>
           </div>
           
           <div className="flex gap-3">
@@ -504,13 +504,9 @@ export default function AddLiquidity({
           
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Hook status:</span>
-            <Badge 
-              variant={selectedHook === 'custom' ? 'default' : 'secondary'}
-              className="text-xs"
-              data-testid="badge-hook-status"
-            >
-              {selectedHook === 'custom' ? 'Custom hook swap' : 'No hook'}
-            </Badge>
+            <span className="font-medium" data-testid="text-liquidity-hook-status">
+              Active Hook: {hookStatusLabel}
+            </span>
           </div>
           
           {selectedHook === 'custom' && isHookValidated && (

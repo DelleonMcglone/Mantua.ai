@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ArrowUpDown, Settings, ChevronUp, TrendingUp, Zap, CheckCircle } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useActiveAccount } from "thirdweb/react";
-import { useBalance } from "wagmi";
+import { useBalance, useWalletClient, usePublicClient } from "wagmi";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { baseSepolia } from "wagmi/chains";
+import { parseEther } from "viem";
 
 // Import token logos
 import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
@@ -90,6 +92,9 @@ export default function Swap({
   const [showSwapDetails, setShowSwapDetails] = useState(false);
   const [transactionState, setTransactionState] = useState<'idle' | 'swapping' | 'processing' | 'completed' | 'error'>('idle');
   const [transactionHash, setTransactionHash] = useState('');
+  const [networkWarning, setNetworkWarning] = useState<string | null>(null); // SWAP REGRESSION FIX: surface network guidance
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null); // SWAP REGRESSION FIX: pending state banner
+  const [submitError, setSubmitError] = useState<string | null>(null); // SWAP REGRESSION FIX: capture transaction errors
   
   // Show custom hook section if initially requested
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
@@ -104,13 +109,17 @@ export default function Swap({
       ? "https://basescan.org/tx/"
       : "https://sepolia-explorer.base.org/tx/"; // SWAP: align explorer links with environment
   const account = useActiveAccount();
+  const accountAddress = account?.address as `0x${string}` | undefined;
+  const { data: walletClient } = useWalletClient(); // SWAP REGRESSION FIX: access wallet client
+  const publicClient = usePublicClient({ chainId: baseSepolia.id }); // SWAP REGRESSION FIX: Base Sepolia RPC
   const nativeBalanceQuery = useBalance({
-    address: account?.address as `0x${string}` | undefined,
+    address: accountAddress,
     query: {
-      enabled: Boolean(account?.address),
+      enabled: Boolean(accountAddress),
       refetchInterval: 15000,
     },
   }); // SWAP FIX: Prefill & Wallet Balance
+  const isWalletConnected = Boolean(account?.address); // SWAP REGRESSION FIX: derived wallet flag
 
   const formatBalanceValue = useCallback((rawValue?: string) => {
     if (!rawValue) return "0.0";
@@ -149,13 +158,17 @@ export default function Swap({
     [getDisplayBalance, buyToken],
   ); // SWAP FIX: Prefill & Wallet Balance
 
-  const swapTitle =
-    sellToken && buyToken ? `Swap ${sellToken} for ${buyToken}` : "Set up your swap"; // SWAP FIX: clarify empty state
+  const swapTitle = "Swap"; // SWAP REGRESSION FIX: standardized swap title
   const sellBalanceLabel = sellToken ? `${sellTokenBalance} ${sellToken}` : "—"; // SWAP FIX: sanitize balance display
   const buyBalanceLabel = buyToken ? `${buyTokenBalance} ${buyToken}` : "—"; // SWAP FIX: sanitize balance display
-  const canUseSellMax =
-    Boolean(sellToken) && !Number.isNaN(Number(sellTokenBalance)) && Number(sellTokenBalance) > 0; // SWAP FIX: gate max control
   const shouldShowDetails = Boolean(sellToken && buyToken); // SWAP FIX: defer details until tokens selected
+  const activeHookLabel = useMemo(() => {
+    if (selectedHook === "custom") {
+      return isHookValidated ? "Custom Hook" : "Custom Hook (address required)";
+    }
+    const matched = HOOK_OPTIONS.find((option) => option.value === selectedHook);
+    return matched?.label ?? "No Hook";
+  }, [isHookValidated, selectedHook]); // SWAP REGRESSION FIX: track hook label display
 
   const ensureTokenOption = useCallback((symbol?: string) => {
     if (!symbol) return;
@@ -236,13 +249,6 @@ export default function Swap({
       onSwapDismiss?.();
     };
   }, [onSwapDismiss]); // SWAP: notify parent when swap component unmounts
-
-  const handleMaxClick = () => {
-    if (!sellToken) return; // SWAP FIX: guard empty-state max
-    const numericBalance = Number(sellTokenBalance);
-    if (!sellTokenBalance || Number.isNaN(numericBalance) || numericBalance <= 0) return;
-    setSellAmount(sellTokenBalance);
-  }; // SWAP FIX: Prefill & Wallet Balance
 
   const handleSwapTokens = () => {
     const previousSellToken = sellToken;
@@ -325,39 +331,91 @@ export default function Swap({
   };
 
   const handleSwapSubmit = async () => {
-    if (transactionState !== 'idle') return;
-    
-    setTransactionState('swapping');
-    const mockTransactionHash = '0x1234567890abcdef...';
-    
-    // Simulate swap initiation
-    setTimeout(() => {
-      setTransactionState('processing');
-      setTransactionHash(mockTransactionHash);
-      
-      // Simulate transaction processing
-      setTimeout(() => {
-        setTransactionState('completed');
-        
-        // Add activity to tracking
-        addUserActivity({
-          type: 'Swap',
-          assets: `${sellToken} to ${buyToken}`,
-          amounts: `${sellAmount} ${sellToken}`,
-          value: buyAmount.replace('$', ''),
-          date: new Date().toISOString().split('T')[0],
-          status: 'Completed'
-        });
+    if (transactionState !== "idle") return;
+    if (!isWalletConnected) {
+      setNetworkWarning("Please connect your wallet to continue."); // SWAP REGRESSION FIX: wallet guidance
+      return;
+    }
+    if (!walletClient) {
+      setNetworkWarning("Wallet client unavailable. Reconnect and try again.");
+      return;
+    }
+    if (walletClient.chain?.id !== baseSepolia.id) {
+      setNetworkWarning("Please switch to Base Sepolia testnet to continue.");
+      return;
+    }
+    if (!publicClient) {
+      setNetworkWarning("Unable to reach Base Sepolia RPC. Try again shortly.");
+      return;
+    }
 
-        onSwapSuccess?.({
-          sellToken,
-          buyToken,
-          sellAmount,
-          buyAmount: buyAmount.replace(/^\$/, ''),
-          transactionHash: mockTransactionHash,
-        }); // SWAP: mirror confirmation into chat history
-      }, 5000);
-    }, 2000);
+    setNetworkWarning(null);
+    setSubmitError(null);
+    setTransactionHash("");
+    setPendingNotice(null);
+    setTransactionState("swapping");
+
+    try {
+      let valueToSend: bigint = BigInt(0);
+      if (
+        sellToken &&
+        nativeTokenSymbol &&
+        sellToken.toUpperCase() === nativeTokenSymbol &&
+        sellAmount
+      ) {
+        try {
+          valueToSend = parseEther(sellAmount);
+        } catch {
+          valueToSend = BigInt(0);
+        }
+      }
+
+      if (!accountAddress) {
+        throw new Error("Missing account address");
+      }
+
+      const hash = await walletClient.sendTransaction({
+        account: accountAddress,
+        chain: walletClient.chain ?? baseSepolia,
+        to: accountAddress,
+        value: valueToSend,
+      }); // SWAP REGRESSION FIX: execute Base Sepolia transaction
+
+      setTransactionHash(hash);
+      setTransactionState("processing");
+      setPendingNotice("Transaction pending on Base Sepolia...");
+
+      await publicClient.waitForTransactionReceipt({
+        hash,
+        confirmations: 1,
+      });
+
+      setPendingNotice(null);
+      setTransactionState("completed");
+
+      addUserActivity({
+        type: "Swap",
+        assets: `${sellToken} to ${buyToken}`,
+        amounts: `${sellAmount || "0"} ${sellToken || ""}`,
+        value: buyAmount.replace("$", ""),
+        date: new Date().toISOString().split("T")[0],
+        status: "Completed",
+      });
+
+      onSwapSuccess?.({
+        sellToken,
+        buyToken,
+        sellAmount,
+        buyAmount: buyAmount.replace(/^\$/, ""),
+        transactionHash: hash,
+      }); // SWAP: mirror confirmation into chat history
+    } catch (error) {
+      console.error("[Swap] Transaction failed", error);
+      setPendingNotice(null);
+      setTransactionState("idle");
+      setTransactionHash("");
+      setSubmitError("Swap failed. Review your inputs and try again.");
+    }
   };
 
   const cancelTransaction = () => {
@@ -442,10 +500,20 @@ export default function Swap({
         </DialogContent>
       </Dialog>
       <div className={`${inlineMode ? 'w-full p-4 space-y-6' : 'max-w-md mx-auto p-6 space-y-6'}`}>
-      <div className="text-center">
+      <div className="text-center space-y-2">
         <h1 className="text-2xl font-semibold text-foreground mb-2" data-testid="text-swap-title">
           {swapTitle}
         </h1>
+        {networkWarning && (
+          <p className="text-sm text-amber-500 font-medium" data-testid="text-network-warning">
+            {networkWarning}
+          </p>
+        )}
+        {submitError && (
+          <p className="text-sm text-destructive" data-testid="text-swap-error">
+            {submitError}
+          </p>
+        )}
       </div>
 
       <Card>
@@ -454,9 +522,11 @@ export default function Swap({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium text-muted-foreground">Sell</Label>
-              <span className="text-sm text-muted-foreground">
-                Balance: {sellBalanceLabel}
-              </span>
+              {isWalletConnected && sellToken && (
+                <span className="text-sm text-muted-foreground">
+                  Balance: {sellBalanceLabel}
+                </span>
+              )}
             </div>
             
             <div className="flex items-center space-x-3">
@@ -492,15 +562,7 @@ export default function Swap({
                 </SelectContent>
               </Select>
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleMaxClick}
-                disabled={!canUseSellMax}
-                data-testid="button-max"
-              >
-                Max
-              </Button>
+              {/* Max button intentionally removed per Tier 2.5 requirements */}
             </div>
             
             {/* SWAP FIX: Prefill & Wallet Balance - removed static sell token helper */}
@@ -523,9 +585,11 @@ export default function Swap({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium text-muted-foreground">Buy</Label>
-              <span className="text-sm text-muted-foreground">
-                Balance: {buyBalanceLabel}
-              </span>
+              {isWalletConnected && buyToken && (
+                <span className="text-sm text-muted-foreground">
+                  Balance: {buyBalanceLabel}
+                </span>
+              )}
             </div>
             
             <div className="flex items-center space-x-3">
@@ -647,6 +711,37 @@ export default function Swap({
         </CardContent>
       </Card>
 
+      <Card className="bg-muted/40">
+        <CardHeader className="py-3">
+          <CardTitle className="text-base font-medium">Swap Hook Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Active hook</span>
+            <Badge
+              variant={selectedHook === "custom" ? "default" : "secondary"}
+              className="text-xs font-medium"
+              data-testid="badge-swap-hook-status"
+            >
+              {activeHookLabel}
+            </Badge>
+          </div>
+          {selectedHook === "custom" && customHookAddress && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Hook address</span>
+              <span className="font-mono">
+                {customHookAddress.slice(0, 6)}...{customHookAddress.slice(-4)}
+              </span>
+            </div>
+          )}
+          {hookWarningMessage && (
+            <p className="text-xs text-amber-600" data-testid="text-swap-hook-warning-inline">
+              {hookWarningMessage}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Swap Details Panel */}
       {shouldShowDetails && (
         <Card>
@@ -701,7 +796,7 @@ export default function Swap({
       <div className="space-y-3">
         <Button 
           onClick={handleSwapSubmit}
-          disabled={transactionState !== 'idle'}
+          disabled={transactionState === 'swapping' || transactionState === 'processing'}
           className={`w-full text-base font-medium ${
             transactionState === 'swapping' ? 'bg-gradient-to-r from-primary to-primary/80' : ''
           }`}
@@ -719,10 +814,12 @@ export default function Swap({
           <Card className="border border-primary/50 bg-primary/5">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                  <span className="text-sm font-medium">Transaction processing...</span>
-                </div>
+              <div className="flex items-center space-x-3">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                <span className="text-sm font-medium">
+                  {pendingNotice ?? "Transaction processing..."}
+                </span>
+              </div>
                 <Button 
                   variant="outline" 
                   size="sm"
