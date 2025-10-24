@@ -1,19 +1,27 @@
 import { nanoid } from 'nanoid';
+import { type AnalysisResponsePayload } from "@/types/analysis";
+
+type ChatComponent =
+  | {
+      type: "swap";
+      props?: {
+        sellToken?: string;
+        buyToken?: string;
+        selectedHook?: string;
+        showCustomHook?: boolean;
+      };
+    }
+  | {
+      type: "analysis";
+      props: AnalysisResponsePayload;
+    };
 
 export interface ChatMessage {
   id: string;
   content: string;
   sender: "user" | "assistant";
   timestamp: Date;
-  component?: {
-    type: "swap";
-    props?: {
-      sellToken?: string;
-      buyToken?: string;
-      selectedHook?: string;
-      showCustomHook?: boolean;
-    };
-  };
+  component?: ChatComponent;
 }
 
 export interface Chat {

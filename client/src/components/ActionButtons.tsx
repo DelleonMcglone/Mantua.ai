@@ -9,7 +9,6 @@ export default function ActionButtons({ onActionClick }: ActionButtonsProps) {
     { label: "Swap", id: "swap" },
     { label: "Add Liquidity", id: "add-liquidity" },
     { label: "Analyze", id: "analyze" },
-    { label: "Explore Agents", id: "explore-agents" },
   ];
 
   const handleActionClick = (actionId: string) => {

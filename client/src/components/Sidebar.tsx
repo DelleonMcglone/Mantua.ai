@@ -1,9 +1,8 @@
-import { ChevronDown, MessageSquarePlus, Package, User, Bot, Menu, MessageSquare, MoreHorizontal, Trash2, ArrowUpDown } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Package, User, Bot, Menu, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { useActiveAccount, useWalletBalance } from "thirdweb/react";
-import { client, baseSepolia } from "../providers/ThirdwebProvider";
+import { useActiveAccount } from "thirdweb/react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useLocation } from "wouter";
 import { TOKENS as TOKEN_CONFIGS } from "@/constants/tokens";
@@ -46,7 +45,7 @@ function TokenSearchDropdown({ isOpen, onClose, searchQuery, onSearchQueryChange
   );
 
   // Handle token selection
-  const handleTokenSelect = (token: Token) => {
+  const handleTokenSelect = (token: SidebarToken) => {
     console.log('Token selected:', token);
     onClose();
   };
@@ -119,24 +118,40 @@ function TokenSearchDropdown({ isOpen, onClose, searchQuery, onSearchQueryChange
 
 function TokensSection({ isExpanded }: { isExpanded: boolean }) {
   const account = useActiveAccount();
-  const { data: balance, isLoading } = useWalletBalance({
-    client,
-    chain: baseSepolia,
-    address: account?.address,
-  });
-  const { lastUpdated } = useTokenBalances();
+  const { tokens, isFetching, error } = useTokenBalances();
+
+  const formatBalance = (value: string) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "0";
+    if (numeric >= 1) {
+      return numeric.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+    }
+    return numeric.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4,
+    });
+  };
 
   if (!account) {
     return (
-      <div className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground" data-testid="text-tokens-connect-prompt">
+      <div
+        className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground"
+        data-testid="text-tokens-connect-prompt"
+      >
         Connect your wallet to view tokens
       </div>
     );
   }
 
-  if (isLoading) {
+  if (isFetching && tokens.length === 0) {
     return (
-      <div className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground" data-testid="text-tokens-loading">
+      <div
+        className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground"
+        data-testid="text-tokens-loading"
+      >
         Loading balances...
       </div>
     );
@@ -144,23 +159,32 @@ function TokensSection({ isExpanded }: { isExpanded: boolean }) {
 
   return (
     <div className="ml-6 mt-1 space-y-1" data-testid="div-tokens-balances">
-      {balance && (
-        <div className="flex justify-between items-center px-2 py-1 text-xs" data-testid="div-eth-balance">
-          <span className="text-sidebar-foreground">ETH</span>
-          <span className="text-muted-foreground">
-            {parseFloat(balance.displayValue).toFixed(4)}
-          </span>
-        </div>
-      )}
-      {/* Additional tokens would be displayed here */}
-      {!balance && (
-        <div className="px-2 py-1 text-xs text-muted-foreground" data-testid="text-no-balances">
+      {tokens.length > 0 ? (
+        tokens.map((token) => (
+          <div
+            key={token.address ?? token.symbol}
+            className="flex justify-between items-center px-2 py-1 text-xs"
+            data-testid={`div-token-${token.symbol.toLowerCase()}`}
+          >
+            <span className="text-sidebar-foreground">
+              {token.symbol}
+            </span>
+            <span className="text-muted-foreground">
+              {formatBalance(token.balance)}
+            </span>
+          </div>
+        ))
+      ) : (
+        <div
+          className="px-2 py-1 text-xs text-muted-foreground"
+          data-testid="text-no-balances"
+        >
           No tokens found
         </div>
       )}
-      {isExpanded && (
-        <div className="px-2 py-1 text-[10px] text-muted-foreground" data-testid="text-token-balances-updated">
-          Updated {new Date(lastUpdated).toLocaleTimeString()}
+      {error && (
+        <div className="px-2 py-1 text-[10px] text-destructive" data-testid="text-token-error">
+          {error}
         </div>
       )}
     </div>
@@ -168,16 +192,71 @@ function TokensSection({ isExpanded }: { isExpanded: boolean }) {
 }
 
 function PoolsSection({ isExpanded }: { isExpanded: boolean }) {
-  const { lastUpdated } = useUserPools();
+  const account = useActiveAccount();
+  const { pools, isFetching, error } = useUserPools();
   if (!isExpanded) return null;
+
+  if (!account) {
+    return (
+      <div className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground" data-testid="text-pools-connect-prompt">
+        Connect your wallet to track pools
+      </div>
+    );
+  }
+
+  if (isFetching && pools.length === 0) {
+    return (
+      <div className="ml-6 mt-1 px-2 py-1 text-xs text-muted-foreground" data-testid="text-pools-loading">
+        Loading pools...
+      </div>
+    );
+  }
+
   return (
     <div className="ml-6 mt-1 space-y-1" data-testid="div-pools-info">
-      <div className="px-2 py-1 text-xs text-muted-foreground">
-        No pools tracked yet
-      </div>
-      <div className="px-2 py-1 text-[10px] text-muted-foreground">
-        Updated {new Date(lastUpdated).toLocaleTimeString()}
-      </div>
+      {pools.length > 0 ? (
+        pools.map((pool) => (
+          <div
+            key={pool.id}
+            className="px-2 py-1 text-xs rounded-sm border border-sidebar-border/50 bg-sidebar/30"
+            data-testid={`div-pool-${pool.id}`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sidebar-foreground font-medium">
+                Pool {pool.tokenA}/{pool.tokenB}
+              </span>
+              {pool.lpTokenBalance && (
+                <span className="text-muted-foreground">
+                  LP {Number(pool.lpTokenBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </span>
+              )}
+            </div>
+            {(pool.amountTokenA || pool.amountTokenB) && (
+              <div className="text-muted-foreground mt-1">
+                {(pool.amountTokenA && Number(pool.amountTokenA) > 0) && (
+                  <span className="mr-2">
+                    {Number(pool.amountTokenA).toLocaleString(undefined, { maximumFractionDigits: 2 })} {pool.tokenA}
+                  </span>
+                )}
+                {(pool.amountTokenB && Number(pool.amountTokenB) > 0) && (
+                  <span>
+                    {Number(pool.amountTokenB).toLocaleString(undefined, { maximumFractionDigits: 2 })} {pool.tokenB}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ))
+      ) : (
+        <div className="px-2 py-1 text-xs text-muted-foreground" data-testid="text-no-pools">
+          No pools tracked yet
+        </div>
+      )}
+      {error && (
+        <div className="px-2 py-1 text-[10px] text-destructive" data-testid="text-pools-error">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
@@ -395,19 +474,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               {isExpanded && 'User activity'}
             </Button>
 
-            {/* Agent activity */}
-            <Button
-              variant="ghost"
-              className={`w-full text-sidebar-foreground hover:bg-sidebar-accent ${
-                isExpanded ? 'justify-start gap-2' : 'justify-center'
-              }`}
-              onClick={() => setLocation('/agent-activity')}
-              data-testid="button-agent-activity"
-              title={!isExpanded ? 'Agent activity' : ''}
-            >
-              <Bot className="h-4 w-4" />
-              {isExpanded && 'Agent activity'}
-            </Button>
           </div>
         </div>
       </aside>

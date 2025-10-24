@@ -31,6 +31,9 @@ const HOOK_OPTIONS = [
   { value: 'custom', label: 'Custom Hook' }
 ];
 
+const UNRECOGNIZED_LIQUIDITY_HOOK_MESSAGE = `You asked to Add Liquidity using a hook that isn't in Mantua's supported library yet.
+You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`;
+
 interface AddLiquidityProps {
   initialToken1?: string;
   initialToken2?: string;
@@ -39,6 +42,7 @@ interface AddLiquidityProps {
   poolName?: string;
   inlineMode?: boolean;
   intentHook?: HookConfig;
+  initialHookWarning?: string;
 }
 
 export default function AddLiquidity({ 
@@ -49,6 +53,7 @@ export default function AddLiquidity({
   poolName,
   inlineMode = false,
   intentHook,
+  initialHookWarning,
 }: AddLiquidityProps = {}) {
   const [token1, setToken1] = useState(initialToken1 ?? '');
   const [token2, setToken2] = useState(initialToken2 ?? '');
@@ -63,6 +68,7 @@ export default function AddLiquidity({
   const [transactionState, setTransactionState] = useState<'idle' | 'adding' | 'processing' | 'completed' | 'error'>('idle');
   const [transactionHash, setTransactionHash] = useState('');
   const [showSummary, setShowSummary] = useState(false);
+  const [hookWarningMessage, setHookWarningMessage] = useState(initialHookWarning ?? "");
 
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
   
@@ -120,6 +126,8 @@ export default function AddLiquidity({
     const matched = HOOK_OPTIONS.find((option) => option.value === selectedHook);
     return matched?.label ?? "No Hook";
   }, [isHookValidated, selectedHook]); // LIQUIDITY REGRESSION FIX: hook status label
+  const showHookWarning = hookWarningMessage === UNRECOGNIZED_LIQUIDITY_HOOK_MESSAGE;
+  const isHookRecognized = !showHookWarning;
 
   useEffect(() => {
     setToken1(initialToken1 ?? "");
@@ -135,6 +143,10 @@ export default function AddLiquidity({
       setIsHookValidated(false);
     }
   }, [initialSelectedHook, initialShowCustomHook]);
+
+  useEffect(() => {
+    setHookWarningMessage(initialHookWarning ?? "");
+  }, [initialHookWarning]);
 
   useEffect(() => {
     if (!intentHook?.id) return;
@@ -173,6 +185,7 @@ export default function AddLiquidity({
       if (isValid) {
         setIsHookValidated(true);
         setHookError('');
+        setHookWarningMessage('');
       } else {
         setIsHookValidated(false);
         setHookError('Invalid hook address.');
@@ -186,6 +199,7 @@ export default function AddLiquidity({
     setIsHookValidated(false);
     setHookError('');
     setSelectedHook('no-hook');
+    setHookWarningMessage('');
   };
 
   const onAddSuccess = async (hash: string) => {
@@ -200,6 +214,9 @@ export default function AddLiquidity({
   };
 
   const handleAddLiquidity = async () => {
+    if (!isHookRecognized) {
+      return;
+    }
     if (selectedHook === 'custom' && !isHookValidated) {
       setHookError('Please validate your custom hook address first.');
       return;
@@ -218,6 +235,15 @@ export default function AddLiquidity({
         const token2Data = TOKENS.find(t => t.symbol === token2);
         const sanitizedAmount1 = amount1 || '0.0';
         const sanitizedAmount2 = amount2 || '0.0';
+
+        if (token1Data?.symbol && token2Data?.symbol) {
+          userPools?.recordPosition?.({
+            tokenA: token1Data.symbol,
+            tokenB: token2Data.symbol,
+            amountTokenA: sanitizedAmount1,
+            amountTokenB: sanitizedAmount2,
+          });
+        }
 
         await onAddSuccess(hash);
 
@@ -241,6 +267,7 @@ export default function AddLiquidity({
     setIsHookValidated(false);
     setShowSummary(false);
     setTransactionHash('');
+    setHookWarningMessage('');
   };
 
   if (transactionState === 'completed' && showSummary) {
@@ -401,6 +428,7 @@ export default function AddLiquidity({
               onValueChange={(value) => {
                 setSelectedHook(value);
                 setShowCustomHook(value === 'custom');
+                setHookWarningMessage('');
                 if (value !== 'custom') {
                   setCustomHookAddress('');
                   setIsHookValidated(false);
@@ -463,6 +491,12 @@ export default function AddLiquidity({
                   <p className="text-sm text-destructive" data-testid="message-hook-error">{hookError}</p>
                 )}
               </div>
+            </div>
+          )}
+
+          {hookWarningMessage && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 whitespace-pre-line" data-testid="text-liquidity-hook-warning">
+              {hookWarningMessage}
             </div>
           )}
         </CardContent>

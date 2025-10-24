@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { ArrowUpDown } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useActiveAccount } from "thirdweb/react";
@@ -20,12 +19,12 @@ import { baseSepolia } from "wagmi/chains";
 import { parseEther } from "viem";
 
 import { TOKENS } from "@/constants/tokens";
-import SwapDetails from "@/components/swap/SwapDetails";
 import TransactionSummary from "@/components/common/TransactionSummary";
 import { useSwapRateData } from "@/hooks/useSwapRateData";
 import { HookConfig } from "@/lib/hookLibrary";
 import { useSwapExecution } from "@/hooks/useSwapExecution";
 import { txUrl } from "@/utils/explorers";
+import { useToast } from "@/hooks/use-toast";
 
 const HOOK_OPTIONS = [
   { value: 'no-hook', label: 'No Hook' },
@@ -34,6 +33,8 @@ const HOOK_OPTIONS = [
   { value: 'mev-protection', label: 'MEV Protection Hook' },
   { value: 'custom', label: 'Custom Hook' }
 ];
+
+const UNRECOGNIZED_SWAP_HOOK_MESSAGE = `Unrecognized Hook — You asked to swap using a hook that isn’t in Mantua’s supported library yet. You can paste the hook’s address to validate it, pick a supported hook, or continue without a hook.`;
 
 interface SwapProps {
   initialSellToken?: string;
@@ -100,6 +101,7 @@ export default function Swap({
   const [hookWarningMessage, setHookWarningMessage] = useState(initialHookWarning ?? ""); // SWAP: display unresolved hook guidance
   const [isCustomHookModalOpen, setIsCustomHookModalOpen] = useState(shouldOpenCustomHookModal); // SWAP: custom hook loader modal state
   const customModalConfirmedRef = useRef(false); // SWAP: track modal confirmation intent
+  const { toast } = useToast();
   
   // Activity tracking
   const { addUserActivity } = useActivity();
@@ -174,6 +176,27 @@ export default function Swap({
     const matched = HOOK_OPTIONS.find((option) => option.value === selectedHook);
     return matched?.label ?? "No Hook";
   }, [isHookValidated, selectedHook]); // SWAP REGRESSION FIX: track hook label display
+
+  const showSwapHookWarning = hookWarningMessage === UNRECOGNIZED_SWAP_HOOK_MESSAGE;
+
+  const estimatedFeeUsd = useMemo(() => {
+    if (!sellAmount || typeof feeBps !== "number") return null;
+    const parsedAmount = Number(sellAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return null;
+    const rateValue = getRate();
+    if (!rateValue || !Number.isFinite(rateValue)) return null;
+    const baseValueUsd = sellToken?.toUpperCase() === "USDC" || sellToken?.toUpperCase() === "EURC"
+      ? parsedAmount
+      : parsedAmount * rateValue;
+    const feeFraction = feeBps / 10000;
+    const feeValue = baseValueUsd * feeFraction;
+    if (!Number.isFinite(feeValue)) return null;
+    return feeValue;
+  }, [feeBps, getRate, sellAmount, sellToken]);
+
+  const feeAmountDisplay = estimatedFeeUsd !== null
+    ? `~$${estimatedFeeUsd.toFixed(2)}`
+    : "~$0.00";
 
   const ensureTokenOption = useCallback((symbol?: string) => {
     if (!symbol) return;
@@ -461,6 +484,10 @@ export default function Swap({
       setTransactionState("idle");
       setTransactionHash("");
       setSubmitError("Swap failed. Review your inputs and try again.");
+      toast({
+        variant: "destructive",
+        title: "Swap failed — please check network or gas settings.",
+      });
     }
   };
 
@@ -690,8 +717,8 @@ export default function Swap({
             </Select>
 
             {/* Custom Hook Address Input */}
-            {showCustomHook && (
-              <div className="space-y-3">
+      {showCustomHook && (
+        <div className="space-y-3">
                 <Label className="text-sm font-medium">Add custom address</Label>
                 <div className="flex items-center space-x-2">
                   <Input
@@ -746,46 +773,36 @@ export default function Swap({
           </div>
         </CardContent>
       </Card>
+      {showSwapHookWarning && (
+        <div className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-900 dark:border-purple-500/60 dark:bg-purple-900 dark:text-purple-50" data-testid="text-swap-hook-warning-inline">
+          {UNRECOGNIZED_SWAP_HOOK_MESSAGE}
+        </div>
+      )}
 
-      <Card className="bg-muted/40">
-        <CardHeader className="py-3">
-          <CardTitle className="text-base font-medium">Swap Hook Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Active hook</span>
-            <Badge
-              variant={selectedHook === "custom" ? "default" : "secondary"}
-              className="text-xs font-medium"
-              data-testid="badge-swap-hook-status"
-            >
-              {activeHookLabel}
-            </Badge>
-          </div>
-          {selectedHook === "custom" && customHookAddress && (
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Hook address</span>
-              <span className="font-mono">
-                {customHookAddress.slice(0, 6)}...{customHookAddress.slice(-4)}
-              </span>
-            </div>
-          )}
-          {hookWarningMessage && (
-            <p className="text-xs text-amber-600" data-testid="text-swap-hook-warning-inline">
-              {hookWarningMessage}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Swap Details Panel */}
       {shouldShowDetails && (
-        <SwapDetails
-          priceImpact={priceImpact}
-          maxSlippage="0.50%"
-          fee={feeDisplay}
-          networkCostUsd="$4.20"
-        />
+        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5 space-y-3 text-sm text-foreground dark:text-slate-100" data-testid="container-swap-details">
+          <div className="text-sm font-semibold text-foreground dark:text-white">
+            Hook-Enhanced Swap Details
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Current Fee</span>
+              <span className="text-sm font-semibold text-foreground dark:text-white">{feeDisplay !== "—" ? feeDisplay : "—"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Fee Amount</span>
+              <span className="text-sm font-semibold text-foreground dark:text-white">{feeAmountDisplay}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Price Impact</span>
+              <span className="text-sm font-semibold text-foreground dark:text-white">{typeof priceImpact === "string" ? priceImpact : "—"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Hook Status</span>
+              <span className="text-sm font-semibold text-foreground dark:text-white">{activeHookLabel}</span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Submit Button */}
@@ -799,7 +816,7 @@ export default function Swap({
           size="lg"
           data-testid="button-submit-swap"
         >
-          {transactionState === 'idle' && 'Submit swap'}
+          {transactionState === 'idle' && 'Swap'}
           {transactionState === 'swapping' && 'Swapping...'}
           {transactionState === 'processing' && 'Processing...'}
           {transactionState === 'error' && 'Try Again'}

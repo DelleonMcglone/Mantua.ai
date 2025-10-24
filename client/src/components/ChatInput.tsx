@@ -15,6 +15,9 @@ interface ChatInputProps {
   isLiquidityModeActive?: boolean;
   onLiquidityModeRequest?: () => void;
   onLiquidityModeExit?: () => void;
+  isAnalyzeModeActive?: boolean;
+  onAnalyzeModeRequest?: () => void;
+  onAnalyzeModeExit?: () => void;
 }
 
 export default function ChatInput({
@@ -28,6 +31,9 @@ export default function ChatInput({
   isLiquidityModeActive = false,
   onLiquidityModeRequest,
   onLiquidityModeExit,
+  isAnalyzeModeActive = false,
+  onAnalyzeModeRequest,
+  onAnalyzeModeExit,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isMenuVisible, setMenuVisible] = useState(false);
@@ -35,6 +41,12 @@ export default function ChatInput({
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const account = useActiveAccount();
+  const menuActions = [
+    { id: "swap", label: "Swap", disabled: false },
+    { id: "add-liquidity", label: "Add Liquidity", disabled: false },
+    { id: "analyze-coming-soon", label: "Analyze — Coming Soon", disabled: true },
+    { id: "agents-coming-soon", label: "Agents — Coming Soon", disabled: true },
+  ] as const;
 
   const handleSend = () => {
     if (message.trim()) {
@@ -89,7 +101,8 @@ export default function ChatInput({
   const triggerQuickAction = (actionId: string) => {
     setMenuVisible(false);
 
-    if (!account) {
+    const requiresWallet = actionId !== "analyze-coming-soon" && actionId !== "agents-coming-soon";
+    if (!account && requiresWallet) {
       if (onSubmit) {
         onSubmit("Please connect your wallet to continue.");
       }
@@ -99,12 +112,10 @@ export default function ChatInput({
     const actionLabels: Record<string, string> = {
       swap: "Swap",
       "add-liquidity": "Add Liquidity",
-      analyze: "Analyze",
-      "explore-agents": "Explore Agents",
     };
 
     const userMessage = actionLabels[actionId] || actionId;
-    if (onSubmit) {
+    if (actionLabels[actionId] && onSubmit) {
       onSubmit(userMessage);
     }
 
@@ -148,7 +159,15 @@ export default function ChatInput({
     setMenuVisible(false);
   }; // LIQUIDITY FIX: exit add-liquidity mode from badge
 
-  const handleQuickActionSelect = (actionId: string) => {
+  const handleAnalyzeModeExit = () => {
+    onAnalyzeModeExit?.();
+    setMenuVisible(false);
+  };
+
+  const handleQuickActionSelect = (actionId: string, disabled?: boolean) => {
+    if (disabled) {
+      return;
+    }
     if (actionId === "swap") {
       onSwapModeRequest?.(); // SWAP FIX: Button trigger condition
     }
@@ -160,7 +179,13 @@ export default function ChatInput({
 
   return (
     <div className="relative w-full">
-      <div className="relative flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-border/50 shadow-sm">
+      <div
+        className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-sm ${
+          isAnalyzeModeActive
+            ? "bg-primary/5 border-primary/60 ring-1 ring-primary/40"
+            : "bg-muted/30 border-border/50"
+        }`}
+      >
         {/* Plus button */}
         <Button
           ref={buttonRef}
@@ -188,6 +213,21 @@ export default function ChatInput({
             data-testid="button-swap-mode-active"
           >
             <span className="group-hover:hidden">Swap</span>
+            <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
+          </Button>
+        )}
+
+        {isAnalyzeModeActive && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="group h-8 rounded-full px-4 text-sm font-medium"
+            onClick={handleAnalyzeModeExit}
+            aria-pressed={isAnalyzeModeActive}
+            data-testid="button-analyze-mode-active"
+          >
+            <span className="group-hover:hidden">Analyze</span>
             <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
           </Button>
         )}
@@ -221,46 +261,24 @@ export default function ChatInput({
           aria-hidden={!isMenuVisible}
         >
           <div className="p-1">
-            <button
-              onClick={() => handleQuickActionSelect('swap')}
-              type="button"
-              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-              data-testid="dropdown-item-swap"
-              role="menuitem"
-              tabIndex={isMenuVisible ? 0 : -1}
-            >
-              Swap
-            </button>
-            <button
-              onClick={() => handleQuickActionSelect('add-liquidity')}
-              type="button"
-              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-              data-testid="dropdown-item-add-liquidity"
-              role="menuitem"
-              tabIndex={isMenuVisible ? 0 : -1}
-            >
-              Add Liquidity
-            </button>
-            <button
-              onClick={() => handleQuickActionSelect('analyze')}
-              type="button"
-              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-              data-testid="dropdown-item-analyze"
-              role="menuitem"
-              tabIndex={isMenuVisible ? 0 : -1}
-            >
-              Analyze
-            </button>
-            <button
-              onClick={() => handleQuickActionSelect('explore-agents')}
-              type="button"
-              className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-              data-testid="dropdown-item-explore-agents"
-              role="menuitem"
-              tabIndex={isMenuVisible ? 0 : -1}
-            >
-              Explore Agents
-            </button>
+            {menuActions.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => handleQuickActionSelect(action.id, action.disabled)}
+                type="button"
+                className={`w-full text-left px-2 py-1.5 text-sm rounded-sm transition-colors ${
+                  action.disabled
+                    ? "text-muted-foreground cursor-not-allowed opacity-70"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                }`}
+                data-testid={`dropdown-item-${action.id}`}
+                role="menuitem"
+                tabIndex={isMenuVisible && !action.disabled ? 0 : -1}
+                disabled={action.disabled}
+              >
+                {action.label}
+              </button>
+            ))}
           </div>
         </div>
 

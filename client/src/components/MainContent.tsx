@@ -13,8 +13,11 @@ import { HookConfig, HOOKS, HOOK_SYNONYMS, normalizeHook } from "@/lib/hookLibra
 import { canonicalizeTokenSymbol, extractTokensFromText } from "@/lib/tokenParsing";
 import { txUrl } from "@/utils/explorers";
 import { baseSepolia } from "wagmi/chains";
+import { AnalyzeResponseCard } from "@/components/analyze/AnalyzeResponseCard";
+import { requestAnalyze, requestParseIntent, ApiError, type ParseIntentResponse } from "@/lib/api";
+import { type AnalysisResponsePayload } from "@/types/analysis";
 
-type ActionId = 'swap' | 'add-liquidity' | 'explore-agents' | 'analyze';
+type ActionId = 'swap' | 'add-liquidity' | 'analyze';
 type HookContext = "swap" | "liquidity";
 
 interface SwapIntentState {
@@ -52,7 +55,7 @@ interface HookResolution {
   hook?: HookConfig;
 }
 
-const SINGLE_WORD_ACTIONS = ["swap", "analyze", "agent", "explore"] as const;
+const SINGLE_WORD_ACTIONS = ["swap", "analyze", "agent"] as const;
 const MULTI_WORD_ACTIONS = ["add liquidity", "remove liquidity"] as const;
 const AFFIRMATIVE_RESPONSES = new Set(["yes", "y", "yeah", "yep", "sure", "confirm", "correct"]);
 const NEGATIVE_RESPONSES = new Set(["no", "n", "nope", "cancel"]);
@@ -164,8 +167,7 @@ function isTokenUnsupported(token?: string): boolean {
 }
 
 const HOOK_UNRECOGNIZED_MESSAGES: Record<HookContext, string> = {
-  swap: `Unrecognized Hook — You asked to swap using a hook that isn't in Mantua's supported library yet.
-You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`,
+  swap: `Unrecognized Hook — You asked to swap using a hook that isn’t in Mantua’s supported library yet. You can paste the hook’s address to validate it, pick a supported hook, or continue without a hook.`,
   liquidity: `You asked to Add Liquidity using a hook that isn't in Mantua's supported library yet.
 You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`,
 }; // SWAP FIX: unify unsupported hook messaging
@@ -192,8 +194,10 @@ export default function MainContent() {
   const [activeComponent, setActiveComponent] = useState<null | "swap" | "liquidity">(null);
   const [swapProps, setSwapProps] = useState<SwapIntentState | null>(null);
   const [liquidityProps, setLiquidityProps] = useState<LiquidityIntentState | null>(null); // LIQUIDITY FIX: track liquidity intent props
+  const [isAnalyzeModeActive, setIsAnalyzeModeActive] = useState(false);
+  const [isAnalyzeLoading, setIsAnalyzeLoading] = useState(false);
   const { currentChat, addMessage, updateAgentMode, createNewChat } = useChatContext();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const account = useActiveAccount();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pendingChatIdRef = useRef<string | null>(null);
@@ -230,6 +234,7 @@ export default function MainContent() {
       setSwapProps(initialIntent);
       setSwapIntentKey((key) => key + 1);
       setLiquidityProps(null); // SWAP FIX: ensure single active flow
+      setIsAnalyzeModeActive(false);
       setActiveComponent("swap");
     },
     [],
@@ -267,6 +272,7 @@ export default function MainContent() {
       setLiquidityProps(initialIntent);
       setLiquidityIntentKey((key) => key + 1);
       setSwapProps(null); // LIQUIDITY FIX: clear swap state when liquidity is active
+      setIsAnalyzeModeActive(false);
       setActiveComponent("liquidity");
     },
     [],
@@ -276,6 +282,17 @@ export default function MainContent() {
     setActiveComponent(null);
     setLiquidityProps(null);
   }, []); // LIQUIDITY FIX: reset liquidity mode when dismissed
+
+  const activateAnalyzeMode = useCallback(() => {
+    setActiveComponent(null);
+    setSwapProps(null);
+    setLiquidityProps(null);
+    setIsAnalyzeModeActive(true);
+  }, []);
+
+  const exitAnalyzeMode = useCallback(() => {
+    setIsAnalyzeModeActive(false);
+  }, []);
 
   const handleSwapIntent = useCallback(
     (intent: SwapIntentState, chatId: string) => {
@@ -446,9 +463,17 @@ export default function MainContent() {
     const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
     if (!activeChatId) return; // No active chat to add messages to
 
-    if (actionId === 'explore-agents') {
-      // Enter Agent mode
-      updateAgentMode(true, activeChatId);
+    if (actionId === 'analyze') {
+      if (!isAnalyzeModeActive) {
+        activateAnalyzeMode();
+        addMessage(
+          {
+            content: "Analyze Mode engaged. Ask a market or onchain question for real-time insights.",
+            sender: "assistant",
+          },
+          activeChatId,
+        );
+      }
       return;
     }
     
@@ -464,11 +489,13 @@ export default function MainContent() {
     
     // Handle component activation for swap
     if (actionId === 'swap') {
+      exitAnalyzeMode();
       activateSwap(); // SWAP FIX: normalize swap activation path
     }
     
     // Handle component activation for add-liquidity
     if (actionId === 'add-liquidity') {
+      exitAnalyzeMode();
       activateLiquidity(); // LIQUIDITY FIX: normalize liquidity activation path
     }
   };
@@ -506,13 +533,8 @@ export default function MainContent() {
       return;
     }
 
-    if (normalizedSuggestion === "explore" || normalizedSuggestion.startsWith("explore ")) {
-      handleActionClick("explore-agents");
-      return;
-    }
-
     if (normalizedSuggestion === "agent") {
-      handleActionClick("explore-agents");
+      updateAgentMode(true, chatId);
       return;
     }
 
@@ -546,42 +568,7 @@ export default function MainContent() {
         return ''; // No intro text for add liquidity - just show component
 
       case 'analyze':
-        return `Uniswap v4 Overview (Base)
-What changed from v3 → v4: v4 introduces a singleton architecture via the PoolManager, so pools live inside one contract; and hooks let builders add programmable logic (dynamic fees, MEV protection, etc.) at the pool level. Gas usage is reduced with native "flash accounting," and liquidity positions move to ERC-1155 (vs v3's ERC-721). (Uniswap Docs)
-
-Ethereum mainnet anchor (context): The canonical PoolManager on Ethereum mainnet is 0x000000000004444C5dC75cB358380D2e3DE08A90. If you're reading v4 articles or SDK examples, they often reference this address. (Ethereum (ETH) Blockchain Explorer)
-
-Core Uniswap v4 Components (what Mantua users will see)
-- PoolManager (singleton): single entry point for swaps, mints/burns, and pool state.
-- PositionManager (ERC-1155): creates/manages LP positions.
-- Quoter: off-chain pricing and quote simulation.
-- StateView: read-only state helpers for pools/positions.
-- Universal Router: user-facing router for swaps/liquidity.
-- Permit2: shared approvals/allowances used across chains. (Uniswap Docs)
-
-Uniswap v4 — Contract Addresses on Base
-
-Base Mainnet (Chain ID 8453)
-PoolManager: 0x498581fF718922C3f8E6A244956Af099b2652B2B
-PositionDescriptor: 0x25D093633990dC94bEDEeD76C8F3cdaa75F3E7D5
-PositionManager: 0x7C5F5A4bbD8Fd63184577525326123b519429Bdc
-Quoter: 0x0D5E0F971ed27FbfF6c2837BF31316121532048D
-StateView: 0xA3C0c9B65Bad0B08107aA264b0F3DB444B867a71
-Universal Router: 0x6fF5693b99212Da76ad316178A184AB56D299b43
-Permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3
-
-Base Sepolia (Testnet, Chain ID 84532)
-PoolManager: 0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408
-PositionManager: 0x4b2C77D209d3405F41A037eC6C77F7F5B8E2cA80
-Quoter: 0x4A6513C898fE1B2D0E78D3B0E0A4a151589B1cBa
-StateView: 0x571291B572eD32cE6751a2cB2486eBEE8defB9B4
-Universal Router: 0x492E6456D9528771018DeB9E87ef7750EF184104
-Permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3
-Source: Uniswap v4 official deployments (Uniswap Docs)`;
-      
-      case 'explore-agents':
-        // This is handled separately in handleActionClick
-        return "";
+        return ''; // Analyze mode provides dynamic responses
       
       default:
         // This should never happen with proper TypeScript typing
@@ -613,6 +600,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     const normalized = phrase.toLowerCase();
     const trimmed = phrase.trim();
     const unsupportedMessage = HOOK_UNRECOGNIZED_MESSAGES[context];
+    const mentionsHook = normalized.includes("hook");
 
     if (!trimmed) return {};
 
@@ -667,6 +655,13 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       return {
         selectedHook: "custom",
         showCustomHook: true,
+      };
+    }
+
+    if (!mentionsHook) {
+      return {
+        selectedHook: "no-hook",
+        showCustomHook: false,
       };
     }
 
@@ -806,8 +801,214 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     };
   };
 
+  const runAnalyze = useCallback(
+    async (question: string, chatId: string) => {
+      setIsAnalyzeModeActive(true);
+      setIsAnalyzeLoading(true);
+      try {
+        const response = await requestAnalyze(question);
+        const analysisMessage = {
+          content: response.summary,
+          sender: "assistant" as const,
+          component: {
+            type: "analysis" as const,
+            props: response as AnalysisResponsePayload,
+          },
+        };
+        addMessage(analysisMessage, chatId);
+      } catch (error) {
+        const fallback =
+          error instanceof ApiError
+            ? error.message
+            : "No data available for that query.";
+        addMessage(
+          {
+            content: fallback,
+            sender: "assistant",
+          },
+          chatId,
+        );
+      } finally {
+        setIsAnalyzeLoading(false);
+      }
+    },
+    [addMessage],
+  );
+
+  const handleParsedIntent = useCallback(
+    async (intentResult: ParseIntentResponse, originalMessage: string, chatId: string) => {
+      const params = intentResult.params ?? {};
+
+      switch (intentResult.intent) {
+        case "swap": {
+          if (!isWalletConnected) {
+            addMessage(
+              {
+                content: "Connect your wallet to execute swaps.",
+                sender: "assistant",
+              },
+              chatId,
+            );
+            return;
+          }
+          const baseIntent = parseSwapIntent(originalMessage) ?? swapDefaults;
+          const sellToken =
+            typeof params.tokenIn === "string"
+              ? canonicalizeTokenSymbol(params.tokenIn)
+              : baseIntent.sellToken;
+          const buyToken =
+            typeof params.tokenOut === "string"
+              ? canonicalizeTokenSymbol(params.tokenOut)
+              : baseIntent.buyToken;
+          let selectedHook =
+            typeof params.hookId === "string" ? params.hookId : baseIntent.selectedHook;
+
+          const nextIntent: SwapIntentState = {
+            ...baseIntent,
+            sellToken,
+            buyToken,
+          };
+
+          if (selectedHook) {
+            if (selectedHook.startsWith("0x")) {
+              nextIntent.selectedHook = "custom";
+              nextIntent.showCustomHook = true;
+              nextIntent.showCustomHookModal = false;
+            } else {
+              nextIntent.selectedHook = selectedHook;
+              nextIntent.showCustomHook = selectedHook === "custom";
+            }
+          }
+
+          handleSwapIntent(nextIntent, chatId);
+          return;
+        }
+        case "add_liquidity": {
+          if (!isWalletConnected) {
+            addMessage(
+              {
+                content: "Connect your wallet to manage liquidity positions.",
+                sender: "assistant",
+              },
+              chatId,
+            );
+            return;
+          }
+          const baseIntent = parseLiquidityIntent(originalMessage) ?? liquidityDefaults;
+          const tokenA =
+            typeof params.tokenA === "string"
+              ? canonicalizeTokenSymbol(params.tokenA)
+              : baseIntent.token1;
+          const tokenB =
+            typeof params.tokenB === "string"
+              ? canonicalizeTokenSymbol(params.tokenB)
+              : baseIntent.token2;
+          const nextIntent: LiquidityIntentState = {
+            ...baseIntent,
+            token1: tokenA,
+            token2: tokenB,
+          };
+
+          const hookId =
+            typeof params.hookId === "string" ? params.hookId : baseIntent.selectedHook;
+
+          if (hookId) {
+            if (hookId.startsWith("0x")) {
+              nextIntent.selectedHook = "custom";
+              nextIntent.showCustomHook = true;
+            } else {
+              nextIntent.selectedHook = hookId;
+              nextIntent.showCustomHook = hookId === "custom";
+            }
+          }
+
+          handleLiquidityIntent(nextIntent, chatId);
+          return;
+        }
+        case "analyze": {
+          activateAnalyzeMode();
+          const normalized = originalMessage.trim().toLowerCase();
+          if (normalized === "analyze" || normalized === "+ analyze") {
+            return;
+          }
+          await runAnalyze(originalMessage, chatId);
+          return;
+        }
+        case "agent_action": {
+          updateAgentMode(true, chatId);
+          navigate("/agents");
+          addMessage(
+            {
+              content: "Opening your Agents workspace for configuration.",
+              sender: "assistant",
+            },
+            chatId,
+          );
+          return;
+        }
+        default: {
+          if (isAnalyzeModeActive) {
+            await runAnalyze(originalMessage, chatId);
+            return;
+          }
+
+          const swapIntent = parseSwapIntent(originalMessage);
+          if (swapIntent) {
+            if (!isWalletConnected) {
+              addMessage(
+                {
+                  content: "Connect your wallet to execute swaps.",
+                  sender: "assistant",
+                },
+                chatId,
+              );
+              return;
+            }
+            handleSwapIntent(swapIntent, chatId);
+            return;
+          }
+
+          const liquidityIntent = parseLiquidityIntent(originalMessage);
+          if (liquidityIntent) {
+            if (!isWalletConnected) {
+              addMessage(
+                {
+                  content: "Connect your wallet to manage liquidity positions.",
+                  sender: "assistant",
+                },
+                chatId,
+              );
+              return;
+            }
+            handleLiquidityIntent(liquidityIntent, chatId);
+            return;
+          }
+
+          addMessage(
+            {
+              content: getMockAssistantResponse(originalMessage),
+              sender: "assistant",
+            },
+            chatId,
+          );
+        }
+      }
+    },
+    [
+      activateAnalyzeMode,
+      addMessage,
+      handleLiquidityIntent,
+      handleSwapIntent,
+      isAnalyzeModeActive,
+      isWalletConnected,
+      navigate,
+      runAnalyze,
+      updateAgentMode,
+    ],
+  );
+
   // Handle chat input submission
-  const handleChatSubmit = (message: string) => {
+  const handleChatSubmit = async (message: string) => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage) return; // Empty message
 
@@ -888,33 +1089,17 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       }
     }
 
-    if (!isWalletConnected) {
-      return;
-    }
-
-    const swapIntent = parseSwapIntent(trimmedMessage);
-    if (swapIntent) {
-      if (handleSwapIntent(swapIntent, chatId)) {
-        return;
-      }
-    }
-
-    const liquidityIntent = parseLiquidityIntent(trimmedMessage);
-    if (liquidityIntent) {
-      if (handleLiquidityIntent(liquidityIntent, chatId)) {
-        return;
-      }
-    }
-
-    setTimeout(() => {
-      addMessage(
-        {
-          content: getMockAssistantResponse(trimmedMessage),
-          sender: "assistant",
-        },
+    try {
+      const intentResponse = await requestParseIntent(trimmedMessage);
+      await handleParsedIntent(intentResponse, trimmedMessage, chatId);
+    } catch (error) {
+      console.error("[MainContent] Failed to parse intent", error);
+      await handleParsedIntent(
+        { intent: "unknown", params: {} },
+        trimmedMessage,
         chatId,
       );
-    }, 800);
+    }
   };
 
   const ensureSwapShortcut = useCallback(() => {
@@ -959,23 +1144,41 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction �
             {/* Chat messages container */}
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0" data-testid="div-chat-messages">
               <div className="max-w-4xl mx-auto space-y-4">
-                {chatMessages.map((message) => (
-                  <div 
-                    key={message.id} 
-                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div 
-                      className={`max-w-[70%] px-4 py-3 rounded-2xl ${
-                        message.sender === 'user' 
-                          ? 'bg-primary text-primary-foreground shadow-sm' 
-                          : 'bg-muted text-foreground shadow-sm'
-                      }`}
-                      data-testid={`message-${message.sender}-${message.id}`}
+                {chatMessages.map((message) => {
+                  if (message.component?.type === "analysis") {
+                    const analysis = message.component.props as AnalysisResponsePayload;
+                    return (
+                      <div key={message.id} className="flex justify-start">
+                        <div className="max-w-[90%] space-y-3">
+                          <AnalyzeResponseCard
+                            summary={analysis.summary || message.content}
+                            metrics={analysis.metrics ?? []}
+                            chart={analysis.chart}
+                            source={analysis.source}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                      <div
+                        className={`max-w-[70%] px-4 py-3 rounded-2xl ${
+                          message.sender === 'user'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-muted text-foreground shadow-sm'
+                        }`}
+                        data-testid={`message-${message.sender}-${message.id}`}
+                      >
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               
                 {/* Render active component */}
                 {activeComponent === 'swap' && (
@@ -1011,6 +1214,7 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction �
                           initialSelectedHook={liquidityProps?.selectedHook ?? liquidityDefaults.selectedHook}
                           initialShowCustomHook={liquidityProps?.showCustomHook ?? liquidityDefaults.showCustomHook}
                           intentHook={liquidityProps?.hook}
+                          initialHookWarning={liquidityProps?.hookWarning}
                           inlineMode={true}
                         />
                       </div>
@@ -1074,7 +1278,15 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction �
                         onSwapModeExit={exitSwapMode}
                         onLiquidityModeRequest={ensureLiquidityShortcut}
                         onLiquidityModeExit={exitLiquidityMode}
+                        isAnalyzeModeActive={isAnalyzeModeActive}
+                        onAnalyzeModeRequest={activateAnalyzeMode}
+                        onAnalyzeModeExit={exitAnalyzeMode}
                       />
+                      {isAnalyzeModeActive && isAnalyzeLoading && (
+                        <p className="text-xs text-muted-foreground px-2">
+                          Gathering market data…
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
@@ -1126,7 +1338,15 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction �
                   onSwapModeExit={exitSwapMode}
                   onLiquidityModeRequest={ensureLiquidityShortcut}
                   onLiquidityModeExit={exitLiquidityMode}
+                  isAnalyzeModeActive={isAnalyzeModeActive}
+                  onAnalyzeModeRequest={activateAnalyzeMode}
+                  onAnalyzeModeExit={exitAnalyzeMode}
                 />
+                {isAnalyzeModeActive && isAnalyzeLoading && (
+                  <p className="text-xs text-muted-foreground px-2 text-left">
+                    Gathering market data…
+                  </p>
+                )}
               </div>
             )}
 

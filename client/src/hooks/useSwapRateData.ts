@@ -29,7 +29,7 @@ export function useSwapRateData({ tokenIn, tokenOut }: Params) {
 
   const getRate = useCallback(() => rate, [rate]);
 
-  const priceImpact = rate ? "~0.20%" : "—";
+  const priceImpact = rate ? "0.10%" : "—";
   const feeBps = rate ? 30 : undefined;
 
   return { getRate, priceImpact, feeBps };
