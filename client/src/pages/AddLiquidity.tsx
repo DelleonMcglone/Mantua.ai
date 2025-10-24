@@ -10,30 +10,11 @@ import { useActiveAccount } from "thirdweb/react";
 import { useBalance } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
-import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
-import usdcLogo from '@assets/Frame 352_1758910679715.png';
-import cbbtcLogo from '@assets/Frame 352 (2)_1758910679714.png';
-import eurcLogo from '@assets/Frame 352 (3)_1758910679715.png';
-
-interface Token {
-  symbol: string;
-  name: string;
-  logo: string;
-  address?: `0x${string}`;
-  decimals?: number;
-}
-
-const TOKENS: Token[] = [
-  { symbol: "ETH", name: "Ethereum", logo: ethereumLogo },
-  { symbol: "USDC", name: "USD Coin", logo: usdcLogo, address: "0xf175520C52418DFe19C8098071a252da48Cd1C19", decimals: 6 },
-  { symbol: "cbBTC", name: "Coinbase Bitcoin", logo: cbbtcLogo },
-  { symbol: "EURC", name: "Euro Coin", logo: eurcLogo, address: "0xD9aAEc86B65D86f6A7B5A4307eA3D0eA1B3E2D51", decimals: 6 },
-];
-
-const TOKEN_MAP = TOKENS.reduce<Record<string, Token>>((acc, token) => {
-  acc[token.symbol] = token;
-  return acc;
-}, {}); // LIQUIDITY FIX: quick lookup for token metadata
+import { TOKENS, TOKENS_BY_SYMBOL } from "@/constants/tokens";
+import { HookConfig } from "@/lib/hookLibrary";
+import { txUrl } from "@/utils/explorers";
+import TransactionSummary from "@/components/common/TransactionSummary";
+import { useUserPools } from "@/hooks/useUserPools";
 
 const FEE_TIERS = [
   { value: '0.01', label: '0.01% - best for very stable pairs' },
@@ -44,10 +25,10 @@ const FEE_TIERS = [
 
 const HOOK_OPTIONS = [
   { value: 'no-hook', label: 'No Hook' },
-  { value: 'dynamic-fee', label: 'Dynamic fee hook' },
-  { value: 'twamm', label: 'TWAMM hook' },
-  { value: 'mev-protection', label: 'MEV protection hook' },
-  { value: 'custom', label: 'Custom hook' }
+  { value: 'dynamic-fee', label: 'Dynamic Fee Hook' },
+  { value: 'twamm', label: 'TWAMM Hook' },
+  { value: 'mev-protection', label: 'MEV Protection Hook' },
+  { value: 'custom', label: 'Custom Hook' }
 ];
 
 interface AddLiquidityProps {
@@ -57,6 +38,7 @@ interface AddLiquidityProps {
   initialShowCustomHook?: boolean;
   poolName?: string;
   inlineMode?: boolean;
+  intentHook?: HookConfig;
 }
 
 export default function AddLiquidity({ 
@@ -65,7 +47,8 @@ export default function AddLiquidity({
   initialSelectedHook = 'no-hook',
   initialShowCustomHook = false,
   poolName,
-  inlineMode = false
+  inlineMode = false,
+  intentHook,
 }: AddLiquidityProps = {}) {
   const [token1, setToken1] = useState(initialToken1 ?? '');
   const [token2, setToken2] = useState(initialToken2 ?? '');
@@ -79,14 +62,16 @@ export default function AddLiquidity({
   const [hookError, setHookError] = useState('');
   const [transactionState, setTransactionState] = useState<'idle' | 'adding' | 'processing' | 'completed' | 'error'>('idle');
   const [transactionHash, setTransactionHash] = useState('');
-  
+  const [showSummary, setShowSummary] = useState(false);
+
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
   
   const { addUserActivity } = useActivity();
+  const userPools = useUserPools();
   const account = useActiveAccount();
 
-  const token1Config = useMemo(() => (token1 ? TOKEN_MAP[token1] : undefined), [token1]);
-  const token2Config = useMemo(() => (token2 ? TOKEN_MAP[token2] : undefined), [token2]);
+  const token1Config = useMemo(() => (token1 ? TOKENS_BY_SYMBOL[token1] : undefined), [token1]);
+  const token2Config = useMemo(() => (token2 ? TOKENS_BY_SYMBOL[token2] : undefined), [token2]);
   const isWalletConnected = Boolean(account?.address); // LIQUIDITY FIX: respond to wallet status
 
   const formatBalanceValue = useCallback((rawValue?: string) => {
@@ -137,11 +122,34 @@ export default function AddLiquidity({
   }, [isHookValidated, selectedHook]); // LIQUIDITY REGRESSION FIX: hook status label
 
   useEffect(() => {
-    setToken1(initialToken1 ?? '');
-    setToken2(initialToken2 ?? '');
-    setSelectedHook(initialSelectedHook || 'no-hook');
-    setShowCustomHook(initialShowCustomHook || initialSelectedHook === 'custom');
-  }, [initialToken1, initialToken2, initialSelectedHook, initialShowCustomHook]);
+    setToken1(initialToken1 ?? "");
+    setToken2(initialToken2 ?? "");
+  }, [initialToken1, initialToken2]);
+
+  useEffect(() => {
+    setSelectedHook(initialSelectedHook || "no-hook");
+    const shouldShowCustom = initialShowCustomHook || initialSelectedHook === "custom";
+    setShowCustomHook(shouldShowCustom);
+    if (!shouldShowCustom) {
+      setCustomHookAddress("");
+      setIsHookValidated(false);
+    }
+  }, [initialSelectedHook, initialShowCustomHook]);
+
+  useEffect(() => {
+    if (!intentHook?.id) return;
+    if (intentHook.id === "custom") {
+      setSelectedHook("custom");
+      setShowCustomHook(true);
+      return;
+    }
+    if (selectedHook !== intentHook.id) {
+      setSelectedHook(intentHook.id);
+    }
+    setShowCustomHook(false);
+    setIsHookValidated(false);
+    setHookError("");
+  }, [intentHook?.id, selectedHook]);
 
   const handleMaxClick = (tokenNumber: 1 | 2) => {
     if (tokenNumber === 1) {
@@ -180,32 +188,44 @@ export default function AddLiquidity({
     setSelectedHook('no-hook');
   };
 
+  const onAddSuccess = async (hash: string) => {
+    try {
+      await userPools?.refetch?.();
+    } catch (error) {
+      console.error("[AddLiquidity] Failed to refresh pools", error);
+    }
+    setTransactionHash(hash);
+    setShowSummary(true);
+    setTransactionState('completed');
+  };
+
   const handleAddLiquidity = async () => {
     if (selectedHook === 'custom' && !isHookValidated) {
       setHookError('Please validate your custom hook address first.');
       return;
     }
 
+    setShowSummary(false);
+    setTransactionHash('');
     setTransactionState('adding');
     
     setTimeout(() => {
       setTransactionState('processing');
-      setTransactionHash('0x' + Math.random().toString(16).substring(2, 42));
+      const hash = `0x${Math.random().toString(16).substring(2, 42)}` as `0x${string}`;
       
-      setTimeout(() => {
-        setTransactionState('completed');
-        
+      setTimeout(async () => {
         const token1Data = TOKENS.find(t => t.symbol === token1);
         const token2Data = TOKENS.find(t => t.symbol === token2);
-        const totalValueUSD = '$1,890.00';
         const sanitizedAmount1 = amount1 || '0.0';
         const sanitizedAmount2 = amount2 || '0.0';
-        
+
+        await onAddSuccess(hash);
+
         addUserActivity({
           type: 'Liquidity',
           assets: `${token1Data?.symbol} / ${token2Data?.symbol}`,
           amounts: `${sanitizedAmount1} ${token1Data?.symbol} + ${sanitizedAmount2} ${token2Data?.symbol}`,
-          value: totalValueUSD,
+          value: `$${(Number(sanitizedAmount1) + Number(sanitizedAmount2)).toFixed(2)}`,
           date: new Date().toLocaleDateString(),
           status: 'Completed'
         });
@@ -219,43 +239,40 @@ export default function AddLiquidity({
     setAmount2('');
     setCustomHookAddress('');
     setIsHookValidated(false);
+    setShowSummary(false);
+    setTransactionHash('');
   };
 
-  if (transactionState === 'completed') {
+  if (transactionState === 'completed' && showSummary) {
     const token1Data = TOKENS.find(t => t.symbol === token1);
     const token2Data = TOKENS.find(t => t.symbol === token2);
-    
+    const sanitizedAmount1 = amount1 || '0.0';
+    const sanitizedAmount2 = amount2 || '0.0';
+    const totalValue = Number(sanitizedAmount1) + Number(sanitizedAmount2);
+
     return (
       <div className={`${inlineMode ? 'w-full p-4 space-y-4' : 'max-w-md mx-auto p-6 space-y-4'}`} data-testid="liquidity-success-screen">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" data-testid="icon-success" />
-            <h2 className="text-lg font-semibold text-foreground mb-2" data-testid="text-success-title">
-              Added {(amount1 || '0.0')} {token1Data?.symbol} and {(amount2 || '0.0')} {token2Data?.symbol} to pool
-            </h2>
-            <p className="text-foreground mb-2">Liquidity added successfully!</p>
-            <p className="text-sm text-muted-foreground">
-              <a 
-                href={`https://sepolia-explorer.base.org/tx/${transactionHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-                data-testid="link-view-transaction"
-              >
-                View Transaction →
-              </a>
-            </p>
-          </CardContent>
-        </Card>
-
-        <Button 
-          variant="outline"
-          className="w-full"
-          onClick={handleAddMore}
-          data-testid="button-add-more-liquidity"
+        <TransactionSummary
+          title="Liquidity added successfully"
+          subtitle={`Added ${sanitizedAmount1} ${token1Data?.symbol ?? token1} and ${sanitizedAmount2} ${token2Data?.symbol ?? token2}`}
+          rows={[
+            { label: 'Add Liquidity', value: `${sanitizedAmount1} ${token1Data?.symbol ?? token1} + ${sanitizedAmount2} ${token2Data?.symbol ?? token2}` },
+            { label: 'Total Value', value: `$${totalValue.toFixed(2)}` },
+            { label: 'Hook', value: selectedHook === 'no-hook' ? 'No Hook' : hookStatusLabel },
+            { label: 'Pool Share', value: '0.00% (est.)', emphasis: true },
+            { label: 'Network fee', value: '$4.20' },
+          ]}
+          cta={{ label: 'Add more liquidity', onClick: handleAddMore }}
+        />
+        <a
+          href={txUrl(baseSepolia.id, transactionHash)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center text-sm text-primary hover:underline"
+          data-testid="link-view-transaction"
         >
-          Add more liquidity
-        </Button>
+          View transaction →
+        </a>
       </div>
     );
   }
@@ -269,11 +286,6 @@ export default function AddLiquidity({
         <h2 className="text-2xl font-semibold" data-testid="text-add-liquidity-title">
           {poolName || "Add liquidity to a pool."}
         </h2>
-        <p className="text-sm text-muted-foreground space-y-1" data-testid="text-add-liquidity-subtitle">
-          <span className="block">Choose tokens you want to provide liquidity for.</span>
-          <span className="block">You can select tokens on all supported networks.</span>
-          <span className="block">To choose token pairs you want to provide liquidity for.</span>
-        </p> {/* LIQUIDITY REGRESSION FIX: refreshed instructional guidance */}
       </div>
 
       <div className="space-y-4">
@@ -383,7 +395,7 @@ export default function AddLiquidity({
           </div>
 
           <div className="space-y-2">
-            <Label>Select a swap hook (optional)</Label>
+            <Label>Select a hook (optional)</Label>
             <Select 
               value={selectedHook} 
               onValueChange={(value) => {

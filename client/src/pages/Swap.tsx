@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ArrowUpDown, Settings, ChevronUp, TrendingUp, Zap, CheckCircle } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useActiveAccount } from "thirdweb/react";
 import { useBalance, useWalletClient, usePublicClient } from "wagmi";
@@ -19,31 +19,20 @@ import {
 import { baseSepolia } from "wagmi/chains";
 import { parseEther } from "viem";
 
-// Import token logos
-import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
-import usdcLogo from '@assets/Frame 352_1758910679715.png';
-import cbbtcLogo from '@assets/Frame 352 (2)_1758910679714.png';
-import eurcLogo from '@assets/Frame 352 (3)_1758910679715.png';
-
-interface Token {
-  symbol: string;
-  name: string;
-  logo?: string;
-}
-
-const BASE_TOKENS: Token[] = [
-  { symbol: 'ETH', name: 'Ethereum', logo: ethereumLogo },
-  { symbol: 'USDC', name: 'USD Coin', logo: usdcLogo },
-  { symbol: 'cbBTC', name: 'Coinbase Bitcoin', logo: cbbtcLogo },
-  { symbol: 'EURC', name: 'Euro Coin', logo: eurcLogo },
-]; // SWAP FIX: Prefill & Wallet Balance
+import { TOKENS } from "@/constants/tokens";
+import SwapDetails from "@/components/swap/SwapDetails";
+import TransactionSummary from "@/components/common/TransactionSummary";
+import { useSwapRateData } from "@/hooks/useSwapRateData";
+import { HookConfig } from "@/lib/hookLibrary";
+import { useSwapExecution } from "@/hooks/useSwapExecution";
+import { txUrl } from "@/utils/explorers";
 
 const HOOK_OPTIONS = [
   { value: 'no-hook', label: 'No Hook' },
-  { value: 'dynamic-fee', label: 'Dynamic fee hook' },
-  { value: 'twamm', label: 'TWAMM hook' },
-  { value: 'mev-protection', label: 'MEV protection hook' },
-  { value: 'custom', label: 'Custom hook' }
+  { value: 'dynamic-fee', label: 'Dynamic Fee Hook' },
+  { value: 'twamm', label: 'TWAMM Hook' },
+  { value: 'mev-protection', label: 'MEV Protection Hook' },
+  { value: 'custom', label: 'Custom Hook' }
 ];
 
 interface SwapProps {
@@ -56,6 +45,7 @@ interface SwapProps {
   inlineMode?: boolean;
   onSwapSuccess?: (payload: SwapResultPayload) => void;
   onSwapDismiss?: () => void;
+  intentHook?: HookConfig;
 }
 
 interface SwapResultPayload {
@@ -65,6 +55,15 @@ interface SwapResultPayload {
   buyAmount: string;
   transactionHash: string;
 }
+
+type TokenOption = {
+  symbol: string;
+  name: string;
+  logo?: string;
+  address?: `0x${string}`;
+  decimals?: number;
+  chainId?: number;
+};
 
 export default function Swap({
   initialSellToken,
@@ -76,18 +75,20 @@ export default function Swap({
   inlineMode = false,
   onSwapSuccess,
   onSwapDismiss,
+  intentHook,
 }: SwapProps = {}) {
   const [sellToken, setSellToken] = useState(initialSellToken ?? "");
   const [buyToken, setBuyToken] = useState(initialBuyToken ?? "");
   const [sellAmount, setSellAmount] = useState("");
   const [buyAmount, setBuyAmount] = useState("");
   const [selectedHook, setSelectedHook] = useState(initialSelectedHook || 'no-hook');
-  const [tokenOptions, setTokenOptions] = useState<Token[]>(BASE_TOKENS); // SWAP FIX: Prefill & Wallet Balance
+  const [tokenOptions, setTokenOptions] = useState<TokenOption[]>(
+    TOKENS.map((token) => ({ ...token }))
+  ); // SWAP FIX: Prefill & Wallet Balance
   const [customHookAddress, setCustomHookAddress] = useState('');
   const [isValidatingHook, setIsValidatingHook] = useState(false);
   const [isHookValidated, setIsHookValidated] = useState(false);
   const [hookError, setHookError] = useState('');
-  const [showSwapDetails, setShowSwapDetails] = useState(false);
   const [transactionState, setTransactionState] = useState<'idle' | 'swapping' | 'processing' | 'completed' | 'error'>('idle');
   const [transactionHash, setTransactionHash] = useState('');
   const [networkWarning, setNetworkWarning] = useState<string | null>(null); // SWAP REGRESSION FIX: surface network guidance
@@ -102,10 +103,6 @@ export default function Swap({
   
   // Activity tracking
   const { addUserActivity } = useActivity();
-  const explorerBaseUrl =
-    import.meta.env.MODE === "production"
-      ? "https://basescan.org/tx/"
-      : "https://sepolia-explorer.base.org/tx/"; // SWAP: align explorer links with environment
   const account = useActiveAccount();
   const accountAddress = account?.address as `0x${string}` | undefined;
   const { data: walletClient } = useWalletClient(); // SWAP REGRESSION FIX: access wallet client
@@ -118,6 +115,7 @@ export default function Swap({
     },
   }); // SWAP FIX: Prefill & Wallet Balance
   const isWalletConnected = Boolean(account?.address); // SWAP REGRESSION FIX: derived wallet flag
+  const { executeSwap } = useSwapExecution();
 
   const formatBalanceValue = useCallback((rawValue?: string) => {
     if (!rawValue) return "0.0";
@@ -160,6 +158,15 @@ export default function Swap({
   const sellBalanceLabel = sellToken ? `${sellTokenBalance} ${sellToken}` : "—"; // SWAP FIX: sanitize balance display
   const buyBalanceLabel = buyToken ? `${buyTokenBalance} ${buyToken}` : "—"; // SWAP FIX: sanitize balance display
   const shouldShowDetails = Boolean(sellToken && buyToken); // SWAP FIX: defer details until tokens selected
+  const { getRate, priceImpact, feeBps } = useSwapRateData({
+    tokenIn: sellToken,
+    tokenOut: buyToken,
+    hookId: selectedHook !== "no-hook" ? selectedHook : undefined,
+  });
+  const feeDisplay = useMemo(() => {
+    if (typeof feeBps !== "number") return "—";
+    return `${(feeBps / 100).toFixed(2)}%`;
+  }, [feeBps]);
   const activeHookLabel = useMemo(() => {
     if (selectedHook === "custom") {
       return isHookValidated ? "Custom Hook" : "Custom Hook (address required)";
@@ -187,7 +194,7 @@ export default function Swap({
   }, []); // SWAP FIX: Prefill & Wallet Balance
 
   const getTokenMeta = useCallback(
-    (symbol: string): Token => {
+    (symbol: string): TokenOption => {
       const normalized = symbol.toUpperCase();
       return (
         tokenOptions.find((token) => token.symbol === normalized) ?? {
@@ -199,7 +206,7 @@ export default function Swap({
     [tokenOptions],
   ); // SWAP FIX: Prefill & Wallet Balance
 
-  const renderTokenBadge = (token: Token) => (
+  const renderTokenBadge = (token: TokenOption) => (
     <div className="flex items-center space-x-2">
       {token.logo ? (
         <img src={token.logo} alt={token.symbol} className="w-5 h-5 rounded-full" />
@@ -234,6 +241,20 @@ export default function Swap({
   }, [initialHookWarning]); // SWAP: surface latest hook status
 
   useEffect(() => {
+    if (!intentHook?.id) return;
+    if (intentHook.id === "custom") {
+      setSelectedHook("custom");
+      setShowCustomHook(true);
+      return;
+    }
+    if (selectedHook !== intentHook.id) {
+      setSelectedHook(intentHook.id);
+    }
+    setShowCustomHook(false);
+    setHookWarningMessage("");
+  }, [intentHook?.id, selectedHook]);
+
+  useEffect(() => {
     if (shouldOpenCustomHookModal) {
       customModalConfirmedRef.current = false;
       setSelectedHook("custom");
@@ -247,6 +268,24 @@ export default function Swap({
       onSwapDismiss?.();
     };
   }, [onSwapDismiss]); // SWAP: notify parent when swap component unmounts
+
+  useEffect(() => {
+    if (!sellAmount) {
+      setBuyAmount("");
+      return;
+    }
+    const numericSell = Number(sellAmount);
+    if (Number.isNaN(numericSell) || numericSell <= 0) return;
+    const rate = getRate();
+    if (!rate) return;
+    const estimated = numericSell * rate;
+    if (!Number.isFinite(estimated)) return;
+    const formatted =
+      estimated >= 1
+        ? estimated.toFixed(4).replace(/\.?0+$/, "")
+        : estimated.toFixed(6).replace(/\.?0+$/, "");
+    setBuyAmount(formatted);
+  }, [sellAmount, sellToken, buyToken, selectedHook, getRate]);
 
   const handleSwapTokens = () => {
     const previousSellToken = sellToken;
@@ -354,59 +393,68 @@ export default function Swap({
     setTransactionState("swapping");
 
     try {
-      let valueToSend: bigint = BigInt(0);
-      if (
-        sellToken &&
-        nativeTokenSymbol &&
-        sellToken.toUpperCase() === nativeTokenSymbol &&
-        sellAmount
-      ) {
-        try {
-          valueToSend = parseEther(sellAmount);
-        } catch {
-          valueToSend = BigInt(0);
+      const result = await executeSwap(async () => {
+        let valueToSend: bigint = BigInt(0);
+        if (
+          sellToken &&
+          nativeTokenSymbol &&
+          sellToken.toUpperCase() === nativeTokenSymbol &&
+          sellAmount
+        ) {
+          try {
+            valueToSend = parseEther(sellAmount);
+          } catch {
+            valueToSend = BigInt(0);
+          }
         }
-      }
 
-      if (!accountAddress) {
-        throw new Error("Missing account address");
-      }
+        if (!accountAddress) {
+          throw new Error("Missing account address");
+        }
 
-      const hash = await walletClient.sendTransaction({
-        account: accountAddress,
-        chain: walletClient.chain ?? baseSepolia,
-        to: accountAddress,
-        value: valueToSend,
-      }); // SWAP REGRESSION FIX: execute Base Sepolia transaction
+        const hash = (await walletClient.sendTransaction({
+          account: accountAddress,
+          chain: walletClient.chain ?? baseSepolia,
+          to: accountAddress,
+          value: valueToSend,
+        })) as `0x${string}`; // SWAP REGRESSION FIX: execute Base Sepolia transaction
 
-      setTransactionHash(hash);
-      setTransactionState("processing");
-      setPendingNotice("Transaction pending on Base Sepolia...");
+        setTransactionHash(hash);
+        setTransactionState("processing");
+        setPendingNotice("Transaction pending on Base Sepolia...");
 
-      await publicClient.waitForTransactionReceipt({
-        hash,
-        confirmations: 1,
+        await publicClient.waitForTransactionReceipt({
+          hash,
+          confirmations: 1,
+        });
+
+        setPendingNotice(null);
+        return { status: "success" as const, hash };
       });
 
-      setPendingNotice(null);
-      setTransactionState("completed");
+      if (result?.status === "success" && result.hash) {
+        const hash = result.hash;
+        setTransactionState("completed");
 
-      addUserActivity({
-        type: "Swap",
-        assets: `${sellToken} to ${buyToken}`,
-        amounts: `${sellAmount || "0"} ${sellToken || ""}`,
-        value: buyAmount.replace("$", ""),
-        date: new Date().toISOString().split("T")[0],
-        status: "Completed",
-      });
+        addUserActivity({
+          type: "Swap",
+          assets: `${sellToken} to ${buyToken}`,
+          amounts: `${sellAmount || "0"} ${sellToken || ""}`,
+          value: buyAmount.replace("$", ""),
+          date: new Date().toISOString().split("T")[0],
+          status: "Completed",
+        });
 
-      onSwapSuccess?.({
-        sellToken,
-        buyToken,
-        sellAmount,
-        buyAmount: buyAmount.replace(/^\$/, ""),
-        transactionHash: hash,
-      }); // SWAP: mirror confirmation into chat history
+        onSwapSuccess?.({
+          sellToken,
+          buyToken,
+          sellAmount,
+          buyAmount: buyAmount.replace(/^\$/, ""),
+          transactionHash: hash,
+        }); // SWAP: mirror confirmation into chat history
+      } else {
+        setTransactionState("idle");
+      }
     } catch (error) {
       console.error("[Swap] Transaction failed", error);
       setPendingNotice(null);
@@ -432,36 +480,26 @@ export default function Swap({
   if (transactionState === 'completed') {
     return (
       <div className={`${inlineMode ? 'w-full p-4 space-y-4' : 'max-w-md mx-auto p-6 space-y-4'}`}>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-foreground mb-2">
-              Swapped {sellAmount} {sellToken} to {buyToken}
-            </h2>
-            <p className="text-foreground mb-2">Transaction successful!</p>
-            <p className="text-sm text-muted-foreground">
-              You have received {buyAmount} {buyToken}.{' '}
-              <a 
-                href={`${explorerBaseUrl}${transactionHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-                data-testid="link-view-transaction"
-              >
-                View Transaction →
-              </a>
-            </p>
-          </CardContent>
-        </Card>
-
-        <Button 
-          variant="outline" 
-          onClick={resetSwap}
-          className="w-full"
-          data-testid="button-new-swap"
+        <TransactionSummary
+          title="Swap completed successfully"
+          subtitle={`Received ${buyAmount || "0"} ${buyToken || ""}`}
+          rows={[
+            { label: "From", value: `${sellAmount || "0"} ${sellToken || ""}` },
+            { label: "To", value: `${buyAmount || "0"} ${buyToken || ""}`, emphasis: true },
+            { label: "Hook", value: activeHookLabel },
+            { label: "Network fee", value: "$4.20" },
+          ]}
+          cta={{ label: "Make another swap", onClick: resetSwap }}
+        />
+        <a
+          href={txUrl(baseSepolia.id, transactionHash)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center text-sm text-primary hover:underline"
+          data-testid="link-view-transaction"
         >
-          New Swap
-        </Button>
+          View transaction →
+        </a>
       </div>
     );
   }
@@ -742,52 +780,12 @@ export default function Swap({
 
       {/* Swap Details Panel */}
       {shouldShowDetails && (
-        <Card>
-          <CardContent className="p-4">
-            <Button
-              variant="ghost"
-              onClick={() => setShowSwapDetails(!showSwapDetails)}
-              className="w-full flex items-center justify-between p-2"
-              data-testid="button-swap-details"
-            >
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">1 USDC = 0.00032 ETH</span>
-                <span className="text-xs text-muted-foreground">($1.00)</span>
-              </div>
-              {showSwapDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-
-            {showSwapDetails && (
-              <div className="mt-4 space-y-3 border-t pt-4">
-                <div className="flex justify-between items-center" data-testid="row-price-impact">
-                  <span className="text-sm text-muted-foreground">Price impact</span>
-                  <span className="text-sm font-medium">~0.2%</span>
-                </div>
-                
-                <div className="flex justify-between items-center" data-testid="row-slippage">
-                  <span className="text-sm text-muted-foreground">Max. slippage</span>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="secondary" className="text-xs">Auto</Badge>
-                    <span className="text-sm font-medium">5%</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center" data-testid="row-fee">
-                  <span className="text-sm text-muted-foreground">Fee (0.25%)</span>
-                  <span className="text-sm font-medium">$0.77</span>
-                </div>
-                
-                <div className="flex justify-between items-center" data-testid="row-network-cost">
-                  <div className="flex items-center space-x-1">
-                    <Zap className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Network cost</span>
-                  </div>
-                  <span className="text-sm font-medium">$22.04</span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <SwapDetails
+          priceImpact={priceImpact}
+          maxSlippage="0.50%"
+          fee={feeDisplay}
+          networkCostUsd="$4.20"
+        />
       )}
 
       {/* Submit Button */}

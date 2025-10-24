@@ -8,6 +8,11 @@ import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useLocation } from "wouter";
+import { parseUserCommand } from "@/lib/intent";
+import { HookConfig, HOOKS, HOOK_SYNONYMS, normalizeHook } from "@/lib/hookLibrary";
+import { canonicalizeTokenSymbol, extractTokensFromText } from "@/lib/tokenParsing";
+import { txUrl } from "@/utils/explorers";
+import { baseSepolia } from "wagmi/chains";
 
 type ActionId = 'swap' | 'add-liquidity' | 'explore-agents' | 'analyze';
 type HookContext = "swap" | "liquidity";
@@ -19,6 +24,7 @@ interface SwapIntentState {
   showCustomHook?: boolean;
   showCustomHookModal?: boolean;
   hookWarning?: string;
+  hook?: HookConfig;
 }
 
 interface SwapSuccessPayload {
@@ -35,6 +41,7 @@ interface LiquidityIntentState {
   selectedHook?: string;
   showCustomHook?: boolean;
   hookWarning?: string;
+  hook?: HookConfig;
 }
 
 interface HookResolution {
@@ -42,14 +49,15 @@ interface HookResolution {
   showCustomHook?: boolean;
   showCustomHookModal?: boolean;
   hookWarning?: string;
+  hook?: HookConfig;
 }
 
 const SINGLE_WORD_ACTIONS = ["swap", "analyze", "agent", "explore"] as const;
 const MULTI_WORD_ACTIONS = ["add liquidity", "remove liquidity"] as const;
 const AFFIRMATIVE_RESPONSES = new Set(["yes", "y", "yeah", "yep", "sure", "confirm", "correct"]);
 const NEGATIVE_RESPONSES = new Set(["no", "n", "nope", "cancel"]);
-const DISALLOWED_TOKENS = new Set(["WETH", "DAI", "CBBTC"]);
-const UNSUPPORTED_TOKEN_MESSAGE = "WETH, DAI, and CBBTC are not currently supported on Mantua.AI.";
+const DISALLOWED_TOKENS = new Set(["WETH", "DAI"]);
+const UNSUPPORTED_TOKEN_MESSAGE = "WETH and DAI are not currently supported on Mantua.AI.";
 
 interface ClarificationRequest {
   suggestion: string;
@@ -155,14 +163,6 @@ function isTokenUnsupported(token?: string): boolean {
   return DISALLOWED_TOKENS.has(token.toUpperCase());
 }
 
-function canonicalizeTokenSymbol(token: string): string {
-  if (!token) return token;
-  if (token.toLowerCase() === "cbbtc") {
-    return "cbBTC";
-  }
-  return token.toUpperCase();
-}
-
 const HOOK_UNRECOGNIZED_MESSAGES: Record<HookContext, string> = {
   swap: `Unrecognized Hook â€” You asked to swap using a hook that isn't in Mantua's supported library yet.
 You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`,
@@ -170,18 +170,13 @@ You can paste the hook's address to validate it, pick a supported hook, or conti
 You can paste the hook's address to validate it, pick a supported hook, or continue without a hook.`,
 }; // SWAP FIX: unify unsupported hook messaging
 
-const SUPPORTED_HOOKS = [
-  { keyword: "dynamic fee", value: "dynamic-fee" },
-  { keyword: "twamm", value: "twamm" },
-  { keyword: "mev protection", value: "mev-protection" },
-]; // SWAP FIX: Unrecognized hook handler
-
 const swapDefaults: Readonly<SwapIntentState> = {
   sellToken: "",
   buyToken: "",
   selectedHook: "no-hook",
   showCustomHook: false,
   showCustomHookModal: false,
+  hook: undefined,
 }; // SWAP: baseline swap configuration
 
 const liquidityDefaults: Readonly<LiquidityIntentState> = {
@@ -189,6 +184,7 @@ const liquidityDefaults: Readonly<LiquidityIntentState> = {
   token2: "",
   selectedHook: "no-hook",
   showCustomHook: false,
+  hook: undefined,
 }; // LIQUIDITY FIX: baseline liquidity configuration
 
 export default function MainContent() {
@@ -218,6 +214,7 @@ export default function MainContent() {
           showCustomHook: nextProps.showCustomHook ?? base.showCustomHook,
           showCustomHookModal: nextProps.showCustomHookModal ?? base.showCustomHookModal ?? false,
           hookWarning: nextProps.hookWarning,
+          hook: nextProps.hook ?? base.hook,
         };
       });
     },
@@ -254,6 +251,7 @@ export default function MainContent() {
           selectedHook: nextProps.selectedHook ?? base.selectedHook,
           showCustomHook: nextProps.showCustomHook ?? base.showCustomHook,
           hookWarning: nextProps.hookWarning,
+          hook: nextProps.hook ?? base.hook,
         };
       });
     },
@@ -613,7 +611,10 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
   // SWAP FIX: derive hook metadata from free-form phrases (shared with liquidity flow)
   const resolveHookDetails = (phrase: string, context: HookContext): HookResolution => {
     const normalized = phrase.toLowerCase();
+    const trimmed = phrase.trim();
     const unsupportedMessage = HOOK_UNRECOGNIZED_MESSAGES[context];
+
+    if (!trimmed) return {};
 
     if (normalized.includes("hook not in library")) {
       return {
@@ -638,58 +639,42 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       };
     }
 
-    const supportedHook = SUPPORTED_HOOKS.find(({ keyword }) => normalized.includes(keyword)); // SWAP FIX: Unrecognized hook handler
-    if (supportedHook) {
-      return { selectedHook: supportedHook.value };
+    const sanitized = trimmed.replace(/hook$/i, "").trim();
+
+    const directMatch = normalizeHook(sanitized) ?? normalizeHook(trimmed);
+    if (directMatch) {
+      return { selectedHook: directMatch.id, hook: directMatch };
     }
 
-    const genericHookMatch =
-      normalized.match(/(?:swap|add\s+liquidity|provide\s+liquidity)(?:\s+[a-z0-9\/]+)*\s+with\s+([a-z0-9\s-]+)/i) ??
-      normalized.match(/with\s+([a-z0-9\s-]+)/i);
-    // SWAP FIX: Unrecognized hook handler
+    for (const key of Object.keys(HOOKS)) {
+      if (sanitized.includes(key)) {
+        const hook = HOOKS[key];
+        return { selectedHook: hook.id, hook };
+      }
+    }
 
-    if (genericHookMatch) {
-      const requestedHookRaw = genericHookMatch[1].trim();
-      if (requestedHookRaw) {
-        const cleanedRequested = requestedHookRaw.replace(/hook$/, "").trim();
-        const isSupported = SUPPORTED_HOOKS.some(({ keyword }) =>
-          cleanedRequested.includes(keyword),
-        );
-        const isCustomRequest = cleanedRequested.includes("custom");
-        if (!isSupported && !isCustomRequest) {
-          return {
-            selectedHook: "no-hook",
-            showCustomHook: false,
-            hookWarning: unsupportedMessage,
-          }; // SWAP FIX: Unrecognized hook handler
+    for (const alias of Object.keys(HOOK_SYNONYMS)) {
+      if (sanitized.includes(alias)) {
+        const canonical = HOOK_SYNONYMS[alias];
+        const hook = HOOKS[canonical];
+        if (hook) {
+          return { selectedHook: hook.id, hook };
         }
       }
     }
 
-    const contextPrefixes =
-      context === "swap"
-        ? ["swap"]
-        : ["add liquidity", "provide liquidity"];
-
-    if (!contextPrefixes.some((prefix) => normalized.startsWith(prefix))) {
-      const fragment = normalized.trim();
-      if (fragment) {
-        const cleanedFragment = fragment.replace(/hook$/, "").trim();
-        const isSupportedFragment = SUPPORTED_HOOKS.some(({ keyword }) =>
-          cleanedFragment.includes(keyword),
-        );
-        const isCustomFragment = cleanedFragment.includes("custom");
-        if (!isSupportedFragment && !isCustomFragment) {
-          return {
-            selectedHook: "no-hook",
-            showCustomHook: false,
-            hookWarning: unsupportedMessage,
-          }; // SWAP FIX: Unrecognized hook handler
-        }
-      }
+    if (normalized.includes("custom")) {
+      return {
+        selectedHook: "custom",
+        showCustomHook: true,
+      };
     }
 
-    return {};
+    return {
+      selectedHook: "no-hook",
+      showCustomHook: false,
+      hookWarning: unsupportedMessage,
+    };
   };
 
   // Intent parsing for swap commands
@@ -700,24 +685,52 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     }
 
     const baseDetails = resolveHookDetails(lowerMessage, "swap");
+    const parsed = parseUserCommand(message);
+    if (parsed.hook) {
+      baseDetails.selectedHook = parsed.hook.id;
+      baseDetails.hook = parsed.hook;
+      baseDetails.showCustomHook = false;
+      baseDetails.showCustomHookModal = false;
+      baseDetails.hookWarning = undefined;
+    }
+
     let sellToken = swapDefaults.sellToken;
     let buyToken = swapDefaults.buyToken;
 
-    const swapWithHookPattern = /swap\s+([a-zA-Z0-9]+)\s+for\s+([a-zA-Z0-9]+)\s+with\s+(.+)/i;
-    const swapTokensPattern = /swap\s+([a-zA-Z0-9]+)\s+for\s+([a-zA-Z0-9]+)/i;
+    const swapWithHookPattern =
+      /swap\s+(?:(\d+(?:\.\d+)?)\s+)?([a-zA-Z0-9]+)\s+(?:to|for)\s+([a-zA-Z0-9]+)\s+with\s+(.+)/i;
+    const swapTokensPattern =
+      /swap\s+(?:(\d+(?:\.\d+)?)\s+)?([a-zA-Z0-9]+)\s+(?:to|for)\s+([a-zA-Z0-9]+)/i;
 
     const withHookMatch = message.match(swapWithHookPattern);
     if (withHookMatch) {
-      sellToken = canonicalizeTokenSymbol(withHookMatch[1]);
-      buyToken = canonicalizeTokenSymbol(withHookMatch[2]);
-      const explicitHookPhrase = withHookMatch[3];
+      sellToken = canonicalizeTokenSymbol(withHookMatch[2]);
+      buyToken = canonicalizeTokenSymbol(withHookMatch[3]);
+      const explicitHookPhrase = withHookMatch[4];
       Object.assign(baseDetails, resolveHookDetails(explicitHookPhrase, "swap"));
     } else {
       const tokensOnlyMatch = message.match(swapTokensPattern);
       if (tokensOnlyMatch) {
-        sellToken = canonicalizeTokenSymbol(tokensOnlyMatch[1]);
-        buyToken = canonicalizeTokenSymbol(tokensOnlyMatch[2]);
+        sellToken = canonicalizeTokenSymbol(tokensOnlyMatch[2]);
+        buyToken = canonicalizeTokenSymbol(tokensOnlyMatch[3]);
       }
+    }
+
+    if (!sellToken || !buyToken) {
+      const extracted = extractTokensFromText(message);
+      if (extracted?.tokenA && !sellToken) {
+        sellToken = canonicalizeTokenSymbol(extracted.tokenA);
+      }
+      if (extracted?.tokenB && !buyToken) {
+        buyToken = canonicalizeTokenSymbol(extracted.tokenB);
+      }
+    }
+
+    if (parsed.tokenIn && !sellToken) {
+      sellToken = canonicalizeTokenSymbol(parsed.tokenIn);
+    }
+    if (parsed.tokenOut && !buyToken) {
+      buyToken = canonicalizeTokenSymbol(parsed.tokenOut);
     }
 
     return {
@@ -727,6 +740,7 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       showCustomHook: baseDetails.showCustomHook ?? swapDefaults.showCustomHook,
       showCustomHookModal: baseDetails.showCustomHookModal ?? false,
       hookWarning: baseDetails.hookWarning,
+      hook: baseDetails.hook,
     };
   };
 
@@ -741,6 +755,14 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
     }
 
     const baseDetails = resolveHookDetails(lowerMessage, "liquidity");
+    const parsed = parseUserCommand(message);
+    if (parsed.hook) {
+      baseDetails.selectedHook = parsed.hook.id;
+      baseDetails.hook = parsed.hook;
+      baseDetails.showCustomHook = false;
+      baseDetails.hookWarning = undefined;
+    }
+
     let token1 = liquidityDefaults.token1;
     let token2 = liquidityDefaults.token2;
 
@@ -761,12 +783,26 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       }
     }
 
+    if ((!token1 || !token2) && parsed.tokenIn && parsed.tokenOut) {
+      token1 = canonicalizeTokenSymbol(parsed.tokenIn);
+      token2 = canonicalizeTokenSymbol(parsed.tokenOut);
+    } else if (!token1 || !token2) {
+      const extracted = extractTokensFromText(message);
+      if (extracted?.tokenA && !token1) {
+        token1 = canonicalizeTokenSymbol(extracted.tokenA);
+      }
+      if (extracted?.tokenB && !token2) {
+        token2 = canonicalizeTokenSymbol(extracted.tokenB);
+      }
+    }
+
     return {
       token1,
       token2,
       selectedHook: baseDetails.selectedHook ?? liquidityDefaults.selectedHook,
       showCustomHook: baseDetails.showCustomHook ?? liquidityDefaults.showCustomHook,
       hookWarning: baseDetails.hookWarning,
+      hook: baseDetails.hook,
     };
   };
 
@@ -896,17 +932,13 @@ Source: Uniswap v4 official deployments (Uniswap Docs)`;
       const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
       if (!activeChatId) return;
 
-      const explorerBase =
-        import.meta.env.MODE === "production"
-          ? "https://basescan.org/tx/"
-          : "https://sepolia-explorer.base.org/tx/"; // SWAP: auto-select explorer per environment
-
       const sanitizedBuyAmount =
         payload.buyAmount.replace(/^\$/, "").trim() || payload.buyAmount;
+      const explorerUrl = txUrl(baseSepolia.id, payload.transactionHash);
 
       const swapSummary = `Swapped ${payload.sellAmount} ${payload.sellToken} to ${payload.buyToken}.
 Transaction successful!
-You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â†’](${explorerBase}${payload.transactionHash})`;
+You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â†’](${explorerUrl})`;
 
       addMessage(
         {
@@ -958,6 +990,7 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                           initialShowCustomHook={swapProps?.showCustomHook ?? swapDefaults.showCustomHook}
                           initialHookWarning={swapProps?.hookWarning}
                           shouldOpenCustomHookModal={Boolean(swapProps?.showCustomHookModal)}
+                          intentHook={swapProps?.hook}
                           inlineMode={true}
                           onSwapSuccess={handleSwapSuccess}
                           onSwapDismiss={exitSwapMode}
@@ -977,6 +1010,7 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                           initialToken2={liquidityProps?.token2}
                           initialSelectedHook={liquidityProps?.selectedHook ?? liquidityDefaults.selectedHook}
                           initialShowCustomHook={liquidityProps?.showCustomHook ?? liquidityDefaults.showCustomHook}
+                          intentHook={liquidityProps?.hook}
                           inlineMode={true}
                         />
                       </div>

@@ -2,55 +2,32 @@ import { ChevronDown, MessageSquarePlus, Package, User, Bot, Menu, MessageSquare
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { useActiveAccount, useWalletBalance } from 'thirdweb/react';
-import { client, baseSepolia } from '../providers/ThirdwebProvider';
-import { useChatContext } from '@/contexts/ChatContext';
-import { useLocation } from 'wouter';
+import { useActiveAccount, useWalletBalance } from "thirdweb/react";
+import { client, baseSepolia } from "../providers/ThirdwebProvider";
+import { useChatContext } from "@/contexts/ChatContext";
+import { useLocation } from "wouter";
+import { TOKENS as TOKEN_CONFIGS } from "@/constants/tokens";
+import { useTokenBalances } from "@/hooks/useTokenBalances";
+import { useUserPools } from "@/hooks/useUserPools";
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-interface Token {
+type SidebarToken = {
   id: string;
   name: string;
   symbol: string;
   icon: string;
-}
+};
 
-// Import token logos
-import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
-import usdcLogo from '@assets/Frame 352_1758910679715.png';
-import cbbtcLogo from '@assets/Frame 352 (2)_1758910679714.png';
-import eurcLogo from '@assets/Frame 352 (3)_1758910679715.png';
-
-const TOKENS: Token[] = [
-  {
-    id: 'ethereum',
-    name: 'Ethereum',
-    symbol: 'ETH',
-    icon: usdcLogo
-  },
-  {
-    id: 'usdc',
-    name: 'USDC',
-    symbol: 'USDC',
-    icon: ethereumLogo
-  },
-  {
-    id: 'cbbtc',
-    name: 'cbBTC',
-    symbol: 'cbBTC',
-    icon: cbbtcLogo
-  },
-  {
-    id: 'eurc',
-    name: 'EURC',
-    symbol: 'EURC',
-    icon: eurcLogo
-  }
-];
+const TOKENS: SidebarToken[] = TOKEN_CONFIGS.map((token) => ({
+  id: token.symbol.toLowerCase(),
+  name: token.name,
+  symbol: token.symbol,
+  icon: token.logo,
+}));
 
 interface TokenSearchDropdownProps {
   isOpen: boolean;
@@ -147,6 +124,7 @@ function TokensSection({ isExpanded }: { isExpanded: boolean }) {
     chain: baseSepolia,
     address: account?.address,
   });
+  const { lastUpdated } = useTokenBalances();
 
   if (!account) {
     return (
@@ -180,6 +158,26 @@ function TokensSection({ isExpanded }: { isExpanded: boolean }) {
           No tokens found
         </div>
       )}
+      {isExpanded && (
+        <div className="px-2 py-1 text-[10px] text-muted-foreground" data-testid="text-token-balances-updated">
+          Updated {new Date(lastUpdated).toLocaleTimeString()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PoolsSection({ isExpanded }: { isExpanded: boolean }) {
+  const { lastUpdated } = useUserPools();
+  if (!isExpanded) return null;
+  return (
+    <div className="ml-6 mt-1 space-y-1" data-testid="div-pools-info">
+      <div className="px-2 py-1 text-xs text-muted-foreground">
+        No pools tracked yet
+      </div>
+      <div className="px-2 py-1 text-[10px] text-muted-foreground">
+        Updated {new Date(lastUpdated).toLocaleTimeString()}
+      </div>
     </div>
   );
 }
@@ -373,9 +371,12 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                     </div>
                     <TokensSection isExpanded={isExpanded} />
                   </div>
-                  <button className="ml-6 text-sm text-muted-foreground hover:text-sidebar-foreground block py-1 hover-elevate px-2 rounded-sm">
-                    Pools
-                  </button>
+                  <div>
+                    <div className="ml-6 text-sm font-medium text-sidebar-foreground mb-1">
+                      Pools
+                    </div>
+                    <PoolsSection isExpanded={isExpanded} />
+                  </div>
                 </div>
               )}
             </div>
