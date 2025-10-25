@@ -14,6 +14,12 @@ type ChatComponent =
   | {
       type: "analysis";
       props: AnalysisResponsePayload;
+    }
+  | {
+      type: "available-pools-cta";
+      props?: {
+        searchQuery?: string;
+      };
     };
 
 export interface ChatMessage {
