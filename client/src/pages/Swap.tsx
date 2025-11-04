@@ -881,9 +881,7 @@ export default function Swap({
 
       {shouldShowDetails && (
         <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5 space-y-3 text-sm text-foreground dark:text-slate-100" data-testid="container-swap-details">
-          <div className="text-sm font-semibold text-foreground dark:text-white">
-            Hook-Enhanced Swap Details
-          </div>
+          <div className="text-sm font-semibold text-foreground dark:text-white">Review Swap Details</div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Current Fee</span>
