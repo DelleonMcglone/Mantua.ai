@@ -1,0 +1,179 @@
+Perfect — we’re now extending Mantua’s **Liquidity Module** to mirror the Uniswap pool explorer you just showed, but integrated with **natural-language triggers** and **hook variety** from your Mantua Hook Library.
+
+Below is a **Replit-ready prompt** that defines how to implement the full “Show me pools” logic and dynamic pool rendering with hooks.
+
+---
+
+## 🧠 **Prompt: Liquidity Module (Show Pools + Hooks Integration)**
+
+> **Task:**
+> Build the **Liquidity Display Component** for Mantua (v4-style Pools Explorer).
+> When a user types phrases like:
+>
+> * “show me pools”
+> * “show me hook pools”
+> * “pools”
+> * “show me ETH/USDC pools”
+>
+> → The component should render a pool list with randomized pool data, including pools both **with and without hooks** from the Mantua Hook Library.
+
+---
+
+### ⚙️ **Functional Requirements**
+
+1. **Trigger Phrases (Chat Input)**
+
+   * If user message includes any of the following:
+
+     ```
+     "pools", "show me pools", "show me hook pools", "show me token pools"
+     ```
+
+     → Render `<PoolsList />` component instead of a text reply.
+
+2. **Display Format**
+
+   * A responsive, dark-theme table or list similar to Uniswap’s `Explore > Pools` page.
+   * Columns:
+     | # | Pool (token pair) | Protocol | Fee Tier | TVL | Pool APR | Hook | 1D Vol | 30D Vol |
+   * Include hook badges (e.g., `Dynamic Fee`, `MEV Protect`, `TWAMM`, `Mantua Intel Hook`, or `—` for no hook).
+
+3. **Pool Data**
+
+   * Use **mocked data** for now (static JSON array), randomizing:
+
+     * Token pairs (ETH/USDC, WBTC/USDT, cbBTC/ETH, etc.)
+     * Fee tiers (0.05%, 0.3%, 1%)
+     * TVL, APR, and volume
+     * Hook association (some have hooks, some don’t)
+
+4. **Hook Integration**
+
+   * Hooks can be drawn randomly from:
+
+     ```js
+     const hooks = ["Mantua Intel Hook", "Dynamic Fee Hook", "TWAMM Hook", "MEV Protection Hook", "—"];
+     ```
+   * Randomly assign each pool one hook label.
+
+5. **UI**
+
+   * Styled similar to Uniswap dark theme.
+   * Each row clickable (future use: show pool details).
+   * Responsive table that fits within Mantua chat interface width.
+
+---
+
+### 🧩 **Example `/client/src/components/Liquidity/PoolsList.tsx`**
+
+```tsx
+/**
+ * Mantua Pools List Component
+ * ---------------------------
+ * Displays pools when user types “show me pools” or similar phrases.
+ * Randomly assigns hooks from Mantua Hook Library.
+ */
+
+import React, { useMemo } from "react";
+
+const hooks = [
+  "Mantua Intel Hook",
+  "Dynamic Fee Hook",
+  "TWAMM Hook",
+  "MEV Protection Hook",
+  "—",
+];
+
+const randomHook = () => hooks[Math.floor(Math.random() * hooks.length)];
+
+const mockPools = [
+  { id: 1, pair: "ETH/USDC", protocol: "v4", fee: "0.05%", tvl: "$5.9M", apr: "18.9%", vol1d: "$6.1M", vol30d: "$304.8M" },
+  { id: 2, pair: "WBTC/USDT", protocol: "v4", fee: "0.3%", tvl: "$3.2M", apr: "21.1%", vol1d: "$614K", vol30d: "$12.1M" },
+  { id: 3, pair: "USDC/USDT", protocol: "v4", fee: "0.0008%", tvl: "$18.8M", apr: "0.83%", vol1d: "$53.6M", vol30d: "$1.6B" },
+  { id: 4, pair: "cbBTC/ETH", protocol: "v4", fee: "0.3%", tvl: "$2.1M", apr: "16.4%", vol1d: "$382K", vol30d: "$9.1M" },
+  { id: 5, pair: "EVA/USDT", protocol: "v4", fee: "0.3%", tvl: "$1.9M", apr: "46.0%", vol1d: "$784K", vol30d: "$5.2M" },
+  { id: 6, pair: "ARB/ETH", protocol: "v4", fee: "0.05%", tvl: "$2.8M", apr: "9.2%", vol1d: "$952K", vol30d: "$27.1M" },
+];
+
+const PoolsList: React.FC = () => {
+  const poolsWithHooks = useMemo(
+    () => mockPools.map((p) => ({ ...p, hook: randomHook() })),
+    []
+  );
+
+  return (
+    <div className="bg-black text-white rounded-2xl p-6 max-w-4xl mx-auto">
+      <h2 className="text-xl font-semibold mb-4">Top Liquidity Pools</h2>
+
+      <table className="w-full text-sm text-left border-collapse">
+        <thead>
+          <tr className="text-zinc-400 border-b border-zinc-700">
+            <th className="py-2">#</th>
+            <th className="py-2">Pool</th>
+            <th className="py-2">Protocol</th>
+            <th className="py-2">Fee</th>
+            <th className="py-2">TVL</th>
+            <th className="py-2">Pool APR</th>
+            <th className="py-2">Hook</th>
+            <th className="py-2">1D Vol</th>
+            <th className="py-2">30D Vol</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {poolsWithHooks.map((pool) => (
+            <tr
+              key={pool.id}
+              className="border-b border-zinc-800 hover:bg-zinc-900 transition"
+            >
+              <td className="py-2 text-zinc-400">{pool.id}</td>
+              <td className="py-2 font-medium">{pool.pair}</td>
+              <td className="py-2">{pool.protocol}</td>
+              <td className="py-2">{pool.fee}</td>
+              <td className="py-2">{pool.tvl}</td>
+              <td className="py-2">{pool.apr}</td>
+              <td className="py-2 text-pink-400">{pool.hook}</td>
+              <td className="py-2">{pool.vol1d}</td>
+              <td className="py-2">{pool.vol30d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default PoolsList;
+```
+
+---
+
+### ⚙️ **Chat Trigger Integration**
+
+In your `chatManager.ts` or `MainContent.tsx`, add:
+
+```tsx
+if (
+  message.toLowerCase().includes("pools") ||
+  message.toLowerCase().includes("show me pools") ||
+  message.toLowerCase().includes("show me hook pools") ||
+  message.toLowerCase().includes("token pools")
+) {
+  setActiveComponent(<PoolsList />);
+  return;
+}
+```
+
+---
+
+### ✅ **Expected Behavior**
+
+* Typing “show me pools” displays the pool explorer (like your screenshot).
+* Pools appear with random hooks (Mantua Intel Hook, Dynamic Fee, etc.)
+* Some pools will display `—` for no hook.
+* UI matches Uniswap’s aesthetic (dark mode + pink accent).
+* Ready for later API connection (Uniswap v4 SDK or HookRank API).
+
+---
+
+Would you like me to extend this to also **filter pools dynamically by token pair** (e.g., typing “show me ETH/USDC pools” only lists those pairs)?

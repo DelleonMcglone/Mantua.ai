@@ -3,6 +3,7 @@ import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
+import PoolsList from "@/components/liquidity/PoolsList";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
@@ -191,9 +192,10 @@ const liquidityDefaults: Readonly<LiquidityIntentState> = {
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
-  const [activeComponent, setActiveComponent] = useState<null | "swap" | "liquidity">(null);
+  const [activeComponent, setActiveComponent] = useState<null | "swap" | "liquidity" | "pools">(null);
   const [swapProps, setSwapProps] = useState<SwapIntentState | null>(null);
   const [liquidityProps, setLiquidityProps] = useState<LiquidityIntentState | null>(null); // LIQUIDITY FIX: track liquidity intent props
+  const [poolsFilter, setPoolsFilter] = useState<string | undefined>(undefined); // POOLS: track token filter
   const [isAnalyzeModeActive, setIsAnalyzeModeActive] = useState(false);
   const [isAnalyzeLoading, setIsAnalyzeLoading] = useState(false);
   const { currentChat, addMessage, updateAgentMode, createNewChat } = useChatContext();
@@ -283,6 +285,19 @@ export default function MainContent() {
     setLiquidityProps(null);
   }, []); // LIQUIDITY FIX: reset liquidity mode when dismissed
 
+  const activatePools = useCallback((tokenFilter?: string) => {
+    setPoolsFilter(tokenFilter);
+    setSwapProps(null);
+    setLiquidityProps(null);
+    setIsAnalyzeModeActive(false);
+    setActiveComponent("pools");
+  }, []); // POOLS: centralize pools activation
+
+  const exitPoolsMode = useCallback(() => {
+    setActiveComponent(null);
+    setPoolsFilter(undefined);
+  }, []); // POOLS: reset pools mode when dismissed
+
   const activateAnalyzeMode = useCallback(() => {
     setActiveComponent(null);
     setSwapProps(null);
@@ -371,6 +386,36 @@ export default function MainContent() {
   const isAgentMode = Boolean(currentChat?.isAgentMode);
   const isSwapModeActive = activeComponent === "swap"; // SWAP: synchronize swap mode state
   const isLiquidityModeActive = activeComponent === "liquidity"; // LIQUIDITY FIX: synchronize add-liquidity mode
+  const isPoolsModeActive = activeComponent === "pools"; // POOLS: synchronize pools mode
+
+  // Helper to detect and parse pools commands
+  const detectPoolsCommand = useCallback((message: string): { detected: boolean; tokenFilter?: string } => {
+    const normalized = message.toLowerCase();
+    
+    // Check for pools-related keywords
+    if (!normalized.includes("pool")) {
+      return { detected: false };
+    }
+
+    // Extract token or token pair filter (supports both "pool" and "pools")
+    const tokenPairMatch = normalized.match(/([a-z]+)\/([a-z]+)\s+pool(?:s)?/i);
+    if (tokenPairMatch) {
+      return { detected: true, tokenFilter: `${tokenPairMatch[1]}/${tokenPairMatch[2]}` };
+    }
+
+    // Extract single token filter (supports both "pool" and "pools")
+    const singleTokenMatch = normalized.match(/([a-z]+)\s+pool(?:s)?/i);
+    if (singleTokenMatch && !["show", "me", "hook", "top", "liquidity"].includes(singleTokenMatch[1])) {
+      return { detected: true, tokenFilter: singleTokenMatch[1] };
+    }
+
+    // General pools request
+    if (normalized.includes("show me pool") || normalized.includes("pools") || normalized.includes("pool list")) {
+      return { detected: true };
+    }
+
+    return { detected: false };
+  }, []);
 
   // Debug logging
   useEffect(() => {
@@ -984,6 +1029,23 @@ export default function MainContent() {
             return;
           }
 
+          // Check for pools command
+          const poolsCommand = detectPoolsCommand(originalMessage);
+          if (poolsCommand.detected) {
+            activatePools(poolsCommand.tokenFilter);
+            const filterMsg = poolsCommand.tokenFilter 
+              ? `Showing pools for ${poolsCommand.tokenFilter.toUpperCase()}`
+              : "Showing top liquidity pools";
+            addMessage(
+              {
+                content: filterMsg,
+                sender: "assistant",
+              },
+              chatId,
+            );
+            return;
+          }
+
           addMessage(
             {
               content: getMockAssistantResponse(originalMessage),
@@ -996,7 +1058,9 @@ export default function MainContent() {
     },
     [
       activateAnalyzeMode,
+      activatePools,
       addMessage,
+      detectPoolsCommand,
       handleLiquidityIntent,
       handleSwapIntent,
       isAnalyzeModeActive,
@@ -1218,6 +1282,14 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                           inlineMode={true}
                         />
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeComponent === 'pools' && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] w-full">
+                      <PoolsList tokenFilter={poolsFilter} />
                     </div>
                   </div>
                 )}

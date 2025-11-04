@@ -1,0 +1,206 @@
+Excellent ✅ — here’s the **enhanced Liquidity Module** (Replit-ready) that now supports:
+
+* Natural-language triggers (“show me pools”, “show me hook pools”, “show me ETH/USDC pools”)
+* Dynamic filtering by **token pair**
+* Randomized hooks (some pools with, some without)
+* Clean Uniswap-style UI
+
+---
+
+## 🧠 **Prompt: Liquidity Module — Pools with Dynamic Token Filtering + Hooks**
+
+> **Task:**
+> Extend Mantua’s Liquidity Module so users can type natural-language commands like:
+>
+> * “show me pools”
+> * “show me hook pools”
+> * “show me ETH/USDC pools”
+> * “show me cbBTC pools”
+>
+> → The app should render a `<PoolsList />` component displaying the appropriate filtered list.
+
+---
+
+### ⚙️ **Functional Specification**
+
+1. **Trigger Phrases**
+
+   ```text
+   pools
+   show me pools
+   show me hook pools
+   show me [TOKEN] pools
+   show me [TOKEN1]/[TOKEN2] pools
+   ```
+
+   → Render `<PoolsList tokenFilter="ETH" />` or `<PoolsList tokenFilter="ETH/USDC" />`.
+
+2. **Dynamic Filtering**
+
+   * If a token or pair name is detected in the input, filter pools containing that token/pair.
+   * Example:
+
+     * Input: “show me ETH/USDC pools” → shows only ETH/USDC pair.
+     * Input: “show me ETH pools” → shows all pairs that include ETH.
+
+3. **Hook Variety**
+
+   * Randomly assign each pool one of:
+
+     ```js
+     ["Mantua Intel Hook", "Dynamic Fee Hook", "TWAMM Hook", "MEV Protection Hook", "—"]
+     ```
+
+4. **UI Design**
+
+   * Dark-mode table layout, styled like Uniswap’s Pools page.
+   * Include columns:
+     | # | Pool | Protocol | Fee | TVL | APR | Hook | 1D Vol | 30D Vol |
+
+5. **Mock Data**
+
+   * Use realistic token pairs and stats until integrated with Uniswap v4 SDK or HookRank API.
+
+---
+
+## 🧩 **Code: `/client/src/components/liquidity/PoolsList.tsx`**
+
+```tsx
+/**
+ * Mantua Pools List Component (v2)
+ * -------------------------------
+ * Supports dynamic filtering by token or token pair.
+ * Displays randomized hook variety from Mantua Hook Library.
+ */
+
+import React, { useMemo } from "react";
+
+interface PoolsListProps {
+  tokenFilter?: string;
+}
+
+const hooks = [
+  "Mantua Intel Hook",
+  "Dynamic Fee Hook",
+  "TWAMM Hook",
+  "MEV Protection Hook",
+  "—",
+];
+
+const randomHook = () => hooks[Math.floor(Math.random() * hooks.length)];
+
+const allPools = [
+  { id: 1, pair: "ETH/USDC", protocol: "v4", fee: "0.05%", tvl: "$5.9M", apr: "18.9%", vol1d: "$6.1M", vol30d: "$304.8M" },
+  { id: 2, pair: "USDC/USDT", protocol: "v4", fee: "0.0008%", tvl: "$18.8M", apr: "0.83%", vol1d: "$53.6M", vol30d: "$1.6B" },
+  { id: 3, pair: "WBTC/USDT", protocol: "v4", fee: "0.3%", tvl: "$3.2M", apr: "21.1%", vol1d: "$614K", vol30d: "$12.1M" },
+  { id: 4, pair: "cbBTC/ETH", protocol: "v4", fee: "0.3%", tvl: "$2.1M", apr: "16.4%", vol1d: "$382K", vol30d: "$9.1M" },
+  { id: 5, pair: "EVA/USDT", protocol: "v4", fee: "0.3%", tvl: "$1.9M", apr: "46.0%", vol1d: "$784K", vol30d: "$5.2M" },
+  { id: 6, pair: "ARB/ETH", protocol: "v4", fee: "0.05%", tvl: "$2.8M", apr: "9.2%", vol1d: "$952K", vol30d: "$27.1M" },
+  { id: 7, pair: "OP/USDC", protocol: "v4", fee: "0.3%", tvl: "$3.8M", apr: "13.8%", vol1d: "$611K", vol30d: "$19.2M" },
+  { id: 8, pair: "sUSD/DAI", protocol: "v4", fee: "0.01%", tvl: "$2.0M", apr: "0.06%", vol1d: "$32.8K", vol30d: "$1.4M" },
+  { id: 9, pair: "PEPE/USDC", protocol: "v4", fee: "1.00%", tvl: "$1.5M", apr: "25.4%", vol1d: "$1.8M", vol30d: "$56.9M" },
+  { id: 10, pair: "ETH/WBTC", protocol: "v4", fee: "0.05%", tvl: "$3.1M", apr: "5.7%", vol1d: "$971K", vol30d: "$54.9M" },
+];
+
+const PoolsList: React.FC<PoolsListProps> = ({ tokenFilter }) => {
+  const poolsWithHooks = useMemo(
+    () => allPools.map((p) => ({ ...p, hook: randomHook() })),
+    []
+  );
+
+  // Filter logic (by token or pair)
+  const filteredPools = useMemo(() => {
+    if (!tokenFilter) return poolsWithHooks;
+    const filter = tokenFilter.toLowerCase();
+    return poolsWithHooks.filter((p) => p.pair.toLowerCase().includes(filter));
+  }, [tokenFilter, poolsWithHooks]);
+
+  return (
+    <div className="bg-black text-white rounded-2xl p-6 max-w-4xl mx-auto">
+      <h2 className="text-xl font-semibold mb-4">
+        {tokenFilter ? `Pools matching "${tokenFilter.toUpperCase()}"` : "Top Liquidity Pools"}
+      </h2>
+
+      {filteredPools.length === 0 ? (
+        <p className="text-zinc-400">No pools found for this token or pair.</p>
+      ) : (
+        <table className="w-full text-sm text-left border-collapse">
+          <thead>
+            <tr className="text-zinc-400 border-b border-zinc-700">
+              <th className="py-2">#</th>
+              <th className="py-2">Pool</th>
+              <th className="py-2">Protocol</th>
+              <th className="py-2">Fee</th>
+              <th className="py-2">TVL</th>
+              <th className="py-2">APR</th>
+              <th className="py-2">Hook</th>
+              <th className="py-2">1D Vol</th>
+              <th className="py-2">30D Vol</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filteredPools.map((pool) => (
+              <tr
+                key={pool.id}
+                className="border-b border-zinc-800 hover:bg-zinc-900 transition"
+              >
+                <td className="py-2 text-zinc-400">{pool.id}</td>
+                <td className="py-2 font-medium">{pool.pair}</td>
+                <td className="py-2">{pool.protocol}</td>
+                <td className="py-2">{pool.fee}</td>
+                <td className="py-2">{pool.tvl}</td>
+                <td className="py-2">{pool.apr}</td>
+                <td className="py-2 text-pink-400">{pool.hook}</td>
+                <td className="py-2">{pool.vol1d}</td>
+                <td className="py-2">{pool.vol30d}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
+export default PoolsList;
+```
+
+---
+
+## 🧩 **Chat Command Integration**
+
+Add to your `chatManager.ts` or `MainContent.tsx`:
+
+```tsx
+import PoolsList from "@/components/liquidity/PoolsList";
+
+const handleUserCommand = (message: string) => {
+  const lowerMsg = message.toLowerCase();
+
+  if (lowerMsg.includes("pool")) {
+    // Detect token or pair from the message
+    const tokenMatch = lowerMsg.match(/show me ([a-z0-9/]+)/i);
+    const tokenFilter = tokenMatch ? tokenMatch[1].toUpperCase() : "";
+
+    setActiveComponent(<PoolsList tokenFilter={tokenFilter} />);
+    return;
+  }
+};
+```
+
+---
+
+### ✅ **Resulting Behavior**
+
+| User Command             | Output                                    |
+| ------------------------ | ----------------------------------------- |
+| `show me pools`          | Displays all mock pools                   |
+| `show me hook pools`     | Displays mix of pools (with random hooks) |
+| `show me ETH pools`      | Filters to all ETH-related pairs          |
+| `show me ETH/USDC pools` | Displays only that pair                   |
+| `show me cbBTC pools`    | Displays cbBTC-related pairs              |
+
+---
+
+Would you like me to add a **visual hook indicator badge** (small colored tag beside pool names, e.g. 🧠 Mantua Intel Hook / ⚡ Dynamic Fee Hook) to make hook types visually distinct?
