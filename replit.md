@@ -89,6 +89,37 @@ The application includes comprehensive activity tracking for both user actions a
 - **Auto-updates**: Charts and summaries update automatically as activities are added
 - **Data persistence**: Activities stored with unique IDs, timestamps, and metadata
 
+## Liquidity Pools Explorer
+The application features a comprehensive liquidity pools explorer accessible via natural language chat commands:
+
+### Pool Display Features
+- **Pool Information**: Displays pool pair, protocol version, fee tier, TVL, APR, volume, and assigned hooks
+- **Random Hook Assignment**: Each pool is randomly assigned a hook from the Mantua Hook Library (Mantua Intel Hook, Dynamic Fee Hook, TWAMM Hook, MEV Protection Hook, or no hook)
+- **Uniswap-Style UI**: Clean table interface showing 10 mock pools with comprehensive data
+- **Responsive Design**: Built with Shadcn Table components and purple theme styling
+- **Data Columns**: Pool rank, pair name, protocol (v4), fee percentage, TVL, Pool APR, Hook assignment, 1-day volume, 30-day volume
+
+### Natural Language Commands
+The pools explorer supports intuitive chat-based triggers:
+- **"pools"** or **"show me pools"**: Displays all available pools
+- **"show me [TOKEN] pools"**: Filters pools containing the specified token (e.g., "show me ETH pools")
+- **"show me [TOKEN1]/[TOKEN2] pools"**: Filters to specific trading pair (e.g., "show me ETH/USDC pools")
+
+### Token Filtering
+- **Dynamic Filtering**: Real-time filtering based on token symbols extracted from user commands
+- **Case-Insensitive**: Accepts both uppercase and lowercase token symbols
+- **Pair Support**: Handles both single-token and token-pair filtering
+- **Normalized Display**: Tokens displayed in uppercase for consistency (ETH/USDC, WBTC/USDT, etc.)
+
+### Mock Data Coverage
+Pools include popular DeFi pairs: ETH/USDC, USDC/USDT, WBTC/USDT, cbBTC/ETH, EVA/USDT, ARB/ETH, OP/USDC, sUSD/DAI, PEPE/USDC, ETH/WBTC
+
+### Implementation Details
+- **Component**: PoolsList component located at `client/src/components/liquidity/PoolsList.tsx`
+- **State Management**: Integrated into MainContent.tsx with pools mode similar to swap/liquidity modes
+- **Detection Logic**: Custom regex-based command detection supporting both singular and plural forms
+- **Hook Library Integration**: Uses shared `hookLibrary.ts` for consistent hook naming across features
+
 ## Chat History Access Control
 The application implements wallet-gated access for saved chat interactions:
 
