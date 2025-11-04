@@ -1,0 +1,73 @@
+# Task: Fix issue where selecting "Swap" from the (+) button does not display the Swap component.
+# Goal: When user clicks the plus (+) button and selects "Swap", the Swap component
+# (e.g., SwapDefault or CustomSwapInterface) should render immediately inside the chat container.
+
+# ======================
+# FRONTEND LOGIC FIX
+# ======================
+# Files to check:
+#   client/src/components/ChatToolbar.tsx
+#   client/src/lib/chatManager.ts
+#   client/src/pages/MainView.tsx or MainContent.tsx (whichever renders chat)
+#   client/src/components/swap/SwapDefault.tsx (or CustomSwapInterface.tsx)
+#
+# 1. Add or verify swap mode state:
+#    const [isSwapMode, setIsSwapMode] = useState(false);
+#
+# 2. In ChatToolbar.tsx:
+#    - When user clicks the "+" button → opens dropdown with options [Swap, Add Liquidity, Analyze].
+#    - On click of "Swap":
+#          setIsSwapMode(true);
+#          pushMessage({
+#              type: "system",
+#              content: "You selected Swap Mode — configure your trade below."
+#          });
+#          render Swap component inline.
+#
+# Example:
+#    <DropdownMenuItem onClick={() => {
+#        setIsSwapMode(true);
+#        onUserSelectMode("swap");
+#    }}>
+#       💱 Swap
+#    </DropdownMenuItem>
+#
+# 3. In MainView.tsx (or MainContent.tsx):
+#    Add conditional rendering:
+#        {isSwapMode && (
+#            <div className="mt-3">
+#                <SwapDefault />   # or <CustomSwapInterface />
+#            </div>
+#        )}
+#
+# 4. Ensure state propagation:
+#    - If using a centralized chatManager or context provider, add "mode" to global state:
+#        const [mode, setMode] = useState("chat");
+#        When user selects Swap → setMode("swap")
+#    - Then in your chat rendering:
+#        if (mode === "swap") return <SwapDefault />;
+#
+# 5. Update chatManager.ts:
+#    Add a handler:
+#        export function handleModeSelect(mode) {
+#            window.dispatchEvent(new CustomEvent("mantua-mode-change", { detail: { mode } }));
+#        }
+#    In MainView, listen for that event:
+#        useEffect(() => {
+#            const handle = (e) => setMode(e.detail.mode);
+#            window.addEventListener("mantua-mode-change", handle);
+#            return () => window.removeEventListener("mantua-mode-change", handle);
+#        }, []);
+#
+# ======================
+# BACKEND (Optional)
+# ======================
+# No backend change is needed; this is a front-end render logic issue.
+#
+# ======================
+# UI EXPECTED BEHAVIOR
+# ======================
+# ✅ When user clicks + → Swap
+#   → A Swap component appears inline above chat input.
+#   → The input placeholder updates to “Enter amount or token to swap...”
+#   → The component loads tokens & live prices (using Mantua’s Uniswap v4

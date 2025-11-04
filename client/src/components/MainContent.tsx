@@ -505,8 +505,18 @@ export default function MainContent() {
 
   // Handle action button clicks with predefined content
   const handleActionClick = (actionId: string) => {
-    const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
-    if (!activeChatId) return; // No active chat to add messages to
+    // SWAP FIX: Create chat if needed, just like handleChatSubmit does
+    let chatForAction = currentChat;
+    
+    if (!chatForAction) {
+      console.log(`[MainContent] No active chat found, creating new chat for action: ${actionId}`);
+      const newChat = createNewChat();
+      if (!newChat) return;
+      chatForAction = newChat;
+    }
+
+    const activeChatId = chatForAction.id;
+    pendingChatIdRef.current = activeChatId;
 
     if (actionId === 'analyze') {
       if (!isAnalyzeModeActive) {
