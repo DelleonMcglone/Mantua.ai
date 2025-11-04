@@ -24,12 +24,12 @@ The application includes comprehensive tracking for both user and AI agent activ
 A Uniswap-style liquidity pools explorer allows users to view and filter mock DeFi pools. Pools display key metrics like TVL, APR, volume, and are randomly assigned hooks from the Mantua Hook Library. Users can interact with the explorer via natural language chat commands (e.g., "pools", "show me ETH pools").
 
 ## Analysis Mode
-An interactive mode for real-time analysis of pools, tokens, and networks:
+An interactive mode for real-time analysis of pools, tokens, and networks powered by CoinGecko API integration:
 
 ### Activation
 - Accessible via the Quick Actions menu (+ button in chat input)
 - Click "Analyze" to activate analysis mode
-- Does not require wallet connection
+- Does not require wallet connection or API key
 
 ### Active Mode Features
 - **Visual Indicators**: Primary-colored border around chat input, "Analyze" badge with hover-to-exit functionality
@@ -37,15 +37,50 @@ An interactive mode for real-time analysis of pools, tokens, and networks:
 - **Quick Actions Menu**: Automatically closes when mode is activated
 - **State Management**: Clears other active modes (swap, liquidity) when activated
 
-### Integration Points
-- **CoinGecko API**: Leverages existing `useTokenUsdPrices` hook for real-time token price data
-- **Chat Context**: Analysis queries are processed through the chat interface
-- **Intent Parsing**: Server-side intent parsing recognizes analysis-related queries
+### CoinGecko API Integration
+Full-featured cryptocurrency data integration with **no API key required**:
+
+#### Simple Price Queries
+- Real-time token prices with market cap, 24h volume, and 24h price changes
+- Supports multiple cryptocurrencies (BTC, ETH, USDC, etc.)
+- Example queries: "eth price", "bitcoin price", "show me token prices"
+
+#### Historical Market Data
+- Fetch historical chart data with customizable time ranges (1-365 days)
+- OHLC candlestick data for technical analysis
+- Price, market cap, and volume history
+
+#### On-Chain DEX Pool Analysis
+Priority feature for Base network:
+- **Search Pools**: Find liquidity pools across DEXes with natural language queries
+- **Base Network Pools**: Get specific pool information on Base including reserves, volume, and pricing
+- **Trending Pools**: Retrieve top trending pools with real-time volume and liquidity data
+- **ETH/cbBTC Analysis**: Specialized endpoint for analyzing ETH/cbBTC pools on Base with detailed volume breakdowns (5min, 1h, 6h, 24h)
+- Example queries: "search eth cbbtc pool", "show me trending pools on base", "analyze liquidity pools"
+
+#### Supported Query Types
+- **Pool Queries**: "eth cbbtc pool", "trending pools", "search for liquidity pools"
+- **Price Queries**: "eth price", "bitcoin price", "usdc price"
+- **Network Analysis**: "base network", "chain tvl", "protocol movers" (uses DefiLlama)
+
+### API Endpoints
+Backend exposes comprehensive CoinGecko endpoints:
+- `GET /api/coingecko/prices` - Current token prices
+- `GET /api/coingecko/markets` - Market data for multiple coins
+- `GET /api/coingecko/chart/:coinId` - Historical chart data
+- `GET /api/coingecko/pools/search` - Search liquidity pools
+- `GET /api/coingecko/pools/base/:poolAddress` - Specific pool on Base
+- `GET /api/coingecko/pools/base/trending` - Trending pools on Base
+- `GET /api/coingecko/pools/eth-cbbtc` - ETH/cbBTC pools analysis
 
 ### Implementation
-- **Component**: ChatInput at `client/src/components/ChatInput.tsx` handles mode activation/deactivation
-- **State**: Managed via `isAnalyzeModeActive` prop and callbacks in MainContent
+- **Frontend**: ChatInput at `client/src/components/ChatInput.tsx` handles mode activation/deactivation
+- **Backend Service**: CoinGecko service at `server/services/coingecko.ts` with comprehensive TypeScript types
+- **Analyze Integration**: Extended `server/services/analyze.ts` to detect and process pool/token queries
+- **State Management**: Managed via `isAnalyzeModeActive` prop and callbacks in MainContent
 - **Design Pattern**: Follows same pattern as Swap and Add Liquidity modes for consistency
+- **Error Handling**: Robust handling for rate limits, network errors, and missing data
+- **Optional API Key**: Works without authentication; set `COINGECKO_API_KEY` env var for higher rate limits (30 calls/min vs lower limits)
 
 ## Add Liquidity Interface
 This feature provides a comprehensive Uniswap v4-style interface for adding liquidity to pools:
