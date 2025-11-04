@@ -25,9 +25,11 @@ import { HookConfig } from "@/lib/hookLibrary";
 import { useSwapExecution } from "@/hooks/useSwapExecution";
 import { txUrl } from "@/utils/explorers";
 import { useToast } from "@/hooks/use-toast";
+import { useTokenUsdPrices } from "@/hooks/useTokenUsdPrices";
 
 const HOOK_OPTIONS = [
   { value: 'no-hook', label: 'No Hook' },
+  { value: 'mantua-intel', label: 'Mantua Intel (Hook)' },
   { value: 'dynamic-fee', label: 'Dynamic Fee Hook' },
   { value: 'twamm', label: 'TWAMM Hook' },
   { value: 'mev-protection', label: 'MEV Protection Hook' },
@@ -95,6 +97,7 @@ export default function Swap({
   const [networkWarning, setNetworkWarning] = useState<string | null>(null); // SWAP REGRESSION FIX: surface network guidance
   const [pendingNotice, setPendingNotice] = useState<string | null>(null); // SWAP REGRESSION FIX: pending state banner
   const [submitError, setSubmitError] = useState<string | null>(null); // SWAP REGRESSION FIX: capture transaction errors
+  const [swapFlowStep, setSwapFlowStep] = useState<'swap' | 'review' | 'approve'>('swap'); // 3-step swap flow
   
   // Show custom hook section if initially requested
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
@@ -179,6 +182,30 @@ export default function Swap({
 
   const showSwapHookWarning = hookWarningMessage === UNRECOGNIZED_SWAP_HOOK_MESSAGE;
 
+  // USD price calculation for sell and buy amounts
+  const { prices: tokenPrices } = useTokenUsdPrices([sellToken, buyToken]);
+  
+  const sellUsdValue = useMemo(() => {
+    if (!sellAmount || !sellToken) return null;
+    const parsedAmount = Number(sellAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return null;
+    const price = tokenPrices[sellToken.toUpperCase()];
+    if (!price) return null;
+    return parsedAmount * price;
+  }, [sellAmount, sellToken, tokenPrices]);
+
+  const buyUsdValue = useMemo(() => {
+    if (!buyAmount || !buyToken) return null;
+    const parsedAmount = Number(buyAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return null;
+    const price = tokenPrices[buyToken.toUpperCase()];
+    if (!price) return null;
+    return parsedAmount * price;
+  }, [buyAmount, buyToken, tokenPrices]);
+
+  const sellUsdDisplay = sellUsdValue !== null ? `$${sellUsdValue.toFixed(2)}` : null;
+  const buyUsdDisplay = buyUsdValue !== null ? `$${buyUsdValue.toFixed(2)}` : null;
+
   const estimatedFeeUsd = useMemo(() => {
     if (!sellAmount || typeof feeBps !== "number") return null;
     const parsedAmount = Number(sellAmount);
@@ -197,6 +224,14 @@ export default function Swap({
   const feeAmountDisplay = estimatedFeeUsd !== null
     ? `~$${estimatedFeeUsd.toFixed(2)}`
     : "~$0.00";
+
+  // Hook fee calculation (Mantua Intel and No Hook have $0.00 fee)
+  const hookFeeDisplay = useMemo(() => {
+    if (selectedHook === 'no-hook' || selectedHook === 'mantua-intel') {
+      return '$0.00';
+    }
+    return '$0.02'; // Placeholder for other hooks
+  }, [selectedHook]);
 
   const ensureTokenOption = useCallback((symbol?: string) => {
     if (!symbol) return;
@@ -390,6 +425,21 @@ export default function Swap({
     handleHookChange('no-hook');
   };
 
+  const handleSwapButtonClick = () => {
+    // 3-step flow: swap -> review -> approve -> execute
+    if (swapFlowStep === 'swap') {
+      setSwapFlowStep('review');
+      return;
+    }
+    if (swapFlowStep === 'review') {
+      setSwapFlowStep('approve');
+      return;
+    }
+    if (swapFlowStep === 'approve') {
+      handleSwapSubmit();
+    }
+  };
+
   const handleSwapSubmit = async () => {
     if (transactionState !== "idle") return;
     if (!isWalletConnected) {
@@ -501,6 +551,7 @@ export default function Swap({
     setTransactionHash('');
     setSellAmount('');
     setBuyAmount('');
+    setSwapFlowStep('swap');
   }; // SWAP FIX: Prefill & Wallet Balance
 
   // If transaction completed, show success screen
@@ -628,7 +679,12 @@ export default function Swap({
               {/* Max button intentionally removed per Tier 2.5 requirements */}
             </div>
             
-            {/* SWAP FIX: Prefill & Wallet Balance - removed static sell token helper */}
+            {/* USD equivalent for sell amount */}
+            {sellUsdDisplay && (
+              <p className="text-sm text-muted-foreground" data-testid="text-sell-usd">
+                {sellUsdDisplay}
+              </p>
+            )}
           </div>
 
           {/* Swap Arrow */}
@@ -688,6 +744,13 @@ export default function Swap({
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* USD equivalent for buy amount */}
+            {buyUsdDisplay && (
+              <p className="text-sm text-muted-foreground" data-testid="text-buy-usd">
+                {buyUsdDisplay}
+              </p>
+            )}
           </div>
 
           {/* Hook Selector */}
@@ -779,6 +842,43 @@ export default function Swap({
         </div>
       )}
 
+      {/* Review Details Section - shows when in review or approve state */}
+      {(swapFlowStep === 'review' || swapFlowStep === 'approve') && shouldShowDetails && (
+        <Card data-testid="container-review-details">
+          <CardContent className="p-5 space-y-3">
+            <div className="text-sm font-semibold text-foreground">Review Swap Details</div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Fee (0.25%)</span>
+                <span className="font-medium">{feeAmountDisplay}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Hook Fee</span>
+                <span className="font-medium">{hookFeeDisplay}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Network cost</span>
+                <span className="font-medium">~$0.02</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Order routing</span>
+                <span className="font-medium">
+                  {selectedHook === 'mantua-intel' ? 'Mantua Intel (Hook)' : 'Uniswap API'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Price impact</span>
+                <span className="font-medium">{typeof priceImpact === "string" ? priceImpact : "-0.33%"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Maximum slippage</span>
+                <span className="font-medium">Auto 2.5%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {shouldShowDetails && (
         <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5 space-y-3 text-sm text-foreground dark:text-slate-100" data-testid="container-swap-details">
           <div className="text-sm font-semibold text-foreground dark:text-white">
@@ -808,7 +908,7 @@ export default function Swap({
       {/* Submit Button */}
       <div className="space-y-3">
         <Button 
-          onClick={handleSwapSubmit}
+          onClick={handleSwapButtonClick}
           disabled={transactionState === 'swapping' || transactionState === 'processing'}
           className={`w-full text-base font-medium ${
             transactionState === 'swapping' ? 'bg-gradient-to-r from-primary to-primary/80' : ''
@@ -816,7 +916,9 @@ export default function Swap({
           size="lg"
           data-testid="button-submit-swap"
         >
-          {transactionState === 'idle' && 'Swap'}
+          {transactionState === 'idle' && swapFlowStep === 'swap' && 'Swap'}
+          {transactionState === 'idle' && swapFlowStep === 'review' && 'Review'}
+          {transactionState === 'idle' && swapFlowStep === 'approve' && 'Approve and Swap'}
           {transactionState === 'swapping' && 'Swapping...'}
           {transactionState === 'processing' && 'Processing...'}
           {transactionState === 'error' && 'Try Again'}

@@ -5,6 +5,7 @@ export type HookConfig = {
 
 // File purpose: Central registry for supported hooks with normalized lookup.
 export const HOOKS: Record<string, HookConfig> = {
+  "mantua intel": { id: "mantua-intel", label: "Mantua Intel (Hook)" },
   "dynamic fee": { id: "dynamic-fee", label: "Dynamic Fee Hook" },
   "mev protection": { id: "mev-protection", label: "MEV Protection Hook" },
   twamm: { id: "twamm", label: "TWAMM Hook" },
@@ -12,6 +13,8 @@ export const HOOKS: Record<string, HookConfig> = {
 
 // Allow common synonyms/abbreviations
 export const HOOK_SYNONYMS: Record<string, string> = {
+  "mantua-intel": "mantua intel",
+  "mantua intel hook": "mantua intel",
   "dynamic-fee": "dynamic fee",
   dynamicfee: "dynamic fee",
   mev: "mev protection",

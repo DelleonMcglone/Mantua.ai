@@ -1,0 +1,90 @@
+Here’s your **ready-to-use Replit prompt** — clean, specific, and formatted for your AI coding agent or Cursor/Claude/Code Interpreter to execute without confusion 👇
+
+---
+
+### 🧠 **Prompt for Replit / Cursor**
+
+> **Task:**
+> Update the **Swap Component** (in the Mantua app) to match the new 3-step swap flow and UI layout shown in the 3 screenshots (`Swap1.png`, `Swap2.png`, `Swap3.png`).
+
+---
+
+### 🪄 **Requirements**
+
+1. **UI Enhancements**
+
+   * When the user enters a **Sell amount**, display the **USD equivalent** directly below both the **Sell** and **Buy** fields.
+   * Use a placeholder for the real-time token price until APIs are added.
+     *(Later, we’ll integrate CoinGecko’s free API for live pricing.)*
+
+2. **Button Flow Logic**
+
+   * The main button at the bottom should change states as follows:
+
+     * Default: **`Swap`**
+     * After click or command “swap”: change to **`Review`**
+     * After click or command “review”: show expanded review details
+     * After click or command “review approved”: change to **`Approve and Swap`**
+     * Clicking **Approve and Swap** executes the transaction.
+
+3. **Review Details Section**
+   When “Review” is triggered, show a summary (as in screenshots) including:
+
+   * Amount of ETH equivalent to the sell amount
+   * **Fee (0.25%)**
+   * **Hook Fee** *(new line, placeholder value for now)*
+   * **Network cost**
+   * **Order routing**
+   * **Price impact**
+   * **Maximum slippage**
+   * Keep styling consistent with Uniswap’s dark UI and use Mantua’s pink accent for the primary button.
+
+4. **Mantua Intel Hook**
+
+   * Add a **new hook option** called `Mantua Intel (Hook)` right after `No Hook` in the hook dropdown.
+   * Mantua Intel acts as a “no-op” hook (no logic change yet, placeholder for now).
+   * Under Fee, show:
+     `Hook Fee: $0.00`
+     `Order routing: Mantua Intel (Hook)`
+
+5. **Swap Review State Examples**
+
+   * “Swap” → user clicks → changes to **Review**
+   * “Review” → shows expanded breakdown like the second screenshot
+   * “Approve and Swap” → executes transaction and confirms swap, as in third screenshot
+
+6. **APIs**
+
+   * No live APIs yet — use placeholder USD values.
+     Example: `"$2.38"` for Sell and `"$2.36"` for Buy.
+   * Later integration will use CoinGecko’s `/simple/price` endpoint.
+
+7. **Files to Update**
+
+   * `/client/src/components/Swap.tsx`
+   * `/client/src/components/hooksList.ts` (if hooks are defined separately)
+
+---
+
+### ✅ **Expected Behavior**
+
+* Enter sell amount → shows USD equivalents.
+* Click “Swap” → changes to “Review”.
+* Click or type “Review” → expanded summary with all trade details.
+* Click or type “Review Approved” → button changes to “Approve and Swap”.
+* Click “Approve and Swap” → executes transaction.
+* Mantua Intel Hook selectable, labeled and styled consistently.
+
+---
+
+### 📁 **Screenshots Reference**
+
+Attach:
+
+* `Swap1.png` — Swap input screen
+* `Swap2.png` — Review screen
+* `Swap3.png` — Approve and Swap confirmation screen
+
+---
+
+Would you like me to **add an implementation-ready Swap.tsx scaffold** that includes these states (Swap → Review → Approve) with Mantua Intel prewired as the first hook? It’ll be plug-and-play for Replit.

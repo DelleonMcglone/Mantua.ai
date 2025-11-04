@@ -13,6 +13,7 @@ import About from "@/pages/About";
 import UserActivity from "@/pages/UserActivity";
 import AgentActivity from "@/pages/AgentActivity";
 import Agents from "@/pages/Agents";
+import Swap from "@/pages/Swap";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,9 @@ function Router() {
       <Route path="/user-activity" component={UserActivity} />
       <Route path="/agent-activity" component={AgentActivity} />
       <Route path="/agents" component={Agents} />
+      <Route path="/swap">
+        <Swap />
+      </Route>
       {/* Chat routes - /chat/new and /chat/:id */}
       <Route path="/chat/:id" component={Home} />
       {/* Fallback to 404 */}
