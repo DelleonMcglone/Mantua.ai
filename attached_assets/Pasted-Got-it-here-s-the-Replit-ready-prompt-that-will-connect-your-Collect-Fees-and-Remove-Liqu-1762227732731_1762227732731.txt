@@ -1,0 +1,234 @@
+Got it ✅ — here’s the **Replit-ready prompt** that will connect your `Collect Fees` and `Remove Liquidity` buttons to their respective modal components (with empty default states and matching your screenshots).
+
+This creates the correct **UI + state logic** for opening and closing these modal windows.
+
+---
+
+### 🧠 **Prompt for Replit: Add Collect Fees + Remove Liquidity Components & Logic**
+
+> In `client/src/components/liquidity/AddLiquidity.tsx`, update the component so that when the user clicks:
+>
+> * **“Collect fees”**, it opens a new **CollectFeesModal**
+> * **“Remove liquidity”**, it opens a new **RemoveLiquidityModal**
+>
+> The modals should:
+>
+> * Start **empty** (no prefilled data)
+> * Match the design and structure of the provided screenshots
+> * Include **Close (X)** buttons to exit the modal
+> * Use the Mantua dark theme with pink/purple accent styles
+>
+> Add these two components (`CollectFeesModal.tsx` and `RemoveLiquidityModal.tsx`) inside `client/src/components/liquidity/`.
+
+---
+
+### 💻 **Step 1: Update AddLiquidity.tsx**
+
+Add this **state + modal trigger logic** at the top of the file:
+
+```tsx
+import CollectFeesModal from "./CollectFeesModal";
+import RemoveLiquidityModal from "./RemoveLiquidityModal";
+
+const [showCollectFees, setShowCollectFees] = useState(false);
+const [showRemoveLiquidity, setShowRemoveLiquidity] = useState(false);
+```
+
+Then, update the two buttons:
+
+```tsx
+{/* Action Buttons */}
+<div className="flex gap-2">
+  <button
+    onClick={() => setShowCollectFees(true)}
+    className="flex-1 bg-zinc-800 py-2 rounded-lg text-zinc-300 hover:bg-zinc-700"
+  >
+    Collect fees
+  </button>
+  <button
+    onClick={() => setShowRemoveLiquidity(true)}
+    className="flex-1 bg-zinc-800 py-2 rounded-lg text-zinc-300 hover:bg-zinc-700"
+  >
+    Remove liquidity
+  </button>
+</div>
+
+{/* Modal Rendering */}
+{showCollectFees && (
+  <CollectFeesModal onClose={() => setShowCollectFees(false)} />
+)}
+{showRemoveLiquidity && (
+  <RemoveLiquidityModal onClose={() => setShowRemoveLiquidity(false)} />
+)}
+```
+
+---
+
+### 💻 **Step 2: Create `CollectFeesModal.tsx`**
+
+```tsx
+/**
+ * Mantua Collect Fees Modal
+ * -------------------------
+ * Displays token fees for collection (empty by default)
+ */
+
+import React from "react";
+import { X } from "lucide-react";
+
+interface Props {
+  onClose: () => void;
+}
+
+const CollectFeesModal: React.FC<Props> = ({ onClose }) => {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+      <div className="bg-zinc-900 p-6 rounded-2xl w-full max-w-sm shadow-xl relative">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Collect fees</h2>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Token Fees (Empty by Default) */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-blue-500 rounded-full" />
+              <p>ETH</p>
+            </div>
+            <div className="text-right text-zinc-400 text-sm">
+              <p>0</p>
+              <p>(&lt;$0.00)</p>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-orange-500 rounded-full" />
+              <p>cbBTC</p>
+            </div>
+            <div className="text-right text-zinc-400 text-sm">
+              <p>0</p>
+              <p>(&lt;$0.00)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Collect Button */}
+        <button
+          className="w-full bg-pink-600 hover:bg-pink-700 text-white text-lg font-medium py-3 rounded-xl mt-6"
+        >
+          Collect
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default CollectFeesModal;
+```
+
+---
+
+### 💻 **Step 3: Create `RemoveLiquidityModal.tsx`**
+
+```tsx
+/**
+ * Mantua Remove Liquidity Modal
+ * -----------------------------
+ * Empty state version of remove liquidity with withdrawal percentage.
+ */
+
+import React, { useState } from "react";
+import { X } from "lucide-react";
+
+interface Props {
+  onClose: () => void;
+}
+
+const RemoveLiquidityModal: React.FC<Props> = ({ onClose }) => {
+  const [withdrawal, setWithdrawal] = useState(0);
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+      <div className="bg-zinc-900 p-6 rounded-2xl w-full max-w-md shadow-xl relative">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Remove liquidity</h2>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Pool Info */}
+        <div className="bg-zinc-800 p-3 rounded-lg flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full" />
+            <p className="text-white font-medium">ETH / cbBTC</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <span>v4</span>
+            <span>0.3%</span>
+            <span className="text-green-400">• In range</span>
+          </div>
+        </div>
+
+        {/* Withdrawal */}
+        <div className="text-center">
+          <p className="text-zinc-400 text-sm mb-2">Withdrawal amount</p>
+          <h1 className="text-5xl font-bold mb-4">{withdrawal}%</h1>
+
+          {/* Percentage Buttons */}
+          <div className="flex justify-center gap-2 mb-4">
+            {[25, 50, 75, 100].map((val) => (
+              <button
+                key={val}
+                onClick={() => setWithdrawal(val)}
+                className={`px-4 py-2 rounded-lg ${
+                  withdrawal === val
+                    ? "bg-pink-600 text-white"
+                    : "bg-zinc-800 text-zinc-300"
+                }`}
+              >
+                {val === 100 ? "Max" : `${val}%`}
+              </button>
+            ))}
+          </div>
+
+          {/* Position Info */}
+          <div className="text-left space-y-1 text-sm text-zinc-400">
+            <p>ETH position: &lt;0.001 ETH</p>
+            <p>cbBTC position: &lt;0.001 cbBTC</p>
+          </div>
+
+          {/* Review Button */}
+          <button
+            className="w-full bg-pink-600 hover:bg-pink-700 text-white text-lg font-medium py-3 rounded-xl mt-6"
+          >
+            Review
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RemoveLiquidityModal;
+```
+
+---
+
+### ✅ **Expected Behavior**
+
+* Clicking **“Collect fees”** opens the Collect Fees modal (ETH + cbBTC rows start empty).
+* Clicking **“Remove liquidity”** opens the Remove Liquidity modal (0% default).
+* Both modals can be closed by clicking the “X”.
+* Modals overlay the existing page with `bg-black/70`.
+* Future integration can easily replace mock data with live pool positions.
+
+---
+
+Would you like me to add **real pool data connection next** (so ETH/cbBTC balances, % ranges, and collected fees pull live from Base Sepolia or Uniswap SDK)?

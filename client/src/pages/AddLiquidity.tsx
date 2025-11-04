@@ -15,6 +15,8 @@ import { HookConfig } from "@/lib/hookLibrary";
 import { txUrl } from "@/utils/explorers";
 import TransactionSummary from "@/components/common/TransactionSummary";
 import { useUserPools } from "@/hooks/useUserPools";
+import CollectFeesModal from "@/components/liquidity/CollectFeesModal";
+import RemoveLiquidityModal from "@/components/liquidity/RemoveLiquidityModal";
 
 const FEE_TIERS = [
   { value: '0.01', label: '0.01% - best for very stable pairs' },
@@ -76,6 +78,8 @@ export default function AddLiquidity({
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [selectedTimeRange, setSelectedTimeRange] = useState('1M');
+  const [showCollectFees, setShowCollectFees] = useState(false);
+  const [showRemoveLiquidity, setShowRemoveLiquidity] = useState(false);
   
   const { addUserActivity } = useActivity();
   const userPools = useUserPools();
@@ -717,6 +721,7 @@ export default function AddLiquidity({
             <Button 
               variant="outline" 
               className="flex-1"
+              onClick={() => setShowCollectFees(true)}
               data-testid="button-collect-fees"
             >
               Collect fees
@@ -724,6 +729,7 @@ export default function AddLiquidity({
             <Button 
               variant="outline" 
               className="flex-1"
+              onClick={() => setShowRemoveLiquidity(true)}
               data-testid="button-remove-liquidity"
             >
               Remove liquidity
@@ -819,6 +825,14 @@ export default function AddLiquidity({
           </div>
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      {showCollectFees && (
+        <CollectFeesModal onClose={() => setShowCollectFees(false)} />
+      )}
+      {showRemoveLiquidity && (
+        <RemoveLiquidityModal onClose={() => setShowRemoveLiquidity(false)} />
+      )}
     </div>
   );
 }
