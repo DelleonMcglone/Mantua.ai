@@ -25,6 +25,7 @@ const FEE_TIERS = [
 
 const HOOK_OPTIONS = [
   { value: 'no-hook', label: 'No Hook' },
+  { value: 'mantua-intel', label: 'Mantua Intel Hook' },
   { value: 'dynamic-fee', label: 'Dynamic Fee Hook' },
   { value: 'twamm', label: 'TWAMM Hook' },
   { value: 'mev-protection', label: 'MEV Protection Hook' },
@@ -71,6 +72,10 @@ export default function AddLiquidity({
   const [hookWarningMessage, setHookWarningMessage] = useState(initialHookWarning ?? "");
 
   const [showCustomHook, setShowCustomHook] = useState(initialShowCustomHook || initialSelectedHook === 'custom');
+  const [rangeType, setRangeType] = useState<'full' | 'custom'>('full');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [selectedTimeRange, setSelectedTimeRange] = useState('1M');
   
   const { addUserActivity } = useActivity();
   const userPools = useUserPools();
@@ -499,6 +504,144 @@ export default function AddLiquidity({
               {hookWarningMessage}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Set Price Range Section */}
+      <Card className="bg-muted/30">
+        <CardContent className="p-5 space-y-4">
+          <h3 className="font-semibold text-lg" data-testid="text-price-range-title">Set price range</h3>
+
+          {/* Range Type Toggle */}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={() => setRangeType('full')}
+              variant={rangeType === 'full' ? 'default' : 'outline'}
+              className={`flex-1 ${
+                rangeType === 'full' 
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-600' 
+                  : ''
+              }`}
+              data-testid="button-full-range"
+            >
+              Full range
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setRangeType('custom')}
+              variant={rangeType === 'custom' ? 'default' : 'outline'}
+              className={`flex-1 ${
+                rangeType === 'custom' 
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-600' 
+                  : ''
+              }`}
+              data-testid="button-custom-range"
+            >
+              Custom range
+            </Button>
+          </div>
+
+          {/* Description Text */}
+          {rangeType === 'full' ? (
+            <p className="text-sm text-muted-foreground" data-testid="text-full-range-description">
+              Providing full range liquidity ensures continuous market participation across all possible prices, 
+              offering simplicity but with potential for higher impermanent loss.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground" data-testid="text-custom-range-description">
+              Custom range allows you to concentrate your liquidity within specific price bounds, 
+              enhancing capital efficiency and fee earnings but requiring more active management.
+            </p>
+          )}
+
+          {/* Current Price Display */}
+          <div className="bg-card border rounded-lg p-4 flex justify-between items-center">
+            <div>
+              <p className="text-sm text-muted-foreground">Current price</p>
+              <h4 className="font-bold text-lg mt-1" data-testid="text-current-price">3,638.71</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                {token1 && token2 ? `${token1}/${token2}` : 'ETH/USDC'} ($3,638.71)
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <div className="bg-muted px-3 py-1 rounded-lg text-sm font-medium" data-testid="badge-token1">
+                {token1 || 'ETH'}
+              </div>
+              <div className="bg-muted px-3 py-1 rounded-lg text-sm font-medium" data-testid="badge-token2">
+                {token2 || 'USDC'}
+              </div>
+            </div>
+          </div>
+
+          {/* Chart Placeholder */}
+          <div className="bg-gradient-to-t from-purple-900/20 via-background to-background rounded-lg mt-4 h-40 relative border">
+            <p className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm" data-testid="text-chart-placeholder">
+              Price Range Chart Visualization
+            </p>
+          </div>
+
+          {/* Min/Max Price Inputs (Custom Range Only) */}
+          {rangeType === 'custom' && (
+            <div className="flex gap-3 mt-4">
+              <div className="flex-1">
+                <Label className="text-sm text-muted-foreground mb-2 block">Min price</Label>
+                <Input
+                  type="number"
+                  placeholder="0.0"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="bg-card"
+                  data-testid="input-min-price"
+                />
+              </div>
+              <div className="flex-1">
+                <Label className="text-sm text-muted-foreground mb-2 block">Max price</Label>
+                <Input
+                  type="number"
+                  placeholder="0.0"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="bg-card"
+                  data-testid="input-max-price"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Time Range Selector + Reset */}
+          <div className="flex justify-between items-center text-sm mt-3">
+            <div className="flex gap-3">
+              {['1D', '1W', '1M', '1Y', 'All time'].map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  onClick={() => setSelectedTimeRange(range)}
+                  className={`${
+                    selectedTimeRange === range
+                      ? 'text-primary font-medium'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  data-testid={`button-time-${range.toLowerCase().replace(' ', '-')}`}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRangeType('full');
+                setMinPrice('');
+                setMaxPrice('');
+                setSelectedTimeRange('1M');
+              }}
+              className="text-primary hover:underline"
+              data-testid="button-reset-range"
+            >
+              Reset
+            </button>
+          </div>
         </CardContent>
       </Card>
 

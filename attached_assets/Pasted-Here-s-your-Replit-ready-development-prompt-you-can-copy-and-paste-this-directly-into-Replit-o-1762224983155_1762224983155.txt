@@ -1,0 +1,135 @@
+Here’s your **Replit-ready development prompt** — you can copy and paste this directly into Replit or Cursor to guide the AI to make the exact UI and functional changes you want 👇
+
+---
+
+### 🧠 **Prompt for Replit: Update Add Liquidity Component UI**
+
+> In the `client/src/components/liquidity/AddLiquidity.tsx` file, update the component so the **Set Price Range** section appears **below the "Select a hook" dropdown** and **above the "Add liquidity" button** — matching the Uniswap-style layout shown in the screenshots.
+>
+> Use Mantua’s dark theme (black/zinc background, pink/purple gradient accents).
+>
+> Keep all existing functionality (token inputs, fee tiers, hook selector).
+>
+> The Set Price Range block should include:
+>
+> * Two toggle buttons: **Full range** and **Custom range**
+> * Conditional text depending on the active mode
+> * Current price display with token pair badges (e.g., `ETH / USDC`)
+> * A pink gradient **chart placeholder**
+> * Time range buttons (`1D`, `1W`, `1M`, `1Y`, `All time`)
+> * A **Reset** button on the right
+>
+> Keep the **Add liquidity** button at the bottom with a pink-to-purple gradient background.
+
+---
+
+### 💻 **Code Reference (Insert or Replace Section)**
+
+```tsx
+{/* --- Hook Selector --- */}
+<div>
+  <label className="block text-sm mb-2 text-zinc-400">
+    Select a hook (optional)
+  </label>
+  <select
+    value={selectedHook}
+    onChange={(e) => setSelectedHook(e.target.value)}
+    className="w-full bg-zinc-900 p-3 rounded-lg"
+  >
+    {hooks.map((hook) => (
+      <option key={hook} value={hook}>
+        {hook}
+      </option>
+    ))}
+  </select>
+</div>
+
+{/* --- Set Price Range Section (NEW POSITION) --- */}
+<div className="bg-zinc-900 p-5 rounded-xl space-y-3">
+  <h3 className="font-semibold text-lg">Set price range</h3>
+
+  <div className="flex gap-2">
+    <button
+      onClick={() => setRangeType('full')}
+      className={`flex-1 py-2 rounded-lg ${
+        rangeType === 'full'
+          ? 'bg-pink-600 text-white'
+          : 'bg-zinc-800 text-zinc-300'
+      }`}
+    >
+      Full range
+    </button>
+    <button
+      onClick={() => setRangeType('custom')}
+      className={`flex-1 py-2 rounded-lg ${
+        rangeType === 'custom'
+          ? 'bg-pink-600 text-white'
+          : 'bg-zinc-800 text-zinc-300'
+      }`}
+    >
+      Custom range
+    </button>
+  </div>
+
+  {rangeType === 'full' ? (
+    <p className="text-zinc-400 text-sm">
+      Providing full range liquidity ensures continuous market participation
+      across all possible prices, offering simplicity but with potential for
+      higher impermanent loss.
+    </p>
+  ) : (
+    <p className="text-zinc-400 text-sm">
+      Custom range allows you to concentrate your liquidity within specific
+      price bounds, enhancing capital efficiency but requiring more active
+      management.
+    </p>
+  )}
+
+  <div className="bg-zinc-800 p-3 rounded-lg flex justify-between items-center">
+    <div>
+      <p className="text-sm text-zinc-400">Current price</p>
+      <h4 className="font-bold text-lg">3,638.71</h4>
+      <p className="text-sm text-zinc-400">ETH/USDC ($3,638.71)</p>
+    </div>
+    <div className="flex gap-2">
+      <div className="bg-zinc-700 px-3 py-1 rounded-lg text-sm">ETH</div>
+      <div className="bg-zinc-700 px-3 py-1 rounded-lg text-sm">USDC</div>
+    </div>
+  </div>
+
+  <div className="bg-gradient-to-t from-purple-900 via-zinc-900 to-black rounded-lg mt-4 h-40 relative">
+    <p className="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">
+      [ Price Range Chart Visualization Placeholder ]
+    </p>
+  </div>
+
+  <div className="flex justify-between items-center text-sm text-zinc-400 mt-2">
+    <div className="flex gap-3">
+      <button>1D</button>
+      <button>1W</button>
+      <button className="text-pink-400">1M</button>
+      <button>1Y</button>
+      <button>All time</button>
+    </div>
+    <button className="text-pink-500">Reset</button>
+  </div>
+</div>
+
+{/* --- Add Liquidity Button --- */}
+<Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-lg py-3 rounded-xl">
+  Add liquidity
+</Button>
+```
+
+---
+
+### ✅ **Expected Output**
+
+* “Set Price Range” now appears directly **beneath the Hook dropdown**.
+* Layout matches the screenshots you uploaded.
+* “Add Liquidity” button remains fixed at the bottom.
+* Uses Mantua’s dark UI with pink/purple accents.
+
+---
+
+Would you like me to include the **Custom Range min/max input boxes** in this Replit prompt too (for the next step of functionality)?
