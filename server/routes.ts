@@ -9,6 +9,15 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { parseIntent } from "./services/intent";
 import { analyzeQuestion } from "./services/analyze";
+import {
+  getSimplePrice,
+  getCoinsMarkets,
+  getCoinMarketChart,
+  searchPools,
+  getPoolInfoBaseNetwork,
+  getTrendingPoolsOnBase,
+  searchEthCbBtcPoolOnBase,
+} from "./services/coingecko";
 
 const parseIntentSchema = z.object({
   message: z.string().trim().min(1).max(500),
@@ -73,6 +82,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(analysis);
     } catch (error) {
       handleRouteError(error, req, res, next);
+    }
+  });
+
+  // CoinGecko API endpoints
+  router.get("/coingecko/prices", async (req, res, next) => {
+    try {
+      const { coinIds, vsCurrency = "usd" } = req.query;
+      if (!coinIds) {
+        res.status(400).json({ message: "coinIds query parameter is required" });
+        return;
+      }
+      const prices = await getSimplePrice(coinIds as string, vsCurrency as string);
+      res.json(prices);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/coingecko/markets", async (req, res, next) => {
+    try {
+      const { vsCurrency = "usd", coinIds, perPage = "10", page = "1" } = req.query;
+      const ids = coinIds ? (coinIds as string).split(",") : undefined;
+      const markets = await getCoinsMarkets(
+        vsCurrency as string,
+        ids,
+        parseInt(perPage as string),
+        parseInt(page as string)
+      );
+      res.json(markets);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/coingecko/chart/:coinId", async (req, res, next) => {
+    try {
+      const { coinId } = req.params;
+      const { vsCurrency = "usd", days = "7" } = req.query;
+      const chart = await getCoinMarketChart(coinId, vsCurrency as string, days as string);
+      res.json(chart);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/coingecko/pools/search", async (req, res, next) => {
+    try {
+      const { query, network } = req.query;
+      if (!query) {
+        res.status(400).json({ message: "query parameter is required" });
+        return;
+      }
+      const pools = await searchPools(query as string, network as string | undefined);
+      res.json(pools);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/coingecko/pools/base/:poolAddress", async (req, res, next) => {
+    try {
+      const { poolAddress } = req.params;
+      const pool = await getPoolInfoBaseNetwork(poolAddress);
+      res.json(pool);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/coingecko/pools/base/trending", async (req, res, next) => {
+    try {
+      const { page = "1" } = req.query;
+      const trending = await getTrendingPoolsOnBase(parseInt(page as string));
+      res.json(trending);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/coingecko/pools/eth-cbbtc", async (_req, res, next) => {
+    try {
+      const result = await searchEthCbBtcPoolOnBase();
+      res.json(result);
+    } catch (error) {
+      next(error);
     }
   });
 

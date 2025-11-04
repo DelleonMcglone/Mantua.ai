@@ -98,6 +98,95 @@ async function fetchChainHistoryPoints(chainName: string, days = 7): Promise<Cha
 export async function analyzeQuestion(question: string): Promise<AnalyzeResponse> {
   const normalized = question.toLowerCase();
 
+  // Check for pool-specific queries
+  if (normalized.includes("pool") || normalized.includes("liquidity")) {
+    // Import CoinGecko functions dynamically to avoid circular dependencies
+    const { searchEthCbBtcPoolOnBase, getTrendingPoolsOnBase, formatUsd, formatPercentChange } = await import("./coingecko");
+    
+    if (normalized.includes("eth") && (normalized.includes("btc") || normalized.includes("cbbtc"))) {
+      // Specific ETH/cbBTC pool query
+      const poolData = await searchEthCbBtcPoolOnBase();
+      if (!poolData.pools || poolData.pools.length === 0) {
+        throw new Error("NO_DATA");
+      }
+      
+      const topPool = poolData.topPool;
+      const summary = `Found ${poolData.pools.length} ETH/cbBTC pools on Base network. Top pool has ${formatUsd(topPool.reserveUsd)} in liquidity with ${formatUsd(topPool.volume24h)} 24h volume.`;
+      
+      const metrics = poolData.pools.map((pool) => ({
+        pool: pool.name,
+        dex: pool.dex,
+        reserveUsd: formatUsd(pool.reserveUsd),
+        volume24h: formatUsd(pool.volume24h),
+        priceChange24h: formatPercentChange(pool.priceChange24h),
+      }));
+      
+      return {
+        summary,
+        metrics,
+        source: "CoinGecko (GeckoTerminal)",
+        topic: "eth_cbbtc_pools",
+      };
+    }
+    
+    if (normalized.includes("trending") || normalized.includes("top")) {
+      // Trending pools on Base
+      const trending = await getTrendingPoolsOnBase();
+      if (!trending.data || trending.data.length === 0) {
+        throw new Error("NO_DATA");
+      }
+      
+      const topPools = trending.data.slice(0, 5);
+      const summary = `Top ${topPools.length} trending pools on Base network show strong activity.`;
+      
+      const metrics = topPools.map((pool) => ({
+        pool: pool.attributes.name,
+        reserveUsd: formatUsd(pool.attributes.reserve_in_usd),
+        volume24h: formatUsd(pool.attributes.volume_usd?.h24 || "0"),
+        priceChange24h: formatPercentChange(pool.attributes.price_change_percentage?.h24),
+      }));
+      
+      return {
+        summary,
+        metrics,
+        source: "CoinGecko (GeckoTerminal)",
+        topic: "trending_pools_base",
+      };
+    }
+  }
+
+  // Check for token price queries
+  if (normalized.includes("price") || normalized.includes("token")) {
+    const { getSimplePrice, formatUsd, formatPercentChange } = await import("./coingecko");
+    
+    // Extract common tokens from query
+    const tokens = [];
+    if (normalized.includes("eth") || normalized.includes("ethereum")) tokens.push("ethereum");
+    if (normalized.includes("btc") || normalized.includes("bitcoin")) tokens.push("bitcoin");
+    if (normalized.includes("usdc")) tokens.push("usd-coin");
+    
+    if (tokens.length > 0) {
+      const prices = await getSimplePrice(tokens);
+      const tokenNames = tokens.map(id => id.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase()));
+      const summary = `Current prices: ${tokenNames.join(", ")}`;
+      
+      const metrics = Object.entries(prices).map(([id, data]) => ({
+        token: id.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase()),
+        price: formatUsd(data.usd || 0),
+        change24h: formatPercentChange(data.usd_24h_change),
+        volume24h: formatUsd(data.usd_24h_vol || 0),
+        marketCap: formatUsd(data.usd_market_cap || 0),
+      }));
+      
+      return {
+        summary,
+        metrics,
+        source: "CoinGecko",
+        topic: "token_prices",
+      };
+    }
+  }
+
   if (normalized.includes("protocol")) {
     return analyzeProtocolMovers();
   }
