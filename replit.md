@@ -24,7 +24,38 @@ The application includes comprehensive tracking for both user and AI agent activ
 A Uniswap-style liquidity pools explorer allows users to view and filter mock DeFi pools. Pools display key metrics like TVL, APR, volume, and are randomly assigned hooks from the Mantua Hook Library. Users can interact with the explorer via natural language chat commands (e.g., "pools", "show me ETH pools").
 
 ## Add Liquidity Interface
-This feature provides a detailed interface for adding liquidity, supporting token pair selection, multiple fee tiers, and optional hook integration (Mantua Intel, Dynamic Fee, TWAMM, MEV Protection, custom hooks). It includes advanced price range management (Full Range and Custom Range modes), comprehensive APR and rewards displays, and detailed pool statistics.
+This feature provides a comprehensive Uniswap v4-style interface for adding liquidity to pools:
+
+### Core Features
+- **Token Pair Selection**: Dual token inputs with dropdown selectors and Max buttons for wallet balance
+- **Fee Tiers**: Multiple fee tier options (0.01%, 0.05%, 0.30%, 1.00%) with descriptive labels
+- **Hook Selection**: Optional hook integration including Mantua Intel Hook, Dynamic Fee Hook, TWAMM Hook, MEV Protection Hook, and custom hook support with address validation
+- **Transaction Flow**: Multi-state transaction handling (idle → adding → processing → completed)
+
+### Set Price Range
+Advanced price range management for concentrated liquidity:
+- **Full Range Mode**: Provides liquidity across all possible prices with simpler management
+- **Custom Range Mode**: Concentrated liquidity within specific price bounds with Min/Max price inputs
+- **Price Display**: Current price indicator with token pair badges and USD value conversion
+- **Time Range Analysis**: Multiple time period selectors (1D, 1W, 1M, 1Y, All time) with active period highlighting
+
+### APR & Rewards Display
+Comprehensive rewards tracking and pool statistics:
+- **Total APR Card**: Large display showing total APR with breakdown of Base APR (fee earnings) and Reward APR (incentive yields)
+- **Rewards Distribution**: Progress visualization showing distributed vs. total rewards with pink/purple gradient bars, time period countdown, and campaign duration
+- **Pool Stats**: TVL with change indicators, 24H volume with percentage changes, 24H fees collected, and pool balances with visual indicator bars
+
+### Interactive Modals
+- **Collect Fees Modal**: Displays earned fees for each token (ETH, cbBTC) with USD equivalent values and collection button
+- **Remove Liquidity Modal**: Percentage-based withdrawal interface (25%, 50%, 75%, Max) with pool info display, position details, and review functionality
+
+### Implementation Details
+- **Component**: AddLiquidity page at `client/src/pages/AddLiquidity.tsx`
+- **Modals**: CollectFeesModal and RemoveLiquidityModal at `client/src/components/liquidity/`
+- **Styling**: Shadcn components with Mantua's purple/pink gradient theme, div containers with bg-card (no nested Cards)
+- **State Management**: React hooks for form state, modal visibility, and price range configuration
+- **Design System Compliance**: Built-in Button hover-elevate, consistent gap spacing, unique data-testid attributes
+- **Mock Data**: Currently displays static placeholder data for APR, rewards, and statistics
 
 ## Chat History Access Control
 Chat history is wallet-gated: users can view past conversations when disconnected but require a connected wallet to interact or input new messages. A prompt guides users to reconnect their wallet for full functionality.
