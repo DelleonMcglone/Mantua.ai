@@ -120,6 +120,49 @@ Pools include popular DeFi pairs: ETH/USDC, USDC/USDT, WBTC/USDT, cbBTC/ETH, EVA
 - **Detection Logic**: Custom regex-based command detection supporting both singular and plural forms
 - **Hook Library Integration**: Uses shared `hookLibrary.ts` for consistent hook naming across features
 
+## Add Liquidity Interface
+The Add Liquidity component features a comprehensive Uniswap-style interface for providing liquidity to pools:
+
+### Core Features
+- **Token Pair Selection**: Dual token inputs with dropdown selectors and Max buttons for wallet balance
+- **Fee Tiers**: Multiple fee tier options (0.01%, 0.05%, 0.30%, 1.00%) with descriptive labels
+- **Hook Selection**: Optional hook integration including Mantua Intel Hook, Dynamic Fee Hook, TWAMM Hook, MEV Protection Hook, and custom hook support
+- **Custom Hook Validation**: Address validation for custom hooks with real-time feedback
+- **Transaction Flow**: Multi-state transaction handling (idle → adding → processing → completed)
+
+### Set Price Range
+Advanced price range management for concentrated liquidity:
+
+**Full Range Mode**:
+- Provides liquidity across all possible prices
+- Simplifies position management
+- Lower capital efficiency but broader market participation
+- Default mode with descriptive explanation
+
+**Custom Range Mode**:
+- Concentrated liquidity within specific price bounds
+- Enhanced capital efficiency and fee earnings
+- Min/Max price inputs for precise range control
+- Requires more active position management
+
+**Price Display**:
+- Current price indicator with real-time updates
+- Token pair badges for visual clarity
+- USD value conversion display
+- Chart placeholder for future price visualization
+
+**Time Range Analysis**:
+- Multiple time period selectors (1D, 1W, 1M, 1Y, All time)
+- Active period highlighting with primary color
+- Reset functionality to return to default settings
+
+### Implementation Details
+- **Component**: AddLiquidity page located at `client/src/pages/AddLiquidity.tsx`
+- **Styling**: Shadcn components with Mantua's purple/pink gradient accents
+- **State Management**: React hooks for form state, transaction status, and price range configuration
+- **Design System Compliance**: Uses built-in Button hover-elevate without custom hover states
+- **Data Attributes**: Comprehensive data-testid attributes for automated testing
+
 ## Chat History Access Control
 The application implements wallet-gated access for saved chat interactions:
 
