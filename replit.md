@@ -23,6 +23,30 @@ The application includes comprehensive tracking for both user and AI agent activ
 ## Liquidity Pools Explorer
 A Uniswap-style liquidity pools explorer allows users to view and filter mock DeFi pools. Pools display key metrics like TVL, APR, volume, and are randomly assigned hooks from the Mantua Hook Library. Users can interact with the explorer via natural language chat commands (e.g., "pools", "show me ETH pools").
 
+## Analysis Mode
+An interactive mode for real-time analysis of pools, tokens, and networks:
+
+### Activation
+- Accessible via the Quick Actions menu (+ button in chat input)
+- Click "Analyze" to activate analysis mode
+- Does not require wallet connection
+
+### Active Mode Features
+- **Visual Indicators**: Primary-colored border around chat input, "Analyze" badge with hover-to-exit functionality
+- **Dynamic Placeholder**: Input placeholder changes to "Ask me to analyze pools, tokens, or networks in real time..."
+- **Quick Actions Menu**: Automatically closes when mode is activated
+- **State Management**: Clears other active modes (swap, liquidity) when activated
+
+### Integration Points
+- **CoinGecko API**: Leverages existing `useTokenUsdPrices` hook for real-time token price data
+- **Chat Context**: Analysis queries are processed through the chat interface
+- **Intent Parsing**: Server-side intent parsing recognizes analysis-related queries
+
+### Implementation
+- **Component**: ChatInput at `client/src/components/ChatInput.tsx` handles mode activation/deactivation
+- **State**: Managed via `isAnalyzeModeActive` prop and callbacks in MainContent
+- **Design Pattern**: Follows same pattern as Swap and Add Liquidity modes for consistency
+
 ## Add Liquidity Interface
 This feature provides a comprehensive Uniswap v4-style interface for adding liquidity to pools:
 
