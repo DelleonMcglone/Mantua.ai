@@ -93,7 +93,7 @@ export interface PoolSearchResult {
  * Fetch JSON from CoinGecko API with optional API key
  */
 async function fetchCoinGecko<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-  const apiKey = process.env.COINGECKO_API_KEY;
+  const apiKey = process.env.COINGECKO_API_KEY?.trim();
   const url = new URL(`${BASE_URL}${endpoint}`);
   
   // Add query parameters
@@ -103,17 +103,18 @@ async function fetchCoinGecko<T>(endpoint: string, params?: Record<string, strin
     });
   }
   
-  // Add API key if available (optional - works without it)
+  // Build headers - only include API key header if key is provided
+  const headers: Record<string, string> = {
+    "Accept": "application/json",
+    "User-Agent": "Mantua-AI/1.0 (+https://mantua.ai)",
+  };
+  
+  // Add API key as header if available (optional - works without it)
   if (apiKey) {
-    url.searchParams.append("x_cg_demo_api_key", apiKey);
+    headers["x-cg-demo-api-key"] = apiKey;
   }
   
-  const response = await fetch(url.toString(), {
-    headers: {
-      "Accept": "application/json",
-      "User-Agent": "MantuaAI/1.0 (+https://mantua.ai)",
-    },
-  });
+  const response = await fetch(url.toString(), { headers });
   
   if (!response.ok) {
     const text = await response.text();
