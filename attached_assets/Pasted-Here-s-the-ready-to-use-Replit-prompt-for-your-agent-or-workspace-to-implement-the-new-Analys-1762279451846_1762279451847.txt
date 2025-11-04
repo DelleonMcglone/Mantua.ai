@@ -1,0 +1,68 @@
+Here’s the **ready-to-use Replit prompt** for your agent or workspace to implement the new **“Analysis Mode”** behavior:
+
+---
+
+### **Prompt for Replit**
+
+```
+# Task: Implement "Analysis Mode" functionality for Mantua.AI.
+# Current behavior: The Analyze button says "Coming Soon" and does nothing.
+# Desired behavior: When the user clicks the plus (+) button and selects "Analyze",
+# the Analyze button should display dynamically and activate "Analysis Mode".
+#
+# In Analysis Mode:
+# - The chat input bar changes placeholder text to: "Ask me to analyze pools, tokens, or networks in real time..."
+# - The Analyze button becomes active and allows real-time querying of on-chain and CoinGecko data.
+# - The chat should process queries like:
+#       "Search for ETH CB BTC pool on Base network"
+#       "Show me the top pools on Base"
+#       "Analyze ETH/USDC liquidity on Base"
+#
+# Integration requirements:
+# 1. Update UI logic in ChatToolbar or equivalent component:
+#    - Detect when "Analyze" is chosen from the plus button.
+#    - Toggle a boolean `isAnalysisMode` state = true.
+#    - Change the Analyze button text from "Coming Soon" → "Analyze".
+#    - Change color (active highlight, e.g., Mantua blue #2563eb).
+#
+# 2. When `isAnalysisMode` is true:
+#    - Route user inputs to the analysis handler instead of normal chat completion.
+#    - Call the backend endpoint that connects to CoinGecko and GeckoTerminal.
+#      Use methods from mantua_coingecko.py:
+#         - get_pool_info(network, pool_address)
+#         - get_trending_pools(network)
+#         - get_token_price_onchain(network, token_address)
+#    - Display the analysis results as a structured response card above the chat input
+#      (e.g., pool name, volume, liquidity, token prices, last 24h changes).
+#
+# 3. Update UI:
+#    - Add a subtle banner or badge showing “Analysis Mode: Live Data Enabled”.
+#    - Allow user to click a small “Exit Analysis Mode” (X) icon to revert to chat mode.
+#
+# 4. (Optional): Use the CoinGeckoClient class already implemented in mantua_coingecko.py
+#    to fetch token and pool data. Example:
+#
+#       from backend.api.mantua_coingecko import CoinGeckoClient
+#       client = CoinGeckoClient.from_env()
+#       data = client.get_trending_pools("base")
+#
+# 5. Example flow:
+#    - User clicks (+) → selects "Analyze"
+#    - UI toggles `isAnalysisMode = true`
+#    - Analyze button label updates and becomes clickable
+#    - User types “Search for ETH CB BTC pool on Base network”
+#    - System calls backend analysis endpoint and displays result card
+#
+# Deliverables:
+# - Updated frontend component(s): ChatToolbar.tsx, ChatInput.tsx, and possibly ChatManager.ts
+# - New state variable: isAnalysisMode
+# - Updated handler: onAnalyzeClick() or startAnalysisMode()
+# - Optional new endpoint: /api/analyze for connecting to mantua_coingecko.py
+#
+# Ensure UI updates smoothly, no reload required.
+# Style should match Mantua design system and reuse existing Tailwind classes.
+```
+
+---
+
+Would you like me to expand this into a **frontend + backend code implementation prompt** (React + Express/FastAPI integration) next so your Replit agent can execute the full change?

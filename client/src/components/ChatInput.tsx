@@ -44,7 +44,7 @@ export default function ChatInput({
   const menuActions = [
     { id: "swap", label: "Swap", disabled: false },
     { id: "add-liquidity", label: "Add Liquidity", disabled: false },
-    { id: "analyze-coming-soon", label: "Analyze — Coming Soon", disabled: true },
+    { id: "analyze", label: "Analyze", disabled: false },
     { id: "agents-coming-soon", label: "Agents — Coming Soon", disabled: true },
   ] as const;
 
@@ -101,7 +101,7 @@ export default function ChatInput({
   const triggerQuickAction = (actionId: string) => {
     setMenuVisible(false);
 
-    const requiresWallet = actionId !== "analyze-coming-soon" && actionId !== "agents-coming-soon";
+    const requiresWallet = actionId !== "analyze" && actionId !== "agents-coming-soon";
     if (!account && requiresWallet) {
       if (onSubmit) {
         onSubmit("Please connect your wallet to continue.");
@@ -112,6 +112,7 @@ export default function ChatInput({
     const actionLabels: Record<string, string> = {
       swap: "Swap",
       "add-liquidity": "Add Liquidity",
+      analyze: "Analyze",
     };
 
     const userMessage = actionLabels[actionId] || actionId;
@@ -144,10 +145,10 @@ export default function ChatInput({
   }, [isMenuVisible]);
 
   useEffect(() => {
-    if (!isSwapModeActive && !isLiquidityModeActive) {
+    if (!isSwapModeActive && !isLiquidityModeActive && !isAnalyzeModeActive) {
       setMenuVisible(false);
     }
-  }, [isSwapModeActive, isLiquidityModeActive]); // SWAP FIX: collapse quick actions when exiting structured flows
+  }, [isSwapModeActive, isLiquidityModeActive, isAnalyzeModeActive]); // Collapse quick actions when exiting structured flows
 
   const handleSwapModeExit = () => {
     onSwapModeExit?.();
@@ -169,10 +170,13 @@ export default function ChatInput({
       return;
     }
     if (actionId === "swap") {
-      onSwapModeRequest?.(); // SWAP FIX: Button trigger condition
+      onSwapModeRequest?.();
     }
     if (actionId === "add-liquidity") {
-      onLiquidityModeRequest?.(); // LIQUIDITY FIX: Button trigger condition
+      onLiquidityModeRequest?.();
+    }
+    if (actionId === "analyze") {
+      onAnalyzeModeRequest?.();
     }
     triggerQuickAction(actionId);
   };
@@ -287,7 +291,11 @@ export default function ChatInput({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask Mantua"
+          placeholder={
+            isAnalyzeModeActive
+              ? "Ask me to analyze pools, tokens, or networks in real time..."
+              : "Ask Mantua"
+          }
           className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/70 resize-none transition-all duration-200 min-h-[40px]"
           data-testid="textarea-chat-message"
           rows={1}
