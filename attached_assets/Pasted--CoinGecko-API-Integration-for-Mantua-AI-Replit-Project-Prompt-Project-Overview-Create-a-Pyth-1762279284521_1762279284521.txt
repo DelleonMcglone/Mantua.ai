@@ -1,0 +1,247 @@
+# CoinGecko API Integration for Mantua AI - Replit Project Prompt
+
+## Project Overview
+Create a Python application that integrates with CoinGecko's free Demo API to fetch cryptocurrency data, DEX pool information, and on-chain analytics. The application should demonstrate comprehensive usage of CoinGecko's REST API endpoints for research and market data analysis.
+
+## Technical Requirements
+
+### API Access
+- **Base URL**: `https://api.coingecko.com/api/v3/`
+- **Authentication**: Demo API plan (free tier)
+  - Rate limit: 30 calls per minute
+  - Monthly cap: 10,000 calls
+  - API key required in header: `x-cg-demo-api-key` or query parameter: `x_cg_demo_api_key`
+- **Response format**: JSON
+
+### Dependencies
+```
+pycoingecko
+requests
+```
+
+## Core Features to Implement
+
+### 1. Simple Price Queries
+- Get current prices for one or multiple cryptocurrencies
+- Include market cap, 24h volume, and 24h price change
+- Support multiple fiat currencies (USD, EUR, etc.)
+- Query by coin ID or contract address
+
+### 2. Historical Market Data
+- Fetch historical chart data (prices, market cap, volume)
+- Support customizable time ranges (1, 7, 14, 30, 90, 180, 365 days, or 'max')
+- OHLC (candlestick) data retrieval
+- Date-range queries using UNIX timestamps
+
+### 3. On-Chain DEX Pool Analysis
+This is a priority feature for Base network analysis:
+- Search for liquidity pools across DEXes
+- Get specific pool information on Base network
+- Retrieve trending pools on Base
+- Fetch pool volume, liquidity, and pricing data
+- **Specific Use Case**: Search and analyze ETH/cbBTC pools on Base network
+
+### 4. Exchange Data
+- List all exchanges with metadata
+- Get trading pairs and tickers for specific exchanges
+- Historical volume charts for exchanges
+- Derivatives exchange data
+
+### 5. NFT Market Data (Beta)
+- List supported NFT collections
+- Get floor prices, volume, and market cap for collections
+- NFT collection metadata
+
+### 6. Search & Discovery
+- Search for coins, categories, and exchanges
+- Get trending searches (last 24 hours)
+- Global market statistics
+
+## Code Structure
+
+### Main Functions Required
+
+```python
+def get_simple_price(coin_ids, vs_currencies='usd'):
+    """
+    Get current price of coins with market cap, 24h volume, and change
+    Args:
+        coin_ids: List of coin IDs or single coin ID string
+        vs_currencies: Currency to compare against (default: 'usd')
+    Returns: Dict with price data
+    """
+
+def get_coin_market_chart(coin_id, vs_currency='usd', days=30):
+    """
+    Get historical market chart data for a coin
+    Args:
+        coin_id: CoinGecko coin ID
+        vs_currency: Currency to compare against
+        days: Number of days (1, 7, 14, 30, 90, 180, 365, 'max')
+    Returns: Dict with prices, market_caps, and total_volumes arrays
+    """
+
+def search_pools(query, network=None):
+    """
+    Search for liquidity pools across DEXes using on-chain API
+    Args:
+        query: Search query (e.g., "ETH cbBTC")
+        network: Optional network filter
+    Returns: Search results
+    """
+
+def get_pool_info_base_network(pool_address):
+    """
+    Get specific pool information on Base network
+    Args:
+        pool_address: The pool contract address
+    Returns: Pool data including volume, liquidity, price
+    """
+
+def get_trending_pools_on_base():
+    """
+    Get trending pools on Base network
+    Returns: List of trending pools with volume and liquidity data
+    """
+
+def search_eth_cbbtc_pool_on_base():
+    """
+    Specific implementation to search for ETH/cbBTC pool on Base
+    Should include:
+    - Search for pools matching "ETH cbBTC"
+    - Filter results for Base network
+    - Display top 3 pools with details
+    - Get detailed info for the primary pool including:
+      - 5min, 1h, 6h, 24h volume data
+      - Total reserves in USD
+      - Base and quote token information
+    - Check trending pools for relevant matches
+    """
+```
+
+## Key API Endpoints to Use
+
+### Price & Currency
+- `/ping` - Check API status
+- `/simple/price` - Get current prices
+- `/simple/token_price/{id}` - Price by contract address
+- `/simple/supported_vs_currencies` - List supported currencies
+
+### Coins
+- `/coins/list` - List all supported coins
+- `/coins/markets` - Market data for multiple coins
+- `/coins/{id}` - Coin metadata
+- `/coins/{id}/market_chart` - Historical chart data
+- `/coins/{id}/ohlc` - OHLC candlestick data
+- `/coins/{id}/contract/{contract_address}` - Metadata by contract
+
+### On-Chain DEX API (GeckoTerminal)
+- `/onchain/search/pools` - Search liquidity pools
+- `/onchain/networks/base/pools/{pool_address}` - Base network pool data
+- `/onchain/networks/base/trending_pools` - Trending pools on Base
+- `/onchain/simple/networks/{network}/token_price/{token_address}` - Token price by contract
+
+### Exchanges
+- `/exchanges` - List exchanges with data
+- `/exchanges/{id}` - Exchange metadata
+- `/exchanges/{id}/tickers` - Trading pairs
+- `/exchanges/{id}/volume_chart` - Historical volume
+
+### NFTs
+- `/nfts/list` - List NFT collections
+- `/nfts/{id}` - Collection data (floor price, volume, market cap)
+
+### Search & Global
+- `/search` - Search coins, categories, exchanges
+- `/search/trending` - Trending searches (24h)
+- `/global` - Global crypto market data
+
+## Output Format
+
+The application should provide:
+
+1. **Formatted Console Output**:
+   - Clear section headers with separators
+   - Properly formatted currency values (e.g., $1,234,567.89)
+   - Timestamp conversions for human readability
+   - Organized data display with labels
+
+2. **Data Structure**:
+   - Return JSON-compatible dictionaries
+   - Handle errors gracefully with try-except blocks
+   - Provide informative error messages
+
+3. **Example Outputs**:
+   ```
+   =================================================
+   SEARCHING FOR ETH/cbBTC POOL ON BASE NETWORK
+   =================================================
+   
+   Found 3 pools on Base network:
+   
+   --- Pool 1 ---
+   Name: ETH/cbBTC
+   Address: 0x...
+   DEX: uniswap-v3-base
+   Reserve USD: $1,234,567.89
+   24h Volume USD: $987,654.32
+   
+   Volume Data:
+     - 5 min:  $12,345.67
+     - 1 hour: $123,456.78
+     - 6 hour: $456,789.01
+     - 24 hour: $987,654.32
+   ```
+
+## Error Handling
+
+Implement robust error handling for:
+- API rate limits (30 calls/minute)
+- Network errors
+- Invalid coin IDs or addresses
+- Missing data in responses
+- JSON parsing errors
+
+## Demo Script
+
+Create a main execution block that demonstrates:
+1. Basic usage examples (BTC and ETH prices, 7-day chart)
+2. ETH/cbBTC pool search on Base network with detailed analysis
+3. Clear progress indicators and section separators
+4. Emoji indicators for successful finds (🎯, ✅, 🚀)
+
+## Additional Considerations
+
+1. **Caching**: Consider implementing basic caching to avoid hitting rate limits
+2. **Logging**: Add optional logging for debugging
+3. **Documentation**: Include docstrings for all functions
+4. **Type Hints**: Use type hints for better code clarity
+5. **Modularity**: Organize code into logical sections/modules
+
+## Success Criteria
+
+The application should successfully:
+- ✅ Fetch real-time cryptocurrency prices
+- ✅ Retrieve historical market data
+- ✅ Search and analyze DEX pools on Base network
+- ✅ Find ETH/cbBTC pools with volume and liquidity data
+- ✅ Display formatted output with clear data presentation
+- ✅ Handle errors gracefully
+- ✅ Stay within API rate limits
+
+## Notes
+
+- The pycoingecko library simplifies API interaction but may not have all on-chain endpoints wrapped
+- For on-chain data, direct requests.get() calls may be necessary
+- The Base network identifier in CoinGecko is "base"
+- Pool addresses are contract addresses on the blockchain
+- Always check response structure before accessing nested data
+
+## Future Enhancements (Optional)
+
+- Add data visualization with matplotlib or plotly
+- Implement a simple CLI interface
+- Add export functionality (CSV, JSON)
+- Create a web interface with Flask or Streamlit
+- Add portfolio tracking features
+- Implement alerts for price movements or volume spikes
