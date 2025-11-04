@@ -5,7 +5,7 @@ export type HookConfig = {
 
 // File purpose: Central registry for supported hooks with normalized lookup.
 export const HOOKS: Record<string, HookConfig> = {
-  "mantua intel": { id: "mantua-intel", label: "Mantua Intel (Hook)" },
+  "mantua intel": { id: "mantua-intel", label: "Mantua Intel Hook" },
   "dynamic fee": { id: "dynamic-fee", label: "Dynamic Fee Hook" },
   "mev protection": { id: "mev-protection", label: "MEV Protection Hook" },
   twamm: { id: "twamm", label: "TWAMM Hook" },

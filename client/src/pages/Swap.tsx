@@ -29,7 +29,7 @@ import { useTokenUsdPrices } from "@/hooks/useTokenUsdPrices";
 
 const HOOK_OPTIONS = [
   { value: 'no-hook', label: 'No Hook' },
-  { value: 'mantua-intel', label: 'Mantua Intel (Hook)' },
+  { value: 'mantua-intel', label: 'Mantua Intel Hook' },
   { value: 'dynamic-fee', label: 'Dynamic Fee Hook' },
   { value: 'twamm', label: 'TWAMM Hook' },
   { value: 'mev-protection', label: 'MEV Protection Hook' },
@@ -863,7 +863,7 @@ export default function Swap({
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Order routing</span>
                 <span className="font-medium">
-                  {selectedHook === 'mantua-intel' ? 'Mantua Intel (Hook)' : 'Uniswap API'}
+                  {selectedHook === 'mantua-intel' ? 'Mantua Intel Hook' : 'Uniswap API'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -877,30 +877,6 @@ export default function Swap({
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {shouldShowDetails && (
-        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5 space-y-3 text-sm text-foreground dark:text-slate-100" data-testid="container-swap-details">
-          <div className="text-sm font-semibold text-foreground dark:text-white">Review Swap Details</div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Current Fee</span>
-              <span className="text-sm font-semibold text-foreground dark:text-white">{feeDisplay !== "—" ? feeDisplay : "—"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Fee Amount</span>
-              <span className="text-sm font-semibold text-foreground dark:text-white">{feeAmountDisplay}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Price Impact</span>
-              <span className="text-sm font-semibold text-foreground dark:text-white">{typeof priceImpact === "string" ? priceImpact : "—"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-foreground/80 dark:text-slate-200/80">Hook Status</span>
-              <span className="text-sm font-semibold text-foreground dark:text-white">{activeHookLabel}</span>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Submit Button */}
