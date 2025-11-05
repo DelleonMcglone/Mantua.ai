@@ -1,0 +1,70 @@
+Perfect — here’s your **follow-up Replit prompt** to run *immediately after* the previous one.
+It will **test and validate** that `MainContent.tsx` is clean, conflict-free, and that the Swap, Add Liquidity, and Available Pools components render properly when selected.
+
+---
+
+### 🧪 **Replit One-Shot Prompt: Validate `MainContent.tsx` After Merge Fix**
+
+```
+🧠 TASK:
+Test and verify that `client/src/components/MainContent.tsx` is working correctly after all merge conflicts were resolved.
+
+---
+
+🧩 VALIDATION CHECKLIST:
+
+1. ✅ **Build Test**
+   - Run `npm run dev` (or the project’s start script).
+   - Ensure there are no TypeScript or lint errors.
+   - Confirm that all imports in `MainContent.tsx` resolve correctly.
+
+2. ✅ **Component Rendering Test**
+   - When the app loads, the chat interface should display normally.
+   - Click the “+” button → Select **Swap**
+     → The `<SwapPage />` component should render immediately.
+   - Click the “+” button → Select **Add Liquidity**
+     → The `<AddLiquidityPage />` component should render.
+   - Click the “+” button → Select **Pools**
+     → The `<AvailablePoolsPage />` component should render.
+
+3. ✅ **Chat Context Integration**
+   - Ensure that the chat input (`ChatInput`) still works when no active view is selected.
+   - Confirm that typing commands like “swap ETH for USDC” or “show me pools” automatically triggers the correct component rendering if connected to `parseUserCommand`.
+
+4. ✅ **State Behavior**
+   - Verify that `activeView` correctly switches between views without needing a manual page refresh.
+   - Confirm that returning to default (no activeView) re-shows the chat interface.
+
+5. ✅ **UI & UX**
+   - Check that all buttons are clickable and visible.
+   - No duplicated buttons or broken layouts.
+   - Dark/light theme still respected.
+
+6. ✅ **Code Integrity**
+   - No merge markers (<<<<<<<, =======, >>>>>>>)
+   - No duplicate imports or unused variables.
+   - File compiles and hot reloads cleanly.
+
+---
+
+🧩 OUTPUT REQUEST:
+If all tests pass, print:
+> ✅ All MainContent.tsx tests passed — Swap, Add Liquidity, and Pools components render correctly and chat input remains functional.
+
+If any test fails, print:
+> ❌ [Short description of which component or test failed]  
+and automatically fix the error if possible.
+
+---
+
+💬 GOAL:
+Guarantee that `MainContent.tsx` is 100% functional, clean, and ready for commit with no residual conflicts or rendering bugs.
+```
+
+---
+
+✅ **How to use:**
+After Replit finishes fixing your merge conflicts with the first prompt, **paste this one next** and run it.
+It will confirm that your fixes worked and that the chat/Swap flows are now rendering correctly.
+
+Would you like me to give you a final Replit prompt for committing and pushing the fixed file to GitHub (so everything is versioned cleanly)?

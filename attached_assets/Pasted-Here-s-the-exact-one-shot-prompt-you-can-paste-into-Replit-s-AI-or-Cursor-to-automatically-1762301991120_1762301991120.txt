@@ -1,0 +1,70 @@
+Here’s the **exact one-shot prompt** you can paste into **Replit’s AI (or Cursor)** to automatically fix all merge conflicts in your `MainContent.tsx` file cleanly and restore working Swap behavior:
+
+---
+
+### 🧩 **Replit One-Shot Prompt: Resolve Merge Conflicts in `MainContent.tsx`**
+
+````
+🧠 TASK:
+Resolve all merge conflicts and restore a clean, working version of `client/src/components/MainContent.tsx`.
+
+The file currently has Git merge conflict markers (<<<<<<<, =======, >>>>>>>) due to conflicting edits between branches. All conflicts must be resolved while preserving full functionality of the Mantua.AI chat interface, Swap, Add Liquidity, and Available Pools flows.
+
+---
+
+🛠️ REQUIREMENTS:
+1. Remove all merge conflict markers and duplicate imports.
+2. Ensure the file imports and renders the following correctly:
+   - `ChatInput` from `./ChatInput`
+   - `SwapPage` from `@/pages/Swap`
+   - `AddLiquidityPage` from `@/pages/AddLiquidity`
+   - `AvailablePoolsPage` from `@/pages/AvailablePools`
+   - `AvailablePoolsPrompt` from `@/components/liquidity/AvailablePoolsPrompt`
+   - All required hooks: `useState`, `useEffect`, `useRef`, `useCallback`, `useActiveAccount`, `useLocation`, `useChatContext`
+   - Utilities: `parseUserCommand`, `HOOKS`, `HOOK_SYNONYMS`, `normalizeHook`, `canonicalizeTokenSymbol`, `extractTokensFromText`, `txUrl`, and `baseSepolia`.
+
+3. Ensure clicking the “+” button → selecting “Swap” renders `<SwapPage />` inside the main area.
+4. Ensure Add Liquidity and Available Pools also render correctly.
+5. Make sure no undefined imports remain and the file compiles with no TypeScript or lint errors.
+
+---
+
+🧩 FINAL OUTPUT SPECIFICATION:
+- Produce a **clean, working, conflict-free** `MainContent.tsx` file.
+- Maintain existing Mantua styling and component structure.
+- Include the working state handler:
+
+  ```tsx
+  const [activeView, setActiveView] = useState<string | null>(null);
+````
+
+* Include conditional rendering for:
+
+  ```tsx
+  {activeView === "swap" && <SwapPage />}
+  {activeView === "add-liquidity" && <AddLiquidityPage />}
+  {activeView === "available-pools" && <AvailablePoolsPage />}
+  ```
+
+* Preserve the chat interface and ensure it still works when `activeView` is null.
+
+---
+
+💬 END RESULT:
+When Replit finishes, `MainContent.tsx` should:
+
+* Build successfully with no merge conflict markers
+* Render the correct component when actions are selected
+* Allow chat input to function normally
+* Contain no syntax, import, or type errors
+
+```
+
+---
+
+✅ **Next step:**  
+Copy and paste that entire block into your Replit AI sidebar (or `/fix` command).  
+Replit will automatically resolve the conflicts and output a clean, working `MainContent.tsx`.  
+
+Would you like me to add a follow-up prompt that tests `MainContent.tsx` after merge resolution to confirm all components render correctly?
+```
