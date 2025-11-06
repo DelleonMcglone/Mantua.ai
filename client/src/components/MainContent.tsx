@@ -3,7 +3,10 @@ import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
-import PoolsList from "@/components/liquidity/PoolsList";
+import RemoveLiquidityPage from "@/pages/RemoveLiquidity";
+import CollectFeesPage from "@/pages/CollectFees";
+import AvailablePoolsPage, { type AvailablePool } from "@/pages/AvailablePools";
+import AvailablePoolsPrompt from "@/components/liquidity/AvailablePoolsPrompt";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
@@ -18,8 +21,9 @@ import { AnalyzeResponseCard } from "@/components/analyze/AnalyzeResponseCard";
 import { requestAnalyze, requestParseIntent, ApiError, type ParseIntentResponse } from "@/lib/api";
 import { type AnalysisResponsePayload } from "@/types/analysis";
 
-type ActionId = 'swap' | 'add-liquidity' | 'analyze';
+type ActionId = 'swap' | 'add-liquidity' | 'analyze' | 'remove-liquidity' | 'collect-fees';
 type HookContext = "swap" | "liquidity";
+type ActiveComponent = null | "swap" | "liquidity" | "available-pools" | "remove-liquidity" | "collect-fees";
 
 interface SwapIntentState {
   sellToken?: string;
@@ -56,7 +60,7 @@ interface HookResolution {
   hook?: HookConfig;
 }
 
-const SINGLE_WORD_ACTIONS = ["swap", "analyze", "agent"] as const;
+const SINGLE_WORD_ACTIONS = ["swap", "analyze"] as const;
 const MULTI_WORD_ACTIONS = ["add liquidity", "remove liquidity"] as const;
 const AFFIRMATIVE_RESPONSES = new Set(["yes", "y", "yeah", "yep", "sure", "confirm", "correct"]);
 const NEGATIVE_RESPONSES = new Set(["no", "n", "nope", "cancel"]);
@@ -192,13 +196,12 @@ const liquidityDefaults: Readonly<LiquidityIntentState> = {
 
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
-  const [activeComponent, setActiveComponent] = useState<null | "swap" | "liquidity" | "pools">(null);
+  const [activeComponent, setActiveComponent] = useState<ActiveComponent>(null);
   const [swapProps, setSwapProps] = useState<SwapIntentState | null>(null);
   const [liquidityProps, setLiquidityProps] = useState<LiquidityIntentState | null>(null); // LIQUIDITY FIX: track liquidity intent props
-  const [poolsFilter, setPoolsFilter] = useState<string | undefined>(undefined); // POOLS: track token filter
   const [isAnalyzeModeActive, setIsAnalyzeModeActive] = useState(false);
   const [isAnalyzeLoading, setIsAnalyzeLoading] = useState(false);
-  const { currentChat, addMessage, updateAgentMode, createNewChat } = useChatContext();
+  const { currentChat, addMessage, createNewChat } = useChatContext();
   const [location, navigate] = useLocation();
   const account = useActiveAccount();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -285,18 +288,27 @@ export default function MainContent() {
     setLiquidityProps(null);
   }, []); // LIQUIDITY FIX: reset liquidity mode when dismissed
 
-  const activatePools = useCallback((tokenFilter?: string) => {
-    setPoolsFilter(tokenFilter);
+  const activateRemoveLiquidity = useCallback(() => {
     setSwapProps(null);
     setLiquidityProps(null);
     setIsAnalyzeModeActive(false);
-    setActiveComponent("pools");
-  }, []); // POOLS: centralize pools activation
+    setActiveComponent("remove-liquidity");
+  }, []);
 
-  const exitPoolsMode = useCallback(() => {
+  const exitRemoveLiquidityMode = useCallback(() => {
     setActiveComponent(null);
-    setPoolsFilter(undefined);
-  }, []); // POOLS: reset pools mode when dismissed
+  }, []);
+
+  const activateCollectFees = useCallback(() => {
+    setSwapProps(null);
+    setLiquidityProps(null);
+    setIsAnalyzeModeActive(false);
+    setActiveComponent("collect-fees");
+  }, []);
+
+  const exitCollectFeesMode = useCallback(() => {
+    setActiveComponent(null);
+  }, []);
 
   const activateAnalyzeMode = useCallback(() => {
     setActiveComponent(null);
@@ -383,39 +395,10 @@ export default function MainContent() {
   const chatMessages = currentChat ? currentChat.messages : [];
   const messageCount = chatMessages.length;
   const hasPrompted = isWalletConnected && messageCount > 0;
-  const isAgentMode = Boolean(currentChat?.isAgentMode);
   const isSwapModeActive = activeComponent === "swap"; // SWAP: synchronize swap mode state
-  const isLiquidityModeActive = activeComponent === "liquidity"; // LIQUIDITY FIX: synchronize add-liquidity mode
-  const isPoolsModeActive = activeComponent === "pools"; // POOLS: synchronize pools mode
-
-  // Helper to detect and parse pools commands
-  const detectPoolsCommand = useCallback((message: string): { detected: boolean; tokenFilter?: string } => {
-    const normalized = message.toLowerCase();
-    
-    // Check for pools-related keywords
-    if (!normalized.includes("pool")) {
-      return { detected: false };
-    }
-
-    // Extract token or token pair filter (supports both "pool" and "pools")
-    const tokenPairMatch = normalized.match(/([a-z]+)\/([a-z]+)\s+pool(?:s)?/i);
-    if (tokenPairMatch) {
-      return { detected: true, tokenFilter: `${tokenPairMatch[1]}/${tokenPairMatch[2]}` };
-    }
-
-    // Extract single token filter (supports both "pool" and "pools")
-    const singleTokenMatch = normalized.match(/([a-z]+)\s+pool(?:s)?/i);
-    if (singleTokenMatch && !["show", "me", "hook", "top", "liquidity"].includes(singleTokenMatch[1])) {
-      return { detected: true, tokenFilter: singleTokenMatch[1] };
-    }
-
-    // General pools request
-    if (normalized.includes("show me pool") || normalized.includes("pools") || normalized.includes("pool list")) {
-      return { detected: true };
-    }
-
-    return { detected: false };
-  }, []);
+  const isLiquidityModeActive = activeComponent === "liquidity" || activeComponent === "available-pools"; // LIQUIDITY FIX: synchronize add-liquidity mode
+  const isRemoveLiquidityModeActive = activeComponent === "remove-liquidity";
+  const isCollectFeesModeActive = activeComponent === "collect-fees";
 
   // Debug logging
   useEffect(() => {
@@ -553,6 +536,18 @@ export default function MainContent() {
       exitAnalyzeMode();
       activateLiquidity(); // LIQUIDITY FIX: normalize liquidity activation path
     }
+
+    // Handle component activation for remove-liquidity
+    if (actionId === 'remove-liquidity') {
+      exitAnalyzeMode();
+      activateRemoveLiquidity();
+    }
+
+    // Handle component activation for collect-fees
+    if (actionId === 'collect-fees') {
+      exitAnalyzeMode();
+      activateCollectFees();
+    }
   };
 
   const processClarifiedCommand = (suggestedMessage: string, chatId: string) => {
@@ -588,19 +583,13 @@ export default function MainContent() {
       return;
     }
 
-    if (normalizedSuggestion === "agent") {
-      updateAgentMode(true, chatId);
+    if (normalizedSuggestion.startsWith("remove liquidity")) {
+      handleActionClick("remove-liquidity");
       return;
     }
 
-    if (normalizedSuggestion.startsWith("remove liquidity")) {
-      addMessage(
-        {
-          content: "Remove Liquidity flows aren't supported yet, but I'm tracking your request.",
-          sender: "assistant",
-        },
-        chatId,
-      );
+    if (normalizedSuggestion.startsWith("collect fees")) {
+      handleActionClick("collect-fees");
       return;
     }
 
@@ -624,30 +613,18 @@ export default function MainContent() {
 
       case 'analyze':
         return ''; // Analyze mode provides dynamic responses
+
+      case 'remove-liquidity':
+        return ''; // No intro text for remove liquidity - just show component
+
+      case 'collect-fees':
+        return ''; // No intro text for collect fees - just show component
       
       default:
         // This should never happen with proper TypeScript typing
         const _exhaustiveCheck: never = actionId;
         return "";
     }
-  };
-
-  // Handle agent action button clicks
-  const handleAgentAction = (action: string) => {
-    const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
-    if (!activeChatId) return; // No active chat to add messages to
-    
-    addMessage({
-      content: `Executing agent action: ${action}`,
-      sender: 'assistant'
-    }, activeChatId);
-  };
-
-  // Exit Agent mode
-  const exitAgentMode = () => {
-    const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
-    if (!activeChatId) return;
-    updateAgentMode(false, activeChatId);
   };
 
   // SWAP FIX: derive hook metadata from free-form phrases (shared with liquidity flow)
@@ -989,18 +966,6 @@ export default function MainContent() {
           await runAnalyze(originalMessage, chatId);
           return;
         }
-        case "agent_action": {
-          updateAgentMode(true, chatId);
-          navigate("/agents");
-          addMessage(
-            {
-              content: "Opening your Agents workspace for configuration.",
-              sender: "assistant",
-            },
-            chatId,
-          );
-          return;
-        }
         default: {
           if (isAnalyzeModeActive) {
             await runAnalyze(originalMessage, chatId);
@@ -1039,23 +1004,6 @@ export default function MainContent() {
             return;
           }
 
-          // Check for pools command
-          const poolsCommand = detectPoolsCommand(originalMessage);
-          if (poolsCommand.detected) {
-            activatePools(poolsCommand.tokenFilter);
-            const filterMsg = poolsCommand.tokenFilter 
-              ? `Showing pools for ${poolsCommand.tokenFilter.toUpperCase()}`
-              : "Showing top liquidity pools";
-            addMessage(
-              {
-                content: filterMsg,
-                sender: "assistant",
-              },
-              chatId,
-            );
-            return;
-          }
-
           addMessage(
             {
               content: getMockAssistantResponse(originalMessage),
@@ -1068,16 +1016,13 @@ export default function MainContent() {
     },
     [
       activateAnalyzeMode,
-      activatePools,
       addMessage,
-      detectPoolsCommand,
       handleLiquidityIntent,
       handleSwapIntent,
       isAnalyzeModeActive,
       isWalletConnected,
       navigate,
       runAnalyze,
-      updateAgentMode,
     ],
   );
 
@@ -1296,10 +1241,50 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                   </div>
                 )}
 
-                {activeComponent === 'pools' && (
+                {activeComponent === 'remove-liquidity' && (
                   <div className="flex justify-start">
-                    <div className="max-w-[90%] w-full">
-                      <PoolsList tokenFilter={poolsFilter} />
+                    <div className="max-w-[90%] space-y-3">
+                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-remove-liquidity-active">
+                        <RemoveLiquidityPage
+                          onSuccess={(txHash) => {
+                            const chatId = currentChat?.id ?? pendingChatIdRef.current;
+                            if (chatId) {
+                              addMessage(
+                                {
+                                  content: `âœ… Liquidity removed successfully! Transaction: ${txUrl(baseSepolia.id, txHash)}`,
+                                  sender: "assistant",
+                                },
+                                chatId
+                              );
+                            }
+                            exitRemoveLiquidityMode();
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeComponent === 'collect-fees' && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] space-y-3">
+                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-collect-fees-active">
+                        <CollectFeesPage
+                          onSuccess={(txHash) => {
+                            const chatId = currentChat?.id ?? pendingChatIdRef.current;
+                            if (chatId) {
+                              addMessage(
+                                {
+                                  content: `âœ… Fees collected successfully! Transaction: ${txUrl(baseSepolia.id, txHash)}`,
+                                  sender: "assistant",
+                                },
+                                chatId
+                              );
+                            }
+                            exitCollectFeesMode();
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1319,41 +1304,10 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                   </div>
                 ) : (
                   <>
-                    {/* Agent action buttons directly above input when in Agent mode */}
-                    {isAgentMode && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <Button
-                          variant="outline"
-                          className="text-sm py-2"
-                          onClick={() => handleAgentAction('Request testnet funds via faucet')}
-                          data-testid="button-agent-faucet"
-                        >
-                          Request testnet funds via faucet
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="text-sm py-2"
-                          onClick={() => handleAgentAction('Manage wallet details and balance checks')}
-                          data-testid="button-agent-wallet"
-                        >
-                          Manage wallet details and balance checks
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="text-sm py-2"
-                          onClick={() => handleAgentAction('Execute token transfers and trades')}
-                          data-testid="button-agent-trades"
-                        >
-                          Execute token transfers and trades
-                        </Button>
-                      </div>
-                    )}
                     <div className="space-y-2">
                       <ChatInput 
                         onSubmit={handleChatSubmit} 
                         onQuickAction={handleActionClick}
-                        isAgentMode={isAgentMode}
-                        onExitAgent={exitAgentMode}
                         isSwapModeActive={isSwapModeActive}
                         isLiquidityModeActive={isLiquidityModeActive}
                         onSwapModeRequest={ensureSwapShortcut}
@@ -1363,6 +1317,12 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                         isAnalyzeModeActive={isAnalyzeModeActive}
                         onAnalyzeModeRequest={activateAnalyzeMode}
                         onAnalyzeModeExit={exitAnalyzeMode}
+                        isRemoveLiquidityModeActive={isRemoveLiquidityModeActive}
+                        onRemoveLiquidityModeRequest={() => handleActionClick('remove-liquidity')}
+                        onRemoveLiquidityModeExit={exitRemoveLiquidityMode}
+                        isCollectFeesModeActive={isCollectFeesModeActive}
+                        onCollectFeesModeRequest={() => handleActionClick('collect-fees')}
+                        onCollectFeesModeExit={exitCollectFeesMode}
                       />
                       {isAnalyzeModeActive && isAnalyzeLoading && (
                         <p className="text-xs text-muted-foreground px-2">
@@ -1412,8 +1372,6 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                 <ChatInput 
                   onSubmit={handleChatSubmit} 
                   onQuickAction={handleActionClick}
-                  isAgentMode={isAgentMode}
-                  onExitAgent={exitAgentMode}
                   isSwapModeActive={isSwapModeActive}
                   isLiquidityModeActive={isLiquidityModeActive}
                   onSwapModeRequest={ensureSwapShortcut}
@@ -1423,6 +1381,12 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                   isAnalyzeModeActive={isAnalyzeModeActive}
                   onAnalyzeModeRequest={activateAnalyzeMode}
                   onAnalyzeModeExit={exitAnalyzeMode}
+                  isRemoveLiquidityModeActive={isRemoveLiquidityModeActive}
+                  onRemoveLiquidityModeRequest={() => handleActionClick('remove-liquidity')}
+                  onRemoveLiquidityModeExit={exitRemoveLiquidityMode}
+                  isCollectFeesModeActive={isCollectFeesModeActive}
+                  onCollectFeesModeRequest={() => handleActionClick('collect-fees')}
+                  onCollectFeesModeExit={exitCollectFeesMode}
                 />
                 {isAnalyzeModeActive && isAnalyzeLoading && (
                   <p className="text-xs text-muted-foreground px-2 text-left">

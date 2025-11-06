@@ -7,8 +7,6 @@ import { useActiveAccount } from 'thirdweb/react';
 interface ChatInputProps {
   onSubmit?: (message: string) => void;
   onQuickAction?: (actionId: string) => void;
-  isAgentMode?: boolean;
-  onExitAgent?: () => void;
   isSwapModeActive?: boolean;
   onSwapModeRequest?: () => void;
   onSwapModeExit?: () => void;
@@ -18,13 +16,17 @@ interface ChatInputProps {
   isAnalyzeModeActive?: boolean;
   onAnalyzeModeRequest?: () => void;
   onAnalyzeModeExit?: () => void;
+  isRemoveLiquidityModeActive?: boolean;
+  onRemoveLiquidityModeRequest?: () => void;
+  onRemoveLiquidityModeExit?: () => void;
+  isCollectFeesModeActive?: boolean;
+  onCollectFeesModeRequest?: () => void;
+  onCollectFeesModeExit?: () => void;
 }
 
 export default function ChatInput({
   onSubmit,
   onQuickAction,
-  isAgentMode,
-  onExitAgent,
   isSwapModeActive = false,
   onSwapModeRequest,
   onSwapModeExit,
@@ -34,6 +36,12 @@ export default function ChatInput({
   isAnalyzeModeActive = false,
   onAnalyzeModeRequest,
   onAnalyzeModeExit,
+  isRemoveLiquidityModeActive = false,
+  onRemoveLiquidityModeRequest,
+  onRemoveLiquidityModeExit,
+  isCollectFeesModeActive = false,
+  onCollectFeesModeRequest,
+  onCollectFeesModeExit,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isMenuVisible, setMenuVisible] = useState(false);
@@ -42,10 +50,11 @@ export default function ChatInput({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const account = useActiveAccount();
   const menuActions = [
+    { id: "analyze", label: "Analyze", disabled: false },
     { id: "swap", label: "Swap", disabled: false },
     { id: "add-liquidity", label: "Add Liquidity", disabled: false },
-    { id: "analyze", label: "Analyze", disabled: false },
-    { id: "agents-coming-soon", label: "Agents — Coming Soon", disabled: true },
+    { id: "remove-liquidity", label: "Remove Liquidity", disabled: false },
+    { id: "collect-fees", label: "Collect Fees", disabled: false },
   ] as const;
 
   const handleSend = () => {
@@ -101,7 +110,7 @@ export default function ChatInput({
   const triggerQuickAction = (actionId: string) => {
     setMenuVisible(false);
 
-    const requiresWallet = actionId !== "analyze" && actionId !== "agents-coming-soon";
+    const requiresWallet = actionId !== "analyze";
     if (!account && requiresWallet) {
       if (onSubmit) {
         onSubmit("Please connect your wallet to continue.");
@@ -110,9 +119,11 @@ export default function ChatInput({
     }
 
     const actionLabels: Record<string, string> = {
+      analyze: "Analyze",
       swap: "Swap",
       "add-liquidity": "Add Liquidity",
-      analyze: "Analyze",
+      "remove-liquidity": "Remove Liquidity",
+      "collect-fees": "Collect Fees",
     };
 
     const userMessage = actionLabels[actionId] || actionId;
@@ -145,10 +156,10 @@ export default function ChatInput({
   }, [isMenuVisible]);
 
   useEffect(() => {
-    if (!isSwapModeActive && !isLiquidityModeActive && !isAnalyzeModeActive) {
+    if (!isSwapModeActive && !isLiquidityModeActive && !isAnalyzeModeActive && !isRemoveLiquidityModeActive && !isCollectFeesModeActive) {
       setMenuVisible(false);
     }
-  }, [isSwapModeActive, isLiquidityModeActive, isAnalyzeModeActive]); // Collapse quick actions when exiting structured flows
+  }, [isSwapModeActive, isLiquidityModeActive, isAnalyzeModeActive, isRemoveLiquidityModeActive, isCollectFeesModeActive]); // Collapse quick actions when exiting structured flows
 
   const handleSwapModeExit = () => {
     onSwapModeExit?.();
@@ -165,6 +176,16 @@ export default function ChatInput({
     setMenuVisible(false);
   };
 
+  const handleRemoveLiquidityModeExit = () => {
+    onRemoveLiquidityModeExit?.();
+    setMenuVisible(false);
+  };
+
+  const handleCollectFeesModeExit = () => {
+    onCollectFeesModeExit?.();
+    setMenuVisible(false);
+  };
+
   const handleQuickActionSelect = (actionId: string, disabled?: boolean) => {
     if (disabled) {
       return;
@@ -177,6 +198,12 @@ export default function ChatInput({
     }
     if (actionId === "analyze") {
       onAnalyzeModeRequest?.();
+    }
+    if (actionId === "remove-liquidity") {
+      onRemoveLiquidityModeRequest?.();
+    }
+    if (actionId === "collect-fees") {
+      onCollectFeesModeRequest?.();
     }
     triggerQuickAction(actionId);
   };
@@ -251,6 +278,36 @@ export default function ChatInput({
           </Button>
         )}
 
+        {isRemoveLiquidityModeActive && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="group h-8 rounded-full px-4 text-sm font-medium"
+            onClick={handleRemoveLiquidityModeExit}
+            aria-pressed={isRemoveLiquidityModeActive}
+            data-testid="button-remove-liquidity-mode-active"
+          >
+            <span className="group-hover:hidden">Remove Liquidity</span>
+            <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
+          </Button>
+        )}
+
+        {isCollectFeesModeActive && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="group h-8 rounded-full px-4 text-sm font-medium"
+            onClick={handleCollectFeesModeExit}
+            aria-pressed={isCollectFeesModeActive}
+            data-testid="button-collect-fees-mode-active"
+          >
+            <span className="group-hover:hidden">Collect Fees</span>
+            <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
+          </Button>
+        )}
+
         {/* Dropdown Menu - absolutely positioned & layout-locked */}
         <div
           ref={menuRef}
@@ -300,19 +357,6 @@ export default function ChatInput({
           data-testid="textarea-chat-message"
           rows={1}
         />
-
-        {/* Agent mode indicator button inside input */}
-        {isAgentMode && (
-          <Button
-            size="sm"
-            type="button"
-            className="text-xs bg-primary hover:bg-primary/80 text-primary-foreground rounded-full px-3 py-1 h-6"
-            onClick={onExitAgent}
-            data-testid="button-agent-mode"
-          >
-            Agent
-          </Button>
-        )}
 
         <Button
           size="icon"
