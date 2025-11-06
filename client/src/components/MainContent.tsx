@@ -1004,23 +1004,6 @@ export default function MainContent() {
             return;
           }
 
-          // Check for pools command
-          const poolsCommand = detectPoolsCommand(originalMessage);
-          if (poolsCommand.detected) {
-            activatePools(poolsCommand.tokenFilter);
-            const filterMsg = poolsCommand.tokenFilter 
-              ? `Showing pools for ${poolsCommand.tokenFilter.toUpperCase()}`
-              : "Showing top liquidity pools";
-            addMessage(
-              {
-                content: filterMsg,
-                sender: "assistant",
-              },
-              chatId,
-            );
-            return;
-          }
-
           addMessage(
             {
               content: getMockAssistantResponse(originalMessage),
@@ -1033,9 +1016,7 @@ export default function MainContent() {
     },
     [
       activateAnalyzeMode,
-      activatePools,
       addMessage,
-      detectPoolsCommand,
       handleLiquidityIntent,
       handleSwapIntent,
       isAnalyzeModeActive,
