@@ -3,9 +3,14 @@ import { processAgentMessage, getWalletInfo, initializeAgent } from "../services
 
 const router = express.Router();
 
-initializeAgent().catch(error => {
-  console.error("Failed to initialize agent:", error);
-});
+// Initialize agent only if all required keys are present
+if (process.env.OPENAI_API_KEY && process.env.CDP_API_KEY_NAME && process.env.CDP_API_KEY_PRIVATE_KEY) {
+  initializeAgent().catch(error => {
+    console.error("Failed to initialize agent:", error);
+  });
+} else {
+  console.log("⚠️  AgentKit not initialized - missing API keys. Agent endpoints will return errors until keys are configured.");
+}
 
 router.post("/chat", async (req: Request, res: Response) => {
   try {
