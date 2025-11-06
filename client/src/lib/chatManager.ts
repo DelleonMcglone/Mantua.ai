@@ -30,7 +30,6 @@ export interface Chat {
   messages: ChatMessage[];
   createdAt: Date;
   updatedAt: Date;
-  isAgentMode: boolean;
 }
 
 const CHAT_SESSION_KEY = "mantua_chat_history";
@@ -51,7 +50,6 @@ interface PersistedChat {
   messages: PersistedChatMessage[];
   createdAt: string;
   updatedAt: string;
-  isAgentMode?: boolean;
 }
 
 interface ChatStorageSnapshot {
@@ -95,7 +93,6 @@ export class ChatManager {
       messages,
       createdAt: new Date(rawChat.createdAt ?? Date.now()),
       updatedAt: new Date(rawChat.updatedAt ?? Date.now()),
-      isAgentMode: Boolean(rawChat.isAgentMode),
     };
   }
 
@@ -114,7 +111,6 @@ export class ChatManager {
       ),
       createdAt: chat.createdAt.toISOString(),
       updatedAt: chat.updatedAt.toISOString(),
-      isAgentMode: chat.isAgentMode,
     };
   }
 
@@ -205,7 +201,6 @@ export class ChatManager {
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
-      isAgentMode: false,
     };
 
     this.updateSnapshot((snapshot) => {
@@ -315,26 +310,6 @@ export class ChatManager {
 
         return updatedChat;
       });
-
-      return {
-        ...snapshot,
-        chats: chats.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()),
-      };
-    });
-  }
-
-  // Update Agent mode for a chat
-  updateChatAgentMode(chatId: string, isAgentMode: boolean): void {
-    this.updateSnapshot((snapshot) => {
-      const chats = snapshot.chats.map((chat) =>
-        chat.id === chatId
-          ? {
-              ...chat,
-              isAgentMode,
-              updatedAt: new Date(),
-            }
-          : chat,
-      );
 
       return {
         ...snapshot,

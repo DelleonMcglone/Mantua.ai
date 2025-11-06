@@ -1,4 +1,4 @@
-import { ChevronDown, MessageSquarePlus, Package, User, Bot, Menu, MessageSquare, Trash2 } from "lucide-react";
+import { ChevronDown, MessageSquarePlus, Package, User, Menu, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
@@ -314,9 +314,6 @@ function ChatListSection({ isExpanded }: { isExpanded: boolean }) {
             >
               <MessageSquare className="h-3 w-3 flex-shrink-0" />
               <span className="truncate flex-1 min-w-0">{chat.title}</span>
-              {chat.isAgentMode && (
-                <Bot className="h-3 w-3 flex-shrink-0 text-primary" />
-              )}
             </button>
             <button
               onClick={(e) => handleDeleteChat(chat.id, chat.title, e)}

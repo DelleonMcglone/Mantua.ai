@@ -60,7 +60,7 @@ interface HookResolution {
   hook?: HookConfig;
 }
 
-const SINGLE_WORD_ACTIONS = ["swap", "analyze", "agent"] as const;
+const SINGLE_WORD_ACTIONS = ["swap", "analyze"] as const;
 const MULTI_WORD_ACTIONS = ["add liquidity", "remove liquidity"] as const;
 const AFFIRMATIVE_RESPONSES = new Set(["yes", "y", "yeah", "yep", "sure", "confirm", "correct"]);
 const NEGATIVE_RESPONSES = new Set(["no", "n", "nope", "cancel"]);
@@ -1042,7 +1042,6 @@ export default function MainContent() {
       isWalletConnected,
       navigate,
       runAnalyze,
-      updateAgentMode,
     ],
   );
 
