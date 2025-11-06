@@ -55,9 +55,13 @@ export async function initializeAgent(): Promise<AgentState> {
 
     if (fs.existsSync(WALLET_DATA_FILE)) {
       console.log("📂 Loading existing wallet...");
-      agentKitConfig.cdpWalletData = fs.readFileSync(WALLET_DATA_FILE, "utf8");
+      const walletData = fs.readFileSync(WALLET_DATA_FILE, "utf8");
+      agentKitConfig.cdpWalletSecret = walletData;
     } else {
       console.log("🆕 Creating new wallet...");
+      const crypto = await import('crypto');
+      const walletSecret = crypto.randomBytes(32).toString('hex');
+      agentKitConfig.cdpWalletSecret = walletSecret;
     }
 
     console.log("🚀 Calling AgentKit.from with config keys:", Object.keys(agentKitConfig));
