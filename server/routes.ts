@@ -18,6 +18,7 @@ import {
   getTrendingPoolsOnBase,
   searchEthCbBtcPoolOnBase,
 } from "./services/coingecko";
+import agentRoutes from "./routes/agentRoutes";
 
 const parseIntentSchema = z.object({
   message: z.string().trim().min(1).max(500),
@@ -232,6 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.use("/api/agent", agentRoutes);
   app.use("/api", router);
 
   const httpServer = createServer(app);
