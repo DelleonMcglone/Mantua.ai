@@ -9,6 +9,7 @@ interface ChatContextType {
   createNewChat: () => Chat | null;
   switchToChat: (chatId: string) => void;
   addMessage: (message: Omit<ChatMessage, "id" | "timestamp">, chatId?: string) => void;
+  updateAgentMode: (isAgentMode: boolean, chatId?: string) => void;
   refreshChats: () => void;
   deleteChat: (chatId: string) => void;
 }
@@ -146,6 +147,31 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   };
 
+  const updateAgentMode = (isAgentMode: boolean, chatId?: string) => {
+    const targetChatId = chatId ?? currentChat?.id;
+    if (!targetChatId) return;
+
+    try {
+      chatManager.updateChatAgentMode(targetChatId, isAgentMode);
+      
+      // Update local state
+      if (currentChat?.id === targetChatId) {
+        setCurrentChat(prev =>
+          prev
+            ? {
+                ...prev,
+                isAgentMode,
+                updatedAt: new Date(),
+              }
+            : null,
+        );
+      }
+      setAllChats(chatManager.getAllChats());
+    } catch (error) {
+      console.error("Error updating agent mode:", error);
+    }
+  };
+
   const refreshChats = () => {
     loadChats();
   };
@@ -171,6 +197,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     createNewChat,
     switchToChat,
     addMessage,
+    updateAgentMode,
     refreshChats,
     deleteChat,
   };

@@ -28,7 +28,7 @@ export default function Landing() {
       {/* Header */}
       <header className="flex items-center justify-between p-6 border-b bg-background">
         <div className="flex items-center gap-3">
-          <img src={isDark ? logoWhite : logoBlack} alt="Mantua Protocol" className="w-8 h-8" />
+          <img src={isDark ? logoBlack : logoWhite} alt="Mantua Protocol" className="w-8 h-8" />
           <h1 className="text-xl font-semibold text-foreground" data-testid="text-brand-name">
             Mantua.AI
           </h1>
@@ -95,7 +95,7 @@ export default function Landing() {
       <main className="relative flex flex-col items-center justify-center px-8 py-16 text-center pb-96">
         {/* Logo */}
         <div className="mb-8">
-          <img src={isDark ? logoWhite : logoBlack} alt="Mantua.AI" className="w-16 h-16 mx-auto" />
+          <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-16 h-16 mx-auto" />
         </div>
 
         {/* Main Headline */}
@@ -131,7 +131,7 @@ export default function Landing() {
               {/* Preview Header */}
               <div className="flex items-center justify-between p-4 border-b bg-background">
                 <div className="flex items-center gap-3">
-                  <img src={isDark ? logoWhite : logoBlack} alt="Mantua.AI" className="w-6 h-6" />
+                  <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-6 h-6" />
                   <span className="text-sm font-medium text-foreground">Mantua.AI</span>
                 </div>
                 <div className="flex items-center gap-4">
