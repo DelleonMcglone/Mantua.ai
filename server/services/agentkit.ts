@@ -38,9 +38,19 @@ export async function initializeAgent(): Promise<AgentState> {
       throw new Error("CDP API keys not set");
     }
 
+    console.log("🔑 CDP_API_KEY_NAME:", process.env.CDP_API_KEY_NAME ? `✓ Set (${process.env.CDP_API_KEY_NAME.length} chars)` : "✗ Missing");
+    console.log("🔑 CDP_API_KEY_PRIVATE_KEY:", process.env.CDP_API_KEY_PRIVATE_KEY ? `✓ Set (${process.env.CDP_API_KEY_PRIVATE_KEY.length} chars)` : "✗ Missing");
+
+    const cdpApiKeyId = process.env.CDP_API_KEY_NAME;
+    const cdpApiKeySecret = process.env.CDP_API_KEY_PRIVATE_KEY;
+
+    console.log("🔧 Config values being passed:");
+    console.log("   cdpApiKeyId:", cdpApiKeyId ? `✓ ${cdpApiKeyId.substring(0, 10)}...` : "✗ null/undefined");
+    console.log("   cdpApiKeySecret:", cdpApiKeySecret ? `✓ ${cdpApiKeySecret.length} chars` : "✗ null/undefined");
+
     const agentKitConfig: any = {
-      cdpApiKeyName: process.env.CDP_API_KEY_NAME,
-      cdpApiKeyPrivate: process.env.CDP_API_KEY_PRIVATE_KEY,
+      cdpApiKeyId,
+      cdpApiKeySecret,
     };
 
     if (fs.existsSync(WALLET_DATA_FILE)) {
@@ -50,6 +60,7 @@ export async function initializeAgent(): Promise<AgentState> {
       console.log("🆕 Creating new wallet...");
     }
 
+    console.log("🚀 Calling AgentKit.from with config keys:", Object.keys(agentKitConfig));
     const agentkit = await AgentKit.from(agentKitConfig);
     const exportedWallet = await agentkit.exportWallet();
     fs.writeFileSync(WALLET_DATA_FILE, exportedWallet);
