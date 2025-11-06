@@ -14,6 +14,9 @@ import UserActivity from "@/pages/UserActivity";
 import AgentActivity from "@/pages/AgentActivity";
 import Agents from "@/pages/Agents";
 import Swap from "@/pages/Swap";
+import AddLiquidity from "@/pages/AddLiquidity";
+import AvailablePools from "@/pages/AvailablePools";
+import PoolDetail from "@/pages/PoolDetail";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -29,6 +32,15 @@ function Router() {
       <Route path="/agents" component={Agents} />
       <Route path="/swap">
         <Swap />
+      </Route>
+      <Route path="/add-liquidity">
+        <AddLiquidity />
+      </Route>
+      <Route path="/pools">
+        <AvailablePools />
+      </Route>
+      <Route path="/pool/:id">
+        {(params) => <PoolDetail poolId={params.id} />}
       </Route>
       {/* Chat routes - /chat/new and /chat/:id */}
       <Route path="/chat/:id" component={Home} />
