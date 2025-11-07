@@ -6,7 +6,7 @@ import { Search, ChevronLeft } from "lucide-react";
 import ethereumLogo from '@assets/Frame 352 (1)_1758910668532.png';
 import usdcLogo from '@assets/Frame 352_1758910679715.png';
 
-interface Pool {
+export interface AvailablePool {
   id: string;
   token1: string;
   token2: string;
@@ -18,6 +18,8 @@ interface Pool {
   logo1: string;
   logo2: string;
 }
+
+type Pool = AvailablePool;
 
 const AVAILABLE_POOLS: Pool[] = [
   {
