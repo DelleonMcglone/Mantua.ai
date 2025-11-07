@@ -4,7 +4,6 @@ import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
 import AvailablePoolsPage, { type AvailablePool } from "@/pages/AvailablePools";
-import AvailablePoolsPrompt from "@/components/liquidity/AvailablePoolsPrompt";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
