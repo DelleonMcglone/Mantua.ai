@@ -9,7 +9,7 @@ Preferred communication style: Simple, everyday language.
 # System Architecture
 
 ## Frontend
-The frontend is a **React 18** application using **TypeScript**, built with **Vite**. It employs **Shadcn/ui** (based on Radix UI) for components and **Tailwind CSS** for styling, adhering to a purple-themed design system. **TanStack React Query** manages server state, and **Wouter** handles client-side routing. The application features a modular component structure, including a streamlined "Quick Actions Menu" with options for Swap, Add Liquidity, Analyze, and Explore Agents. Key pages include a marketing-focused Landing Page, the main DeFi application interface, an About Page detailing Mantua.AI's capabilities, and dedicated pages for User and Agent Activity tracking.
+The frontend is a **React 18** application using **TypeScript**, built with **Vite**. It employs **Shadcn/ui** (based on Radix UI) for components and **Tailwind CSS** for styling, adhering to a purple-themed design system. **TanStack React Query** manages server state, and **Wouter** handles client-side routing. The application features a modular component structure, including a streamlined "Quick Actions Menu" with three options: Analyze, Swap, and Add Liquidity. Key pages include a marketing-focused Landing Page, the main DeFi application interface, an About Page detailing Mantua.AI's capabilities, and dedicated pages for User and Agent Activity tracking.
 
 ## Backend
 The backend is a **Node.js/Express** server developed with **TypeScript**. It uses **Drizzle ORM** for PostgreSQL database interactions and **Express sessions** for session management. The API follows a RESTful design.

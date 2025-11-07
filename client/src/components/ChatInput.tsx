@@ -53,8 +53,6 @@ export default function ChatInput({
     { id: "analyze", label: "Analyze", disabled: false },
     { id: "swap", label: "Swap", disabled: false },
     { id: "add-liquidity", label: "Add Liquidity", disabled: false },
-    { id: "remove-liquidity", label: "Remove Liquidity", disabled: false },
-    { id: "collect-fees", label: "Collect Fees", disabled: false },
   ] as const;
 
   const handleSend = () => {
@@ -122,8 +120,6 @@ export default function ChatInput({
       analyze: "Analyze",
       swap: "Swap",
       "add-liquidity": "Add Liquidity",
-      "remove-liquidity": "Remove Liquidity",
-      "collect-fees": "Collect Fees",
     };
 
     const userMessage = actionLabels[actionId] || actionId;
@@ -156,10 +152,10 @@ export default function ChatInput({
   }, [isMenuVisible]);
 
   useEffect(() => {
-    if (!isSwapModeActive && !isLiquidityModeActive && !isAnalyzeModeActive && !isRemoveLiquidityModeActive && !isCollectFeesModeActive) {
+    if (!isSwapModeActive && !isLiquidityModeActive && !isAnalyzeModeActive) {
       setMenuVisible(false);
     }
-  }, [isSwapModeActive, isLiquidityModeActive, isAnalyzeModeActive, isRemoveLiquidityModeActive, isCollectFeesModeActive]); // Collapse quick actions when exiting structured flows
+  }, [isSwapModeActive, isLiquidityModeActive, isAnalyzeModeActive]); // Collapse quick actions when exiting structured flows
 
   const handleSwapModeExit = () => {
     onSwapModeExit?.();
@@ -176,16 +172,6 @@ export default function ChatInput({
     setMenuVisible(false);
   };
 
-  const handleRemoveLiquidityModeExit = () => {
-    onRemoveLiquidityModeExit?.();
-    setMenuVisible(false);
-  };
-
-  const handleCollectFeesModeExit = () => {
-    onCollectFeesModeExit?.();
-    setMenuVisible(false);
-  };
-
   const handleQuickActionSelect = (actionId: string, disabled?: boolean) => {
     if (disabled) {
       return;
@@ -198,12 +184,6 @@ export default function ChatInput({
     }
     if (actionId === "analyze") {
       onAnalyzeModeRequest?.();
-    }
-    if (actionId === "remove-liquidity") {
-      onRemoveLiquidityModeRequest?.();
-    }
-    if (actionId === "collect-fees") {
-      onCollectFeesModeRequest?.();
     }
     triggerQuickAction(actionId);
   };
@@ -274,36 +254,6 @@ export default function ChatInput({
             data-testid="button-liquidity-mode-active"
           >
             <span className="group-hover:hidden">Add Liquidity</span>
-            <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
-          </Button>
-        )}
-
-        {isRemoveLiquidityModeActive && (
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="group h-8 rounded-full px-4 text-sm font-medium"
-            onClick={handleRemoveLiquidityModeExit}
-            aria-pressed={isRemoveLiquidityModeActive}
-            data-testid="button-remove-liquidity-mode-active"
-          >
-            <span className="group-hover:hidden">Remove Liquidity</span>
-            <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
-          </Button>
-        )}
-
-        {isCollectFeesModeActive && (
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="group h-8 rounded-full px-4 text-sm font-medium"
-            onClick={handleCollectFeesModeExit}
-            aria-pressed={isCollectFeesModeActive}
-            data-testid="button-collect-fees-mode-active"
-          >
-            <span className="group-hover:hidden">Collect Fees</span>
             <X className="hidden h-4 w-4 group-hover:block" aria-hidden="true" />
           </Button>
         )}
