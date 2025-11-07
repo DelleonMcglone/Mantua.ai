@@ -3,7 +3,7 @@ import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
-import AvailablePoolsPage, { type AvailablePool } from "@/pages/AvailablePools";
+import AvailablePoolsPage from "@/pages/AvailablePools";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
