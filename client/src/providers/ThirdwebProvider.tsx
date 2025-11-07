@@ -12,7 +12,7 @@ const metamask = createWallet("io.metamask");
 
 export function ThirdwebProviders(props: { children: ReactNode }) {
   return (
-    <ThirdwebProvider clientId="ad56c696e9e352f2d6beb550518a3023" activeChain={baseSepolia} wallets={[metamask]}>
+    <ThirdwebProvider>
       {props.children}
     </ThirdwebProvider>
   );
