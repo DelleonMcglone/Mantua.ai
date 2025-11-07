@@ -3,8 +3,6 @@ import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
-import RemoveLiquidityPage from "@/pages/RemoveLiquidity";
-import CollectFeesPage from "@/pages/CollectFees";
 import AvailablePoolsPage, { type AvailablePool } from "@/pages/AvailablePools";
 import AvailablePoolsPrompt from "@/components/liquidity/AvailablePoolsPrompt";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -21,9 +19,9 @@ import { AnalyzeResponseCard } from "@/components/analyze/AnalyzeResponseCard";
 import { requestAnalyze, requestParseIntent, ApiError, type ParseIntentResponse } from "@/lib/api";
 import { type AnalysisResponsePayload } from "@/types/analysis";
 
-type ActionId = 'swap' | 'add-liquidity' | 'analyze' | 'remove-liquidity' | 'collect-fees';
+type ActionId = 'swap' | 'add-liquidity' | 'analyze';
 type HookContext = "swap" | "liquidity";
-type ActiveComponent = null | "swap" | "liquidity" | "available-pools" | "remove-liquidity" | "collect-fees";
+type ActiveComponent = null | "swap" | "liquidity" | "available-pools";
 
 interface SwapIntentState {
   sellToken?: string;
@@ -288,28 +286,6 @@ export default function MainContent() {
     setLiquidityProps(null);
   }, []); // LIQUIDITY FIX: reset liquidity mode when dismissed
 
-  const activateRemoveLiquidity = useCallback(() => {
-    setSwapProps(null);
-    setLiquidityProps(null);
-    setIsAnalyzeModeActive(false);
-    setActiveComponent("remove-liquidity");
-  }, []);
-
-  const exitRemoveLiquidityMode = useCallback(() => {
-    setActiveComponent(null);
-  }, []);
-
-  const activateCollectFees = useCallback(() => {
-    setSwapProps(null);
-    setLiquidityProps(null);
-    setIsAnalyzeModeActive(false);
-    setActiveComponent("collect-fees");
-  }, []);
-
-  const exitCollectFeesMode = useCallback(() => {
-    setActiveComponent(null);
-  }, []);
-
   const activateAnalyzeMode = useCallback(() => {
     setActiveComponent(null);
     setSwapProps(null);
@@ -397,8 +373,6 @@ export default function MainContent() {
   const hasPrompted = isWalletConnected && messageCount > 0;
   const isSwapModeActive = activeComponent === "swap"; // SWAP: synchronize swap mode state
   const isLiquidityModeActive = activeComponent === "liquidity" || activeComponent === "available-pools"; // LIQUIDITY FIX: synchronize add-liquidity mode
-  const isRemoveLiquidityModeActive = activeComponent === "remove-liquidity";
-  const isCollectFeesModeActive = activeComponent === "collect-fees";
 
   // Debug logging
   useEffect(() => {
@@ -536,18 +510,6 @@ export default function MainContent() {
       exitAnalyzeMode();
       activateLiquidity(); // LIQUIDITY FIX: normalize liquidity activation path
     }
-
-    // Handle component activation for remove-liquidity
-    if (actionId === 'remove-liquidity') {
-      exitAnalyzeMode();
-      activateRemoveLiquidity();
-    }
-
-    // Handle component activation for collect-fees
-    if (actionId === 'collect-fees') {
-      exitAnalyzeMode();
-      activateCollectFees();
-    }
   };
 
   const processClarifiedCommand = (suggestedMessage: string, chatId: string) => {
@@ -583,16 +545,6 @@ export default function MainContent() {
       return;
     }
 
-    if (normalizedSuggestion.startsWith("remove liquidity")) {
-      handleActionClick("remove-liquidity");
-      return;
-    }
-
-    if (normalizedSuggestion.startsWith("collect fees")) {
-      handleActionClick("collect-fees");
-      return;
-    }
-
     addMessage(
       {
         content: getMockAssistantResponse(trimmedSuggestion),
@@ -613,12 +565,6 @@ export default function MainContent() {
 
       case 'analyze':
         return ''; // Analyze mode provides dynamic responses
-
-      case 'remove-liquidity':
-        return ''; // No intro text for remove liquidity - just show component
-
-      case 'collect-fees':
-        return ''; // No intro text for collect fees - just show component
       
       default:
         // This should never happen with proper TypeScript typing
@@ -1240,54 +1186,6 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                     </div>
                   </div>
                 )}
-
-                {activeComponent === 'remove-liquidity' && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[90%] space-y-3">
-                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-remove-liquidity-active">
-                        <RemoveLiquidityPage
-                          onSuccess={(txHash) => {
-                            const chatId = currentChat?.id ?? pendingChatIdRef.current;
-                            if (chatId) {
-                              addMessage(
-                                {
-                                  content: `âœ… Liquidity removed successfully! Transaction: ${txUrl(baseSepolia.id, txHash)}`,
-                                  sender: "assistant",
-                                },
-                                chatId
-                              );
-                            }
-                            exitRemoveLiquidityMode();
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeComponent === 'collect-fees' && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[90%] space-y-3">
-                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-collect-fees-active">
-                        <CollectFeesPage
-                          onSuccess={(txHash) => {
-                            const chatId = currentChat?.id ?? pendingChatIdRef.current;
-                            if (chatId) {
-                              addMessage(
-                                {
-                                  content: `âœ… Fees collected successfully! Transaction: ${txUrl(baseSepolia.id, txHash)}`,
-                                  sender: "assistant",
-                                },
-                                chatId
-                              );
-                            }
-                            exitCollectFeesMode();
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>
@@ -1317,12 +1215,6 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                         isAnalyzeModeActive={isAnalyzeModeActive}
                         onAnalyzeModeRequest={activateAnalyzeMode}
                         onAnalyzeModeExit={exitAnalyzeMode}
-                        isRemoveLiquidityModeActive={isRemoveLiquidityModeActive}
-                        onRemoveLiquidityModeRequest={() => handleActionClick('remove-liquidity')}
-                        onRemoveLiquidityModeExit={exitRemoveLiquidityMode}
-                        isCollectFeesModeActive={isCollectFeesModeActive}
-                        onCollectFeesModeRequest={() => handleActionClick('collect-fees')}
-                        onCollectFeesModeExit={exitCollectFeesMode}
                       />
                       {isAnalyzeModeActive && isAnalyzeLoading && (
                         <p className="text-xs text-muted-foreground px-2">
@@ -1381,12 +1273,6 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction â
                   isAnalyzeModeActive={isAnalyzeModeActive}
                   onAnalyzeModeRequest={activateAnalyzeMode}
                   onAnalyzeModeExit={exitAnalyzeMode}
-                  isRemoveLiquidityModeActive={isRemoveLiquidityModeActive}
-                  onRemoveLiquidityModeRequest={() => handleActionClick('remove-liquidity')}
-                  onRemoveLiquidityModeExit={exitRemoveLiquidityMode}
-                  isCollectFeesModeActive={isCollectFeesModeActive}
-                  onCollectFeesModeRequest={() => handleActionClick('collect-fees')}
-                  onCollectFeesModeExit={exitCollectFeesMode}
                 />
                 {isAnalyzeModeActive && isAnalyzeLoading && (
                   <p className="text-xs text-muted-foreground px-2 text-left">

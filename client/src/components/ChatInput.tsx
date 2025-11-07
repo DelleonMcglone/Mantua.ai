@@ -16,12 +16,6 @@ interface ChatInputProps {
   isAnalyzeModeActive?: boolean;
   onAnalyzeModeRequest?: () => void;
   onAnalyzeModeExit?: () => void;
-  isRemoveLiquidityModeActive?: boolean;
-  onRemoveLiquidityModeRequest?: () => void;
-  onRemoveLiquidityModeExit?: () => void;
-  isCollectFeesModeActive?: boolean;
-  onCollectFeesModeRequest?: () => void;
-  onCollectFeesModeExit?: () => void;
 }
 
 export default function ChatInput({
@@ -36,12 +30,6 @@ export default function ChatInput({
   isAnalyzeModeActive = false,
   onAnalyzeModeRequest,
   onAnalyzeModeExit,
-  isRemoveLiquidityModeActive = false,
-  onRemoveLiquidityModeRequest,
-  onRemoveLiquidityModeExit,
-  isCollectFeesModeActive = false,
-  onCollectFeesModeRequest,
-  onCollectFeesModeExit,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isMenuVisible, setMenuVisible] = useState(false);
