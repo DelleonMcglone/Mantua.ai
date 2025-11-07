@@ -9,11 +9,18 @@ export const wagmiConfig = createConfig({
       appName: 'Mantua.AI',
     }),
     walletConnect({
-      projectId: 'demo', // Using demo project ID for now
+      projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'demo-project-id',
+      metadata: {
+        name: 'Mantua.AI',
+        description: 'DeFi personal assistant for programmable liquidity',
+        url: 'https://mantua.ai',
+        icons: ['https://mantua.ai/icon.png'],
+      },
+      showQrModal: true,
     }),
   ],
   transports: {
-    [baseSepolia.id]: http(),
+    [baseSepolia.id]: http('https://sepolia.base.org'),
   },
 })
 
