@@ -84,7 +84,7 @@ export default function About() {
               <strong>Liquidity Providers</strong> — execute complex trades and liquidity strategies in seconds.
             </li>
             <li className="text-foreground leading-relaxed">
-              <strong>Analysts & Researchers</strong> — query on-chain data and token metrics conversationally.
+              <strong>Hook Focused Devs</strong> — query on-chain data and token metrics conversationally.
             </li>
             <li className="text-foreground leading-relaxed">
               <strong>Everyday Users</strong> — learn, explore, and use DeFi safely through a friendly interface.
