@@ -81,13 +81,13 @@ export default function About() {
           <h2 className="text-2xl font-bold text-foreground mb-4">Who It's For</h2>
           <ul className="space-y-3 mb-8">
             <li className="text-foreground leading-relaxed">
-              <strong>Liquidity Providers</strong> — execute complex trades and liquidity strategies in seconds.
+              <strong>Liquidity Providers</strong>
             </li>
             <li className="text-foreground leading-relaxed">
-              <strong>Hook Focused Devs</strong> — query on-chain data and token metrics conversationally.
+              <strong>Hook Focused Devs</strong>
             </li>
             <li className="text-foreground leading-relaxed">
-              <strong>Everyday Users</strong> — learn, explore, and use DeFi safely through a friendly interface.
+              <strong>Everyday Users</strong>
             </li>
           </ul>
 
@@ -108,10 +108,10 @@ export default function About() {
           <div className="flex gap-4">
             <Button
               variant="outline"
-              onClick={() => window.open('https://discord.com/channels/1423172421967413311/1423172423150342218', '_blank')}
-              data-testid="button-discord-join"
+              onClick={() => window.open('https://t.me/+uG4bi2BDzNxmYmVh', '_blank')}
+              data-testid="button-telegram-join"
             >
-              💬 Discord
+              💬 Telegram
             </Button>
             <Button
               variant="outline"
