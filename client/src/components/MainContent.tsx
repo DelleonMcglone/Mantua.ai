@@ -1155,23 +1155,9 @@ export default function MainContent() {
       const activeChatId = currentChat?.id ?? pendingChatIdRef.current;
       if (!activeChatId) return;
 
-      const sanitizedBuyAmount =
-        payload.buyAmount.replace(/^\$/, "").trim() || payload.buyAmount;
-      const explorerUrl = txUrl(baseSepolia.id, payload.transactionHash);
-
-      const swapSummary = `Swapped ${payload.sellAmount} ${payload.sellToken} to ${payload.buyToken}.
-Transaction successful!
-You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction →](${explorerUrl})`;
-
-      addMessage(
-        {
-          content: swapSummary,
-          sender: "assistant",
-        },
-        activeChatId,
-      ); // SWAP: persist simplified swap recap
+      // SWAP FIX: Text output removed per user request - swap completion is shown in TransactionSummary component only
     },
-    [addMessage, currentChat?.id],
+    [currentChat?.id],
   );
 
   return (

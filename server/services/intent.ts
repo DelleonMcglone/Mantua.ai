@@ -155,10 +155,22 @@ function extractTokens(message: string): {
   tokenIn?: string;
   tokenOut?: string;
 } {
+  // Keywords to exclude from token extraction
+  const EXCLUDED_KEYWORDS = new Set([
+    'SWAP', 'ADD', 'LIQUIDITY', 'PROVIDE', 'WITH', 'HOOK',
+    'CUSTOM', 'FOR', 'THE', 'AND', 'USING', 'INTO'
+  ]);
+
   const candidates = message
     .split(/\s+/)
     .map((word) => word.replace(/[^a-zA-Z0-9]/g, ""))
-    .filter((word) => word.length >= 3 && word.length <= 10 && /^[a-zA-Z0-9]+$/.test(word));
+    .filter((word) => {
+      const upper = word.toUpperCase();
+      return word.length >= 3 &&
+             word.length <= 10 &&
+             /^[a-zA-Z0-9]+$/.test(word) &&
+             !EXCLUDED_KEYWORDS.has(upper);
+    });
 
   const unique: string[] = [];
   for (const candidate of candidates) {

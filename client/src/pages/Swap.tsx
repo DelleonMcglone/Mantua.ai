@@ -768,7 +768,9 @@ export default function Swap({
 
             <Select value={selectedHook} onValueChange={handleHookChange}>
               <SelectTrigger data-testid="select-hook">
-                <SelectValue placeholder="Select a hook..." />
+                <SelectValue>
+                  {HOOK_OPTIONS.find(h => h.value === selectedHook)?.label || "Select a hook..."}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {HOOK_OPTIONS.map((hook) => (
