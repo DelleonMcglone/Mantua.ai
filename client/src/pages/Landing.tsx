@@ -92,7 +92,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <main className="relative flex flex-col items-center justify-center px-8 py-16 text-center pb-96">
+      <main className="relative flex flex-col items-center justify-center px-8 py-16 text-center">
         {/* Logo */}
         <div className="mb-8">
           <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-16 h-16 mx-auto" />
@@ -124,76 +124,7 @@ export default function Landing() {
           Launch app
         </Button>
 
-        {/* App Preview - Bleeding off bottom */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 max-w-5xl w-full px-8">
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
-            <div className="bg-background rounded-lg border border-border overflow-hidden">
-              {/* Preview Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-background">
-                <div className="flex items-center gap-3">
-                  <img src={isDark ? logoBlack : logoWhite} alt="Mantua.AI" className="w-6 h-6" />
-                  <span className="text-sm font-medium text-foreground">Mantua.AI</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="bg-muted px-3 py-1 rounded text-xs text-muted-foreground">Datadealer.base.eth</div>
-                </div>
-              </div>
-              
-              {/* Preview Content */}
-              <div className="flex">
-                {/* Sidebar */}
-                <div className="w-64 bg-muted/30 border-r p-4">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 text-sm text-primary">
-                      <MessageSquarePlus className="h-4 w-4" />
-                      New chats
-                    </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Assets
-                    </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      User Activity
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Main Content */}
-                <div className="flex-1 p-6 bg-background">
-                  <div className="text-sm text-muted-foreground mb-8 text-right">
-                    Swap ETH for USDC use the dynamic fee hook
-                  </div>
-                  
-                  <div className="max-w-md mx-auto">
-                    <div className="bg-muted/30 rounded-lg p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm text-muted-foreground mb-1">Sell</div>
-                          <div className="text-2xl font-semibold">0.5</div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="text-xs text-muted-foreground">Balance: ETH 0.0034</div>
-                          <div className="flex items-center gap-1 bg-background rounded-lg px-3 py-1 border">
-                            <span className="text-sm font-medium">ETH</span>
-                            <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground">0.0567 ETH</span>
-                        <span className="text-primary">Max</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
       </main>
     </div>
   );
