@@ -92,7 +92,6 @@ export default function About() {
           </ul>
 
           {/* Why Mantua.AI Is Different */}
-          <h2 className="text-2xl font-bold text-foreground mb-4">Why Mantua.AI Is Different</h2>
           <ul className="space-y-3 mb-8">
             <li className="text-foreground leading-relaxed">
               ⚙️ <strong>Built on Hooks</strong>: Programmable Uniswap v4 logic lets you customize how pools and swaps behave.
