@@ -91,25 +91,6 @@ export default function About() {
             </li>
           </ul>
 
-          {/* Why Mantua.AI Is Different */}
-          <ul className="space-y-3 mb-8">
-            <li className="text-foreground leading-relaxed">
-              ⚙️ <strong>Built on Hooks</strong>: Programmable Uniswap v4 logic lets you customize how pools and swaps behave.
-            </li>
-            <li className="text-foreground leading-relaxed">
-              🤖 <strong>Driven by Agents</strong>: AI Agents automate DeFi strategies and remember your preferences.
-            </li>
-            <li className="text-foreground leading-relaxed">
-              🧠 <strong>Powered by Intelligence</strong>: Real-time blockchain data gives context and reasoning behind every action.
-            </li>
-            <li className="text-foreground leading-relaxed">
-              🔗 <strong>On Base</strong>: Secure, transparent execution — every transaction verifiable on Base.
-            </li>
-            <li className="text-foreground leading-relaxed">
-              💬 <strong>Conversational UX</strong>: A chat interface that feels like ChatGPT, but with real DeFi execution power.
-            </li>
-          </ul>
-
           {/* Our Vision */}
           <h2 className="text-2xl font-bold text-foreground mb-4">Our Vision</h2>
           <p className="text-foreground mb-6 leading-relaxed">
