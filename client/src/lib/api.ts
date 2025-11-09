@@ -1,7 +1,7 @@
 import { type AnalysisResponsePayload } from "@/types/analysis";
 import type { Agent } from "@shared/schema";
 
-export type IntentType = "swap" | "add_liquidity" | "analyze" | "agent_action" | "unknown";
+export type IntentType = "swap" | "add_liquidity" | "view_pools" | "analyze" | "agent_action" | "unknown";
 
 export interface ParseIntentResponse {
   intent: IntentType;

@@ -5,6 +5,7 @@ import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
 import AvailablePoolsPage, { type AvailablePool } from "@/pages/AvailablePools";
 import AvailablePoolsPrompt from "@/components/liquidity/AvailablePoolsPrompt";
+import { InlinePoolsList } from "@/components/liquidity/InlinePoolsList";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { canonicalizeTokenSymbol, extractTokensFromText } from "@/lib/tokenParsi
 import { txUrl } from "@/utils/explorers";
 import { baseSepolia } from "wagmi/chains";
 import { AnalyzeResponseCard } from "@/components/analyze/AnalyzeResponseCard";
+import { AnalyzeInterface } from "@/components/analyze/AnalyzeInterface";
 import { requestAnalyze, requestParseIntent, ApiError, type ParseIntentResponse } from "@/lib/api";
 import { type AnalysisResponsePayload } from "@/types/analysis";
 import { useGeckoTerminal } from "@/hooks/useGeckoTerminal";
@@ -215,6 +217,7 @@ export default function MainContent() {
   const [liquidityProps, setLiquidityProps] = useState<LiquidityIntentState | null>(null); // LIQUIDITY FIX: track liquidity intent props
   const [isAnalyzeModeActive, setIsAnalyzeModeActive] = useState(false);
   const [isAnalyzeLoading, setIsAnalyzeLoading] = useState(false);
+  const [isPoolsViewActive, setIsPoolsViewActive] = useState(false);
   const { currentChat, addMessage, createNewChat } = useChatContext();
   const [location, navigate] = useLocation();
   const account = useActiveAccount();
@@ -321,6 +324,45 @@ export default function MainContent() {
   const exitAnalyzeMode = useCallback(() => {
     setIsAnalyzeModeActive(false);
   }, []);
+
+  const handlePoolSelection = useCallback(
+    (pool: { id: string; token1: string; token2: string; hook: string | null }) => {
+      const chatId = currentChat?.id ?? pendingChatIdRef.current;
+      if (!chatId) return;
+
+      // Map hook name to hook ID
+      const hookMapping: Record<string, string> = {
+        "Dynamic Fee Hook": "dynamic-fee",
+        "TWAMM Hook": "twamm",
+        "Mantua Intel Hook": "mantua-intel",
+        "MEV Protection Hook": "mev-protection",
+      };
+
+      const selectedHook = pool.hook ? (hookMapping[pool.hook] ?? "no-hook") : "no-hook";
+      const hook = pool.hook ? normalizeHook(pool.hook) : undefined;
+
+      // Convert pool selection to liquidity intent
+      const liquidityIntent: LiquidityIntentState = {
+        token1: pool.token1,
+        token2: pool.token2,
+        selectedHook,
+        hook,
+        showCustomHook: false,
+      };
+
+      setIsPoolsViewActive(false);
+      activateLiquidity(liquidityIntent);
+
+      addMessage(
+        {
+          content: `Adding liquidity to ${pool.token1}/${pool.token2} pool${pool.hook ? ` with ${pool.hook}` : ""}.`,
+          sender: "assistant",
+        },
+        chatId
+      );
+    },
+    [activateLiquidity, addMessage, currentChat?.id]
+  );
 
   const handleSwapIntent = useCallback(
     (intent: SwapIntentState, chatId: string) => {
@@ -985,6 +1027,26 @@ export default function MainContent() {
           await runAnalyze(originalMessage, chatId);
           return;
         }
+        case "view_pools": {
+          setIsPoolsViewActive(true);
+          setActiveComponent(null);
+          setSwapProps(null);
+          setLiquidityProps(null);
+          setIsAnalyzeModeActive(false);
+
+          addMessage(
+            {
+              content: "Here are the available liquidity pools on Base Sepolia. Click 'Add Liquidity' to get started.",
+              sender: "assistant",
+              component: {
+                type: "pools_list" as const,
+                props: {},
+              },
+            },
+            chatId
+          );
+          return;
+        }
         default: {
           if (isAnalyzeModeActive) {
             await runAnalyze(originalMessage, chatId);
@@ -1193,6 +1255,21 @@ export default function MainContent() {
                     );
                   }
 
+                  if (message.component?.type === "pools_list") {
+                    return (
+                      <div key={message.id} className="flex justify-start">
+                        <div className="w-full max-w-full space-y-3">
+                          <InlinePoolsList
+                            onAddLiquidity={handlePoolSelection}
+                            onViewDetails={(poolId) => {
+                              console.log("View pool:", poolId);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={message.id}
@@ -1249,6 +1326,19 @@ export default function MainContent() {
                           intentHook={liquidityProps?.hook}
                           initialHookWarning={liquidityProps?.hookWarning}
                           inlineMode={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {isAnalyzeModeActive && (
+                  <div className="flex justify-start">
+                    <div className="w-full max-w-full space-y-3">
+                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden p-4" data-testid="component-analyze-active">
+                        <AnalyzeInterface
+                          onQuerySubmit={handleChatSubmit}
+                          isLoading={isAnalyzeLoading || isGeckoLoading}
                         />
                       </div>
                     </div>

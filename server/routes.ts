@@ -18,6 +18,19 @@ import {
   getTrendingPoolsOnBase,
   searchEthCbBtcPoolOnBase,
 } from "./services/coingecko";
+import {
+  getCurrentPrices,
+  getHistoricalPrices,
+  getAllDexVolumes,
+  getDexVolumesByChain,
+  getDexSummary,
+  getYieldPools,
+  getProtocols,
+  getProtocol,
+  getChains,
+  getTrendingPools,
+  searchPoolsByTokens,
+} from "./services/defillama";
 
 const parseIntentSchema = z.object({
   message: z.string().trim().min(1).max(500),
@@ -165,6 +178,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = await searchEthCbBtcPoolOnBase();
       res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // DeFiLlama API endpoints - FREE, NO API KEY REQUIRED!
+
+  // Token prices
+  router.get("/defillama/prices/current", async (req, res, next) => {
+    try {
+      const { coins } = req.query;
+      if (!coins) {
+        res.status(400).json({ message: "coins query parameter is required (comma-separated)" });
+        return;
+      }
+      const coinArray = (coins as string).split(",").map(c => c.trim());
+      const prices = await getCurrentPrices(coinArray);
+      res.json(prices);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/defillama/prices/historical/:timestamp", async (req, res, next) => {
+    try {
+      const { timestamp } = req.params;
+      const { coins } = req.query;
+      if (!coins) {
+        res.status(400).json({ message: "coins query parameter is required (comma-separated)" });
+        return;
+      }
+      const coinArray = (coins as string).split(",").map(c => c.trim());
+      const prices = await getHistoricalPrices(parseInt(timestamp), coinArray);
+      res.json(prices);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // DEX volumes
+  router.get("/defillama/dex/all", async (_req, res, next) => {
+    try {
+      const volumes = await getAllDexVolumes();
+      res.json(volumes);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/defillama/dex/chain/:chain", async (req, res, next) => {
+    try {
+      const { chain } = req.params;
+      const volumes = await getDexVolumesByChain(chain);
+      res.json(volumes);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/defillama/dex/:dex/summary", async (req, res, next) => {
+    try {
+      const { dex } = req.params;
+      const summary = await getDexSummary(dex);
+      res.json(summary);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Yield pools
+  router.get("/defillama/pools", async (req, res, next) => {
+    try {
+      const { chain } = req.query;
+      const pools = await getYieldPools(chain as string | undefined);
+      res.json(pools);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/defillama/pools/trending/:chain", async (req, res, next) => {
+    try {
+      const { chain } = req.params;
+      const { sortBy = "tvl", limit = "10" } = req.query;
+      const pools = await getTrendingPools(
+        chain,
+        sortBy as "apy" | "tvl" | "volume",
+        parseInt(limit as string)
+      );
+      res.json({ pools });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/defillama/pools/search", async (req, res, next) => {
+    try {
+      const { token1, token2, chain } = req.query;
+      if (!token1 || !token2) {
+        res.status(400).json({ message: "token1 and token2 query parameters are required" });
+        return;
+      }
+      const pools = await searchPoolsByTokens(
+        token1 as string,
+        token2 as string,
+        chain as string | undefined
+      );
+      res.json({ pools });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Protocols
+  router.get("/defillama/protocols", async (_req, res, next) => {
+    try {
+      const protocols = await getProtocols();
+      res.json({ protocols });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/defillama/protocol/:protocol", async (req, res, next) => {
+    try {
+      const { protocol } = req.params;
+      const data = await getProtocol(protocol);
+      res.json(data);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Chains
+  router.get("/defillama/chains", async (_req, res, next) => {
+    try {
+      const chains = await getChains();
+      res.json({ chains });
     } catch (error) {
       next(error);
     }

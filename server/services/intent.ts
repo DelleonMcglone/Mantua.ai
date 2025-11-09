@@ -1,6 +1,7 @@
 export type IntentType =
   | "swap"
   | "add_liquidity"
+  | "view_pools"
   | "analyze"
   | "agent_action"
   | "unknown";
@@ -31,6 +32,35 @@ export function parseIntent(message: string): ParsedIntent {
     return {
       intent: "agent_action",
       params: { raw: trimmed },
+    };
+  }
+
+  // Check for pool viewing intent BEFORE add_liquidity to avoid conflicts
+  if (
+    normalized.includes("pools") ||
+    normalized.includes("liquidity pool") ||
+    normalized.includes("available pool") ||
+    normalized.includes("show me pool") ||
+    normalized.includes("view pool") ||
+    normalized.includes("browse pool") ||
+    normalized.includes("explore pool") ||
+    normalized.includes("list pool") ||
+    (normalized.includes("liquidity") &&
+      (normalized.includes("browse") || normalized.includes("explore") || normalized.includes("show")))
+  ) {
+    // Exclude if it's clearly an add liquidity command
+    if (
+      normalized.startsWith("add liquidity") ||
+      normalized.startsWith("provide liquidity") ||
+      normalized.includes("add liquidity to") ||
+      normalized.includes("provide liquidity to")
+    ) {
+      return parseAddLiquidityIntent(trimmed);
+    }
+
+    return {
+      intent: "view_pools",
+      params: {},
     };
   }
 

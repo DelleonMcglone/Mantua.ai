@@ -516,6 +516,7 @@ export default function Swap({
           value: buyAmount.replace("$", ""),
           date: new Date().toISOString().split("T")[0],
           status: "Completed",
+          transactionHash: hash,
         });
 
         onSwapSuccess?.({

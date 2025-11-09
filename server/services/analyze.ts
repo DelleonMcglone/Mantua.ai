@@ -100,56 +100,61 @@ export async function analyzeQuestion(question: string): Promise<AnalyzeResponse
 
   // Check for pool-specific queries
   if (normalized.includes("pool") || normalized.includes("liquidity")) {
-    // Import CoinGecko functions dynamically to avoid circular dependencies
-    const { searchEthCbBtcPoolOnBase, getTrendingPoolsOnBase, formatUsd, formatPercentChange } = await import("./coingecko");
-    
+    // Use DeFiLlama for pool data
+    const { searchPoolsByTokens, getTrendingPools, formatUsd } = await import("./defillama");
+
     if (normalized.includes("eth") && (normalized.includes("btc") || normalized.includes("cbbtc"))) {
-      // Specific ETH/cbBTC pool query
-      const poolData = await searchEthCbBtcPoolOnBase();
-      if (!poolData.pools || poolData.pools.length === 0) {
+      // Specific ETH/cbBTC pool query using DeFiLlama
+      const pools = await searchPoolsByTokens("ETH", "BTC", "Base");
+      if (!pools || pools.length === 0) {
         throw new Error("NO_DATA");
       }
-      
-      const topPool = poolData.topPool;
-      const summary = `Found ${poolData.pools.length} ETH/cbBTC pools on Base network. Top pool has ${formatUsd(topPool.reserveUsd)} in liquidity with ${formatUsd(topPool.volume24h)} 24h volume.`;
-      
-      const metrics = poolData.pools.map((pool) => ({
-        pool: pool.name,
-        dex: pool.dex,
-        reserveUsd: formatUsd(pool.reserveUsd),
-        volume24h: formatUsd(pool.volume24h),
-        priceChange24h: formatPercentChange(pool.priceChange24h),
+
+      const topPools = pools.slice(0, 3);
+      const topPool = topPools[0];
+      const summary = `Found ${pools.length} ETH/BTC pools on Base network. Top pool has ${formatUsd(topPool.tvlUsd)} in TVL with ${topPool.apy.toFixed(2)}% APY.`;
+
+      const metrics = topPools.map((pool) => ({
+        pool: pool.symbol,
+        project: pool.project,
+        tvlUsd: formatUsd(pool.tvlUsd),
+        apy: `${pool.apy.toFixed(2)}%`,
+        volume24h: formatUsd(pool.volumeUsd1d || 0),
       }));
-      
+
       return {
         summary,
         metrics,
-        source: "CoinGecko (GeckoTerminal)",
+        source: "DeFiLlama",
         topic: "eth_cbbtc_pools",
       };
     }
-    
+
     if (normalized.includes("trending") || normalized.includes("top")) {
-      // Trending pools on Base
-      const trending = await getTrendingPoolsOnBase();
-      if (!trending.data || trending.data.length === 0) {
+      // Get trending pools on Base using DeFiLlama
+      const chain = normalized.includes("base") ? "Base" :
+                    normalized.includes("ethereum") ? "Ethereum" :
+                    normalized.includes("arbitrum") ? "Arbitrum" : "Base";
+
+      const trending = await getTrendingPools(chain, "tvl", 5);
+      if (!trending || trending.length === 0) {
         throw new Error("NO_DATA");
       }
-      
-      const topPools = trending.data.slice(0, 5);
-      const summary = `Top ${topPools.length} trending pools on Base network show strong activity.`;
-      
-      const metrics = topPools.map((pool) => ({
-        pool: pool.attributes.name,
-        reserveUsd: formatUsd(pool.attributes.reserve_in_usd),
-        volume24h: formatUsd(pool.attributes.volume_usd?.h24 || "0"),
-        priceChange24h: formatPercentChange(pool.attributes.price_change_percentage?.h24),
+
+      const summary = `Top ${trending.length} pools on ${chain} by TVL show strong liquidity.`;
+
+      const metrics = trending.map((pool) => ({
+        pool: pool.symbol,
+        project: pool.project,
+        tvlUsd: formatUsd(pool.tvlUsd),
+        apy: `${pool.apy.toFixed(2)}%`,
+        volume24h: formatUsd(pool.volumeUsd1d || 0),
       }));
-      
+
       return {
         summary,
         metrics,
-        source: "CoinGecko (GeckoTerminal)",
+        source: "DeFiLlama",
         topic: "trending_pools_base",
       };
     }
@@ -157,31 +162,52 @@ export async function analyzeQuestion(question: string): Promise<AnalyzeResponse
 
   // Check for token price queries
   if (normalized.includes("price") || normalized.includes("token")) {
-    const { getSimplePrice, formatUsd, formatPercentChange } = await import("./coingecko");
-    
-    // Extract common tokens from query
-    const tokens = [];
-    if (normalized.includes("eth") || normalized.includes("ethereum")) tokens.push("ethereum");
-    if (normalized.includes("btc") || normalized.includes("bitcoin")) tokens.push("bitcoin");
-    if (normalized.includes("usdc")) tokens.push("usd-coin");
-    
+    const { getCurrentPrices, coingeckoIdToDefillama, formatUsd } = await import("./defillama");
+
+    // Extract common tokens from query and convert to DeFiLlama format
+    const tokens: string[] = [];
+    const tokenNames: string[] = [];
+
+    if (normalized.includes("eth") || normalized.includes("ethereum")) {
+      tokens.push(coingeckoIdToDefillama("ethereum"));
+      tokenNames.push("Ethereum");
+    }
+    if (normalized.includes("btc") || normalized.includes("bitcoin")) {
+      tokens.push(coingeckoIdToDefillama("bitcoin"));
+      tokenNames.push("Bitcoin");
+    }
+    if (normalized.includes("usdc")) {
+      tokens.push(coingeckoIdToDefillama("usd-coin"));
+      tokenNames.push("USDC");
+    }
+    if (normalized.includes("usdt")) {
+      tokens.push(coingeckoIdToDefillama("tether"));
+      tokenNames.push("USDT");
+    }
+    if (normalized.includes("dai")) {
+      tokens.push(coingeckoIdToDefillama("dai"));
+      tokenNames.push("DAI");
+    }
+
     if (tokens.length > 0) {
-      const prices = await getSimplePrice(tokens);
-      const tokenNames = tokens.map(id => id.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase()));
-      const summary = `Current prices: ${tokenNames.join(", ")}`;
-      
-      const metrics = Object.entries(prices).map(([id, data]) => ({
-        token: id.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase()),
-        price: formatUsd(data.usd || 0),
-        change24h: formatPercentChange(data.usd_24h_change),
-        volume24h: formatUsd(data.usd_24h_vol || 0),
-        marketCap: formatUsd(data.usd_market_cap || 0),
-      }));
-      
+      const priceData = await getCurrentPrices(tokens);
+      const summary = `Current prices for ${tokenNames.join(", ")}`;
+
+      const metrics = Object.entries(priceData.coins).map(([id, data]) => {
+        const tokenName = id.replace("coingecko:", "").replace("-", " ").replace(/\b\w/g, l => l.toUpperCase());
+        return {
+          token: tokenName,
+          price: formatUsd(data.price),
+          symbol: data.symbol,
+          confidence: `${(data.confidence * 100).toFixed(1)}%`,
+          timestamp: new Date(data.timestamp * 1000).toISOString(),
+        };
+      });
+
       return {
         summary,
         metrics,
-        source: "CoinGecko",
+        source: "DeFiLlama",
         topic: "token_prices",
       };
     }

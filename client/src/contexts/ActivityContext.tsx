@@ -9,6 +9,7 @@ export interface UserActivity {
   date: string;
   status: 'Completed' | 'Pending' | 'Failed';
   timestamp: number;
+  transactionHash?: string; // Optional transaction hash for block explorer link
 }
 
 export interface AgentActivity {

@@ -6,11 +6,15 @@ type UseTokenUsdPricesResult = {
   error: string | null;
 };
 
-const COINGECKO_IDS: Record<string, string> = {
-  ETH: "ethereum",
-  USDC: "usd-coin",
-  CBBTC: "coinbase-wrapped-bitcoin",
-  EURC: "euro-coin",
+// DeFiLlama token identifiers (using coingecko: prefix for common tokens)
+const DEFILLAMA_IDS: Record<string, string> = {
+  ETH: "coingecko:ethereum",
+  USDC: "coingecko:usd-coin",
+  CBBTC: "coingecko:coinbase-wrapped-bitcoin",
+  EURC: "coingecko:euro-coin",
+  WETH: "ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+  USDT: "coingecko:tether",
+  DAI: "coingecko:dai",
 };
 
 const FALLBACK_PRICES: Record<string, number> = {
@@ -18,6 +22,9 @@ const FALLBACK_PRICES: Record<string, number> = {
   USDC: 1,
   CBBTC: 67000,
   EURC: 1.08,
+  WETH: 3200,
+  USDT: 1,
+  DAI: 1,
 };
 
 function normalizeSymbol(symbol: string): string {
@@ -48,7 +55,7 @@ export function useTokenUsdPrices(tokens: Array<string | undefined>): UseTokenUs
     }
 
     const ids = symbols
-      .map((symbol) => COINGECKO_IDS[symbol])
+      .map((symbol) => DEFILLAMA_IDS[symbol])
       .filter((id): id is string => Boolean(id));
 
     // Use fallback values if we do not recognize any ids
@@ -72,9 +79,9 @@ export function useTokenUsdPrices(tokens: Array<string | undefined>): UseTokenUs
     setIsLoading(true);
     setError(null);
 
-    const query = encodeURIComponent(ids.join(","));
+    const coinString = ids.join(",");
     fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${query}&vs_currencies=usd`,
+      `https://coins.llama.fi/prices/current/${coinString}`,
       { signal: controller.signal },
     )
       .then(async (response) => {
@@ -82,18 +89,19 @@ export function useTokenUsdPrices(tokens: Array<string | undefined>): UseTokenUs
           const text = await response.text();
           throw new Error(text || `Failed to load price data (status ${response.status})`);
         }
-        return response.json() as Promise<Record<string, { usd?: number }>>;
+        return response.json() as Promise<{ coins: Record<string, { price: number; decimals: number; symbol: string; timestamp: number }> }>;
       })
       .then((data) => {
         setPrices((prev) => {
           const next: Record<string, number | null> = { ...prev };
           symbols.forEach((symbol) => {
-            const id = COINGECKO_IDS[symbol];
+            const id = DEFILLAMA_IDS[symbol];
             if (!id) {
               next[symbol] = FALLBACK_PRICES[symbol] ?? null;
               return;
             }
-            const price = data[id]?.usd ?? FALLBACK_PRICES[symbol] ?? null;
+            const priceData = data.coins[id];
+            const price = priceData?.price ?? FALLBACK_PRICES[symbol] ?? null;
             next[symbol] = typeof price === "number" ? price : null;
           });
           return next;

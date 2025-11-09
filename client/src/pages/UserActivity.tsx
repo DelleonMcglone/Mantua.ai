@@ -1,12 +1,63 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Droplets, ExternalLink, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useActivity, UserActivity as UserActivityType } from "@/contexts/ActivityContext";
+import { txUrl } from "@/utils/explorers";
+import { baseSepolia } from "wagmi/chains";
 
 type TimeRange = '24H' | '7D' | '1M' | '3M' | '1Y' | 'Max';
+
+// Helper function to get activity icon and color
+function getActivityIcon(type: 'Swap' | 'Liquidity', assets: string) {
+  if (type === 'Swap') {
+    return {
+      icon: ArrowRightLeft,
+      color: 'text-blue-600 dark:text-blue-400',
+      bgColor: 'bg-blue-500/10 dark:bg-blue-500/20',
+    };
+  }
+
+  // For liquidity, check if it's add or remove
+  const isRemove = assets.toLowerCase().includes('remove') || assets.toLowerCase().includes('withdrew');
+
+  if (isRemove) {
+    return {
+      icon: Minus,
+      color: 'text-orange-600 dark:text-orange-400',
+      bgColor: 'bg-orange-500/10 dark:bg-orange-500/20',
+    };
+  }
+
+  return {
+    icon: Plus,
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-500/10 dark:bg-green-500/20',
+  };
+}
+
+// Helper function to format date as relative time
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+  });
+}
 
 export default function UserActivity() {
   const [, setLocation] = useLocation();
@@ -225,44 +276,75 @@ export default function UserActivity() {
               ))}
             </div>
 
-            {/* Activity Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full" data-testid="table-activities">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 text-sm font-medium text-muted-foreground">Activity</th>
-                    <th className="text-left py-3 text-sm font-medium text-muted-foreground">Assets</th>
-                    <th className="text-left py-3 text-sm font-medium text-muted-foreground">Amounts</th>
-                    <th className="text-left py-3 text-sm font-medium text-muted-foreground">Value</th>
-                    <th className="text-left py-3 text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="text-left py-3 text-sm font-medium text-muted-foreground">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredActivities.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-sm text-muted-foreground" data-testid="text-no-activities">
-                        No activities yet
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredActivities.map((activity) => (
-                      <tr key={activity.id} className="border-b border-border" data-testid={`row-activity-${activity.id}`}>
-                        <td className="py-3 text-sm">{activity.type}</td>
-                        <td className="py-3 text-sm">{activity.assets}</td>
-                        <td className="py-3 text-sm">{activity.amounts}</td>
-                        <td className="py-3 text-sm">{activity.value}</td>
-                        <td className="py-3 text-sm">{activity.date}</td>
-                        <td className="py-3">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
-                            {activity.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            {/* Activity List */}
+            <div className="space-y-3">
+              {filteredActivities.length === 0 ? (
+                <div className="text-center py-12 text-sm text-muted-foreground" data-testid="text-no-activities">
+                  <div className="flex flex-col items-center gap-2">
+                    <Droplets className="h-8 w-8 text-muted-foreground/50" />
+                    <p>No activities yet</p>
+                    <p className="text-xs">Your swaps and liquidity actions will appear here</p>
+                  </div>
+                </div>
+              ) : (
+                filteredActivities.map((activity) => {
+                  const { icon: Icon, color, bgColor } = getActivityIcon(activity.type, activity.assets);
+                  const relativeTime = formatRelativeTime(activity.date);
+
+                  return (
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                      data-testid={`row-activity-${activity.id}`}
+                    >
+                      {/* Icon */}
+                      <div className={`flex-shrink-0 p-2 rounded-lg ${bgColor}`}>
+                        <Icon className={`h-4 w-4 ${color}`} />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">{activity.type}</span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
+                                {activity.status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">{relativeTime}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold">${activity.value}</p>
+                          </div>
+                        </div>
+
+                        {/* Details */}
+                        <div className="text-sm text-foreground">
+                          <p className="font-medium">{activity.assets}</p>
+                          <p className="text-muted-foreground text-xs mt-0.5">{activity.amounts}</p>
+                        </div>
+
+                        {/* Transaction Link */}
+                        {activity.transactionHash && (
+                          <div className="pt-2">
+                            <a
+                              href={txUrl(baseSepolia, activity.transactionHash)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              View transaction
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>
