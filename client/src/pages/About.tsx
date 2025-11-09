@@ -81,7 +81,7 @@ export default function About() {
           <h2 className="text-2xl font-bold text-foreground mb-4">Who It's For</h2>
           <ul className="space-y-3 mb-8">
             <li className="text-foreground leading-relaxed">
-              <strong>DeFi Power Users</strong> — execute complex trades and liquidity strategies in seconds.
+              <strong>Liquidity Providers</strong> — execute complex trades and liquidity strategies in seconds.
             </li>
             <li className="text-foreground leading-relaxed">
               <strong>Analysts & Researchers</strong> — query on-chain data and token metrics conversationally.
