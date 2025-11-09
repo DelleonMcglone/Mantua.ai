@@ -37,35 +37,74 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    console.log("🚀 Starting Mantua Protocol server...");
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔌 Database URL: ${process.env.DATABASE_URL ? 'configured ✅' : 'not set ⚠️'}`);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    const server = await registerRoutes(app);
+    console.log("✅ Routes registered successfully");
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+      console.error("❌ Error handler caught:", {
+        status,
+        message,
+        stack: err.stack,
+      });
+
+      res.status(status).json({ message });
+    });
+
+    if (app.get("env") === "development") {
+      console.log("🔧 Setting up Vite for development...");
+      await setupVite(app, server);
+      console.log("✅ Vite setup complete");
+    } else {
+      console.log("📦 Serving static files for production...");
+      serveStatic(app);
+      console.log("✅ Static files configured");
+    }
+
+    const port = parseInt(process.env.PORT || '5000', 10);
+    const host = "0.0.0.0";
+
+    server.listen({
+      port,
+      host,
+      reusePort: true,
+    }, () => {
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log(`✅ Mantua Protocol server is running!`);
+      console.log(`🌐 Host: ${host}`);
+      console.log(`🔌 Port: ${port}`);
+      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      log(`serving on port ${port}`);
+    });
+
+    server.on('error', (err: any) => {
+      console.error("❌ Server error:", err);
+      if (err.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${port} is already in use`);
+      }
+      process.exit(1);
+    });
+
+  } catch (error) {
+    console.error("❌ Fatal error during server startup:");
+    console.error(error);
+    process.exit(1);
   }
-
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
 })();
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});

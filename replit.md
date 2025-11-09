@@ -15,7 +15,12 @@ The frontend is a **React 18** application using **TypeScript**, built with **Vi
 The backend is a **Node.js/Express** server developed with **TypeScript**. It uses **Drizzle ORM** for PostgreSQL database interactions and **Express sessions** for session management. The API follows a RESTful design.
 
 ## Data Storage
-**PostgreSQL** is the primary database, managed with **Drizzle ORM** and **Drizzle Kit** for schema migrations. **Neon serverless PostgreSQL** is used for cloud deployment, with an in-memory fallback for development.
+**PostgreSQL** is the primary database, managed with **Drizzle ORM** and **Drizzle Kit** for schema migrations. The application uses **environment-aware storage**:
+- **Production**: Uses PostgreSQL database with Drizzle ORM for persistent data storage
+- **Development**: Uses in-memory storage (MemStorage) for faster development iterations
+- **Automatic Switching**: Storage implementation automatically selects based on `NODE_ENV` environment variable
+
+Database connection is configured in `server/db.ts` with proper error handling. The storage abstraction layer (`server/storage.ts`) implements both `DbStorage` (PostgreSQL) and `MemStorage` (in-memory) using a unified `IStorage` interface.
 
 ## Activity Tracking System
 The application includes comprehensive tracking for both user and AI agent activities. This system provides real-time monitoring of transactions, portfolio metrics, performance, and activity logs. Chat integration delivers automatic updates and navigation links for completed activities, with data persisted via `ActivityContext`.
@@ -124,6 +129,48 @@ The application exclusively supports the **Base Sepolia testnet** (Chain ID: 845
 
 ## Development and Build System
 The project utilizes **Vite** for frontend bundling, **ESBuild** for backend compilation, and **TypeScript** for type safety across the stack. It is optimized for deployment on Replit.
+
+## Production Deployment
+The application is production-ready with comprehensive deployment configurations:
+
+### Server Configuration
+- **Host Binding**: Server listens on `0.0.0.0` (all network interfaces) for Replit deployment compatibility
+- **Port Configuration**: Uses environment variable `PORT` with fallback to `5000`
+- **Environment Detection**: Automatically switches between development and production modes
+- **Static File Serving**: Production builds served from `dist/public` directory
+
+### Error Handling & Diagnostics
+Enhanced startup logging and error handling for production troubleshooting:
+- Detailed environment diagnostics on server startup
+- Database connection status verification
+- Comprehensive error logging with stack traces
+- Graceful error handling for uncaught exceptions and promise rejections
+- Server error event listeners with descriptive messages
+
+### Build Process
+- **Frontend Build**: `npm run build` - Vite bundles frontend to `dist/public`
+- **Backend Build**: `npm run build` - ESBuild compiles TypeScript server to `dist/index.js`
+- **Production Start**: `npm run start` - Runs compiled server with `NODE_ENV=production`
+- **Database Migrations**: `npm run db:push` - Syncs Drizzle schema to PostgreSQL database
+
+### Environment Variables
+Required for production deployment:
+- `DATABASE_URL` - PostgreSQL connection string (automatically provided by Replit)
+- `PORT` - Server port (default: 5000, automatically set by Replit)
+- `NODE_ENV` - Set to `production` for production builds
+
+Optional environment variables:
+- `COINGECKO_API_KEY` - For higher CoinGecko API rate limits (30 calls/min)
+- `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID for wallet connections
+
+### Deployment Checklist
+1. ✅ Server binds to `0.0.0.0:5000`
+2. ✅ PostgreSQL database configured and schema pushed
+3. ✅ Production build tested successfully
+4. ✅ Error handling and logging implemented
+5. ✅ Static file serving configured
+6. ✅ Environment variables properly set
+7. ✅ Start command verified (`npm run start`)
 
 # External Dependencies
 
