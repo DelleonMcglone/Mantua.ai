@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Sun, Moon } from "lucide-react";
-import { SiDiscord, SiX } from "react-icons/si";
+import { SiTelegram, SiX } from "react-icons/si";
 import logoBlack from "@assets/Mantua logo black_1758235323665.png";
 import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import { useState, useEffect } from "react";
@@ -105,11 +105,11 @@ export default function Header() {
         <Button
           variant="ghost"
           size="icon"
-          data-testid="button-discord"
-          onClick={() => window.open('https://discord.com/channels/1423172421967413311/1423172423150342218', '_blank')}
-          title="Discord"
+          data-testid="button-telegram"
+          onClick={() => window.open('https://t.me/+uG4bi2BDzNxmYmVh', '_blank')}
+          title="Telegram"
         >
-          <SiDiscord className="h-4 w-4" />
+          <SiTelegram className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"

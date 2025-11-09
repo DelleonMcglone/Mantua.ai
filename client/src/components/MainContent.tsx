@@ -18,6 +18,7 @@ import { baseSepolia } from "wagmi/chains";
 import { AnalyzeResponseCard } from "@/components/analyze/AnalyzeResponseCard";
 import { requestAnalyze, requestParseIntent, ApiError, type ParseIntentResponse } from "@/lib/api";
 import { type AnalysisResponsePayload } from "@/types/analysis";
+import { useGeckoTerminal } from "@/hooks/useGeckoTerminal";
 
 type ActionId = 'swap' | 'add-liquidity' | 'analyze';
 type HookContext = "swap" | "liquidity";
@@ -63,6 +64,7 @@ const MULTI_WORD_ACTIONS = ["add liquidity", "remove liquidity"] as const;
 const AFFIRMATIVE_RESPONSES = new Set(["yes", "y", "yeah", "yep", "sure", "confirm", "correct"]);
 const NEGATIVE_RESPONSES = new Set(["no", "n", "nope", "cancel"]);
 const DISALLOWED_TOKENS = new Set(["WETH", "DAI"]);
+const GECKO_KEYWORD_REGEX = /\b(pool|pools|token|price|liquidity|volume|dex|chart|network|trending|newest)\b/i;
 const UNSUPPORTED_TOKEN_MESSAGE = "WETH and DAI are not currently supported on Mantua.AI.";
 
 interface ClarificationRequest {
@@ -192,6 +194,20 @@ const liquidityDefaults: Readonly<LiquidityIntentState> = {
   hook: undefined,
 }; // LIQUIDITY FIX: baseline liquidity configuration
 
+function formatUsdCompact(value?: number) {
+  const num = typeof value === "number" ? value : Number(value ?? 0);
+  if (!Number.isFinite(num)) return "$0.00";
+  if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
+  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
+  if (num >= 1_000) return `$${(num / 1_000).toFixed(2)}K`;
+  return `$${num.toFixed(2)}`;
+}
+
+function formatPercent(value?: number) {
+  if (!Number.isFinite(value)) return "0.00%";
+  return `${value!.toFixed(2)}%`;
+}
+
 export default function MainContent() {
   const [isDark, setIsDark] = useState(false);
   const [activeComponent, setActiveComponent] = useState<ActiveComponent>(null);
@@ -208,6 +224,7 @@ export default function MainContent() {
   const pendingClarificationsRef = useRef<Record<string, ClarificationRequest | undefined>>({}); // SWAP REGRESSION FIX: track clarification prompts
   const [swapIntentKey, setSwapIntentKey] = useState<number>(0); // SWAP: track swap intent resets
   const [liquidityIntentKey, setLiquidityIntentKey] = useState<number>(0); // LIQUIDITY FIX: track liquidity intent resets
+  const { query: geckoQuery, loading: isGeckoLoading } = useGeckoTerminal();
 
   const mergeSwapIntent = useCallback(
     (nextProps: SwapIntentState) => {
@@ -813,6 +830,54 @@ export default function MainContent() {
     [addMessage],
   );
 
+  const handleGeckoTerminalQuery = useCallback(
+    async (message: string, chatId: string) => {
+      try {
+        const response = await geckoQuery(message);
+        if (!response.success) {
+          return false;
+        }
+
+        const sections: string[] = [];
+        if (response.title) {
+          sections.push(`**${response.title}**`);
+        }
+        if (response.message) {
+          sections.push(response.message);
+        }
+        if (response.summary) {
+          const { count, totalVolume, totalLiquidity, avgPriceChange } = response.summary as Record<string, number>;
+          sections.push(
+            [
+              `Summary — Pools: ${count ?? 0}`,
+              `Total Volume: ${formatUsdCompact(totalVolume)}`,
+              `Total Liquidity: ${formatUsdCompact(totalLiquidity)}`,
+              `Avg Change: ${formatPercent(avgPriceChange)}`,
+            ].join(" • "),
+          );
+        }
+
+        const responseText = sections.filter(Boolean).join("\n\n").trim();
+        if (!responseText) {
+          return false;
+        }
+
+        addMessage(
+          {
+            content: responseText,
+            sender: "assistant",
+          },
+          chatId,
+        );
+        return true;
+      } catch (error) {
+        console.error("[MainContent] GeckoTerminal query failed", error);
+        return false;
+      }
+    },
+    [addMessage, geckoQuery],
+  );
+
   const handleParsedIntent = useCallback(
     async (intentResult: ParseIntentResponse, originalMessage: string, chatId: string) => {
       const params = intentResult.params ?? {};
@@ -932,7 +997,7 @@ export default function MainContent() {
             }
             handleSwapIntent(swapIntent, chatId);
             return;
-          }
+        }
 
           const liquidityIntent = parseLiquidityIntent(originalMessage);
           if (liquidityIntent) {
@@ -950,6 +1015,13 @@ export default function MainContent() {
             return;
           }
 
+          if (GECKO_KEYWORD_REGEX.test(originalMessage)) {
+            const handled = await handleGeckoTerminalQuery(originalMessage, chatId);
+            if (handled) {
+              return;
+            }
+          }
+
           addMessage(
             {
               content: getMockAssistantResponse(originalMessage),
@@ -964,6 +1036,7 @@ export default function MainContent() {
       activateAnalyzeMode,
       addMessage,
       handleLiquidityIntent,
+      handleGeckoTerminalQuery,
       handleSwapIntent,
       isAnalyzeModeActive,
       isWalletConnected,
@@ -1183,6 +1256,14 @@ You have received ${sanitizedBuyAmount} ${payload.buyToken}. [View Transaction �
                           inlineMode={true}
                         />
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {isGeckoLoading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[70%] px-4 py-2 rounded-2xl bg-muted text-muted-foreground text-sm shadow-sm">
+                      🔍 Searching pools...
                     </div>
                   </div>
                 )}
