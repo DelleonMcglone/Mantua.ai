@@ -164,11 +164,22 @@ export default function ChatInput({
     if (disabled) {
       return;
     }
+
+    setMenuVisible(false);
+
     if (actionId === "swap") {
       onSwapModeRequest?.();
+      // Don't submit message for swap - component will display directly
+      onQuickAction?.(actionId);
+      textareaRef.current?.focus();
+      return;
     }
     if (actionId === "add-liquidity") {
       onLiquidityModeRequest?.();
+      // Don't submit message for liquidity - component will display directly
+      onQuickAction?.(actionId);
+      textareaRef.current?.focus();
+      return;
     }
     if (actionId === "analyze") {
       onAnalyzeModeRequest?.();

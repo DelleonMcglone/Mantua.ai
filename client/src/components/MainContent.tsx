@@ -294,6 +294,14 @@ export default function MainContent() {
       setSwapProps(null); // LIQUIDITY FIX: clear swap state when liquidity is active
       setIsAnalyzeModeActive(false);
       setActiveComponent("liquidity");
+
+      // Scroll to top of liquidity component
+      setTimeout(() => {
+        const liquidityTop = document.getElementById("liquidity-component-top");
+        if (liquidityTop) {
+          liquidityTop.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
     },
     [],
   ); // LIQUIDITY FIX: centralize liquidity activation
@@ -1231,6 +1239,7 @@ export default function MainContent() {
                   <div className="flex justify-start">
                     <div className="max-w-[90%] space-y-3">
                       <div className="bg-background border rounded-2xl shadow-sm overflow-hidden" data-testid="component-liquidity-active">
+                        <div id="liquidity-component-top"></div>
                         <AddLiquidityPage
                           key={liquidityIntentKey}
                           initialToken1={liquidityProps?.token1}

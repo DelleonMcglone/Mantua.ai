@@ -589,7 +589,9 @@ export default function AddLiquidity({
           {rangeType === 'custom' && (
             <div className="flex gap-3 mt-4">
               <div className="flex-1">
-                <Label className="text-sm text-muted-foreground mb-2 block">Min price</Label>
+                <Label className="text-sm text-muted-foreground mb-2 block">
+                  Min price: {token2 || 'USDC'} per {token1 || 'ETH'}
+                </Label>
                 <Input
                   type="number"
                   placeholder="0.0"
@@ -600,7 +602,9 @@ export default function AddLiquidity({
                 />
               </div>
               <div className="flex-1">
-                <Label className="text-sm text-muted-foreground mb-2 block">Max price</Label>
+                <Label className="text-sm text-muted-foreground mb-2 block">
+                  Max price: {token1 || 'ETH'} per {token2 || 'USDC'}
+                </Label>
                 <Input
                   type="number"
                   placeholder="0.0"
@@ -739,15 +743,15 @@ export default function AddLiquidity({
           {/* Total APR */}
           <div className="bg-card p-5 rounded-lg">
             <p className="text-muted-foreground text-sm mb-1" data-testid="text-apr-label">Total APR</p>
-            <h2 className="text-4xl font-bold" data-testid="text-total-apr">33.6%</h2>
+            <h2 className="text-4xl font-bold" data-testid="text-total-apr">—</h2>
             <div className="flex justify-between gap-4 text-sm mt-2">
               <div>
                 <p className="text-muted-foreground">Base APR</p>
-                <p className="font-medium" data-testid="text-base-apr">31.87%</p>
+                <p className="font-medium" data-testid="text-base-apr">—</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Reward APR</p>
-                <p className="font-medium text-pink-400" data-testid="text-reward-apr">1.73% UNI</p>
+                <p className="font-medium text-pink-400" data-testid="text-reward-apr">— ETH</p>
               </div>
             </div>
           </div>
@@ -756,24 +760,24 @@ export default function AddLiquidity({
           <div className="bg-card p-5 rounded-lg space-y-3">
             <p className="font-semibold text-lg" data-testid="text-rewards-title">Rewards distribution</p>
             <div className="flex justify-between gap-2 text-sm text-muted-foreground">
-              <p data-testid="text-rewards-distributed">1.6K UNI ($9.1K)</p>
-              <p data-testid="text-rewards-total">/ 10.9K UNI ($63.7K)</p>
+              <p data-testid="text-rewards-distributed">—</p>
+              <p data-testid="text-rewards-total">—</p>
             </div>
             <div className="w-full bg-muted h-2 rounded-full">
-              <div 
-                className="bg-gradient-to-r from-pink-500 to-purple-600 h-2 rounded-full w-1/4"
+              <div
+                className="bg-gradient-to-r from-pink-500 to-purple-600 h-2 rounded-full w-0"
                 data-testid="progress-rewards-distribution"
               ></div>
             </div>
 
             <p className="font-semibold text-lg mt-4" data-testid="text-time-period-title">Time period</p>
             <div className="flex justify-between gap-2 text-sm text-muted-foreground">
-              <p data-testid="text-time-remaining">14 days left</p>
-              <p data-testid="text-time-range">Oct 28 – Nov 13</p>
+              <p data-testid="text-time-remaining">—</p>
+              <p data-testid="text-time-range">—</p>
             </div>
             <div className="w-full bg-muted h-2 rounded-full">
-              <div 
-                className="bg-gradient-to-r from-pink-500 to-purple-600 h-2 rounded-full w-1/3"
+              <div
+                className="bg-gradient-to-r from-pink-500 to-purple-600 h-2 rounded-full w-0"
                 data-testid="progress-time-period"
               ></div>
             </div>
@@ -793,12 +797,12 @@ export default function AddLiquidity({
               <p data-testid="text-pool-pair">{token1} / {token2}</p>
             </div>
             <div className="flex justify-between gap-2 font-medium">
-              <p data-testid="text-balance-token1">20.6K {token1}</p>
-              <p data-testid="text-balance-token2">21.4M {token2}</p>
+              <p data-testid="text-balance-token1">— {token1}</p>
+              <p data-testid="text-balance-token2">— {token2}</p>
             </div>
             <div className="w-full bg-muted h-1.5 rounded-full mt-2">
-              <div 
-                className="bg-gradient-to-r from-pink-500 to-purple-600 h-1.5 rounded-full w-1/2"
+              <div
+                className="bg-gradient-to-r from-pink-500 to-purple-600 h-1.5 rounded-full w-0"
                 data-testid="bar-pool-balance"
               ></div>
             </div>
@@ -807,21 +811,21 @@ export default function AddLiquidity({
           {/* TVL */}
           <div>
             <p className="text-muted-foreground text-sm">TVL</p>
-            <h2 className="text-3xl font-bold" data-testid="text-tvl">$99.4M</h2>
-            <p className="text-red-400 text-sm" data-testid="text-tvl-change">▼ 3.69%</p>
+            <h2 className="text-3xl font-bold" data-testid="text-tvl">—</h2>
+            <p className="text-muted-foreground text-sm" data-testid="text-tvl-change">—</p>
           </div>
 
           {/* 24H Volume */}
           <div>
             <p className="text-muted-foreground text-sm">24H volume</p>
-            <h2 className="text-3xl font-bold" data-testid="text-24h-volume">$173.6M</h2>
-            <p className="text-red-400 text-sm" data-testid="text-24h-volume-change">▼ 64.15%</p>
+            <h2 className="text-3xl font-bold" data-testid="text-24h-volume">—</h2>
+            <p className="text-muted-foreground text-sm" data-testid="text-24h-volume-change">—</p>
           </div>
 
           {/* 24H Fees */}
           <div>
             <p className="text-muted-foreground text-sm">24H fees</p>
-            <h2 className="text-3xl font-bold" data-testid="text-24h-fees">$86.8K</h2>
+            <h2 className="text-3xl font-bold" data-testid="text-24h-fees">—</h2>
           </div>
         </CardContent>
       </Card>
