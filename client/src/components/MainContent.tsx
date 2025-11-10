@@ -3,9 +3,6 @@ import logoWhite from "@assets/Mantua logo white_1758237422953.png";
 import ChatInput from "./ChatInput";
 import SwapPage from "@/pages/Swap";
 import AddLiquidityPage from "@/pages/AddLiquidity";
-import AvailablePoolsPage, { type AvailablePool } from "@/pages/AvailablePools";
-import AvailablePoolsPrompt from "@/components/liquidity/AvailablePoolsPrompt";
-import { InlinePoolsList } from "@/components/liquidity/InlinePoolsList";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Button } from "@/components/ui/button";
@@ -46,10 +43,12 @@ interface SwapSuccessPayload {
 interface LiquidityIntentState {
   token1?: string;
   token2?: string;
+  feeTier?: string;
   selectedHook?: string;
   showCustomHook?: boolean;
   hookWarning?: string;
   hook?: HookConfig;
+  poolName?: string;
 }
 
 interface HookResolution {
@@ -72,6 +71,10 @@ interface ClarificationRequest {
   suggestion: string;
   normalizedSuggestion: string;
   keyword: string;
+}
+
+interface PendingAvailablePoolsPrompt {
+  searchQuery?: string;
 }
 
 function computeLevenshtein(a: string, b: string): number {
@@ -172,6 +175,41 @@ function isTokenUnsupported(token?: string): boolean {
   return DISALLOWED_TOKENS.has(token.toUpperCase());
 }
 
+function detectAvailablePoolsPrompt(message: string): PendingAvailablePoolsPrompt | null {
+  const trimmed = message.trim();
+  if (!trimmed) return null;
+
+  const normalized = trimmed.toLowerCase().replace(/[.!?]+$/, "");
+  if (normalized === "add liquidity") {
+    return {};
+  }
+
+  const pairMatch = trimmed.match(/add\s+liquidity(?:\s+to)?(?:\s+the)?\s+([a-zA-Z0-9]+)\/([a-zA-Z0-9]+)(?:\s+pool)?/i);
+  if (pairMatch) {
+    const tokenA = canonicalizeTokenSymbol(pairMatch[1]);
+    const tokenB = canonicalizeTokenSymbol(pairMatch[2]);
+    if (tokenA && tokenB) {
+      return { searchQuery: `${tokenA}/${tokenB}` };
+    }
+    return {};
+  }
+
+  return null;
+}
+
+function resolveHookConfigById(hookId?: string): HookConfig | undefined {
+  if (!hookId || hookId === "no-hook") return undefined;
+  const normalized = hookId.toLowerCase();
+  return Object.values(HOOKS).find((hook) => hook.id === normalized);
+}
+
+function sanitizeFeeTier(input?: string): string | undefined {
+  if (!input) return undefined;
+  const trimmed = input.trim();
+  if (!trimmed) return undefined;
+  return trimmed.replace(/%$/, "");
+}
+
 const HOOK_UNRECOGNIZED_MESSAGES: Record<HookContext, string> = {
   swap: `Unrecognized Hook — You asked to swap using a hook that isn’t in Mantua’s supported library yet. You can paste the hook’s address to validate it, pick a supported hook, or continue without a hook.`,
   liquidity: `You asked to Add Liquidity using a hook that isn't in Mantua's supported library yet.
@@ -190,9 +228,11 @@ const swapDefaults: Readonly<SwapIntentState> = {
 const liquidityDefaults: Readonly<LiquidityIntentState> = {
   token1: "",
   token2: "",
+  feeTier: "0.30",
   selectedHook: "no-hook",
   showCustomHook: false,
   hook: undefined,
+  poolName: undefined,
 }; // LIQUIDITY FIX: baseline liquidity configuration
 
 function formatUsdCompact(value?: number) {
@@ -214,6 +254,7 @@ export default function MainContent() {
   const [activeComponent, setActiveComponent] = useState<ActiveComponent>(null);
   const [swapProps, setSwapProps] = useState<SwapIntentState | null>(null);
   const [liquidityProps, setLiquidityProps] = useState<LiquidityIntentState | null>(null); // LIQUIDITY FIX: track liquidity intent props
+  const [availablePoolsSearch, setAvailablePoolsSearch] = useState<string>("");
   const [isAnalyzeModeActive, setIsAnalyzeModeActive] = useState(false);
   const [isAnalyzeLoading, setIsAnalyzeLoading] = useState(false);
   const [isPoolsViewActive, setIsPoolsViewActive] = useState(false);
@@ -224,6 +265,7 @@ export default function MainContent() {
   const pendingChatIdRef = useRef<string | null>(null);
   const previousChatIdRef = useRef<string | null>(null);
   const pendingClarificationsRef = useRef<Record<string, ClarificationRequest | undefined>>({}); // SWAP REGRESSION FIX: track clarification prompts
+  const pendingAvailablePoolsRef = useRef<Record<string, PendingAvailablePoolsPrompt | undefined>>({});
   const [swapIntentKey, setSwapIntentKey] = useState<number>(0); // SWAP: track swap intent resets
   const [liquidityIntentKey, setLiquidityIntentKey] = useState<number>(0); // LIQUIDITY FIX: track liquidity intent resets
   const { query: geckoQuery, loading: isGeckoLoading } = useGeckoTerminal();
@@ -256,6 +298,7 @@ export default function MainContent() {
       setSwapProps(initialIntent);
       setSwapIntentKey((key) => key + 1);
       setLiquidityProps(null); // SWAP FIX: ensure single active flow
+      setAvailablePoolsSearch("");
       setIsAnalyzeModeActive(false);
       setActiveComponent("swap");
     },
@@ -275,10 +318,12 @@ export default function MainContent() {
           ...base,
           token1: nextProps.token1 || base.token1,
           token2: nextProps.token2 || base.token2,
+          feeTier: nextProps.feeTier ?? base.feeTier,
           selectedHook: nextProps.selectedHook ?? base.selectedHook,
           showCustomHook: nextProps.showCustomHook ?? base.showCustomHook,
           hookWarning: nextProps.hookWarning,
           hook: nextProps.hook ?? base.hook,
+          poolName: nextProps.poolName ?? base.poolName,
         };
       });
     },
@@ -294,6 +339,7 @@ export default function MainContent() {
       setLiquidityProps(initialIntent);
       setLiquidityIntentKey((key) => key + 1);
       setSwapProps(null); // LIQUIDITY FIX: clear swap state when liquidity is active
+      setAvailablePoolsSearch("");
       setIsAnalyzeModeActive(false);
       setActiveComponent("liquidity");
 
@@ -308,10 +354,26 @@ export default function MainContent() {
     [],
   ); // LIQUIDITY FIX: centralize liquidity activation
 
+  const activateAvailablePools = useCallback(
+    (searchQuery?: string) => {
+      setSwapProps(null);
+      setLiquidityProps(null);
+      setAvailablePoolsSearch(searchQuery ?? "");
+      setIsAnalyzeModeActive(false);
+      setActiveComponent("available-pools");
+    },
+    [],
+  );
+
   const exitLiquidityMode = useCallback(() => {
     setActiveComponent(null);
     setLiquidityProps(null);
   }, []); // LIQUIDITY FIX: reset liquidity mode when dismissed
+
+  const exitAvailablePools = useCallback(() => {
+    setActiveComponent(null);
+    setAvailablePoolsSearch("");
+  }, []);
 
   const activateAnalyzeMode = useCallback(() => {
     setActiveComponent(null);
@@ -397,6 +459,58 @@ export default function MainContent() {
     [activateSwap, activeComponent, addMessage, mergeSwapIntent],
   ); // SWAP REGRESSION FIX: centralized swap intent handler
 
+  const presentAvailablePoolsPrompt = useCallback(
+    (chatId: string, prompt: PendingAvailablePoolsPrompt) => {
+      pendingAvailablePoolsRef.current[chatId] = prompt;
+      addMessage(
+        {
+          content: "Would you like to browse Mantua's available liquidity pools?",
+          sender: "assistant",
+        },
+        chatId,
+      );
+      addMessage(
+        {
+          content: "View available pools",
+          sender: "assistant",
+          component: {
+            type: "available-pools-cta",
+            props: {
+              searchQuery: prompt.searchQuery,
+            },
+          },
+        },
+        chatId,
+      );
+    },
+    [addMessage],
+  );
+
+  const ensureAvailablePoolsPrompt = useCallback(
+    (chatId: string, prompt: PendingAvailablePoolsPrompt = {}) => {
+      if (pendingAvailablePoolsRef.current[chatId]) {
+        return;
+      }
+      presentAvailablePoolsPrompt(chatId, prompt);
+    },
+    [presentAvailablePoolsPrompt],
+  );
+
+  const commitAvailablePoolsView = useCallback(
+    (chatId: string, searchQuery?: string) => {
+      pendingAvailablePoolsRef.current[chatId] = undefined;
+      addMessage(
+        {
+          content: "Here are the pools available for adding liquidity.",
+          sender: "assistant",
+        },
+        chatId,
+      );
+      activateAvailablePools(searchQuery);
+    },
+    [activateAvailablePools, addMessage],
+  );
+
   const handleLiquidityIntent = useCallback(
     (intent: LiquidityIntentState, chatId: string) => {
       if (isTokenUnsupported(intent.token1) || isTokenUnsupported(intent.token2)) {
@@ -410,10 +524,19 @@ export default function MainContent() {
         return true;
       }
 
+      const normalizedToken1 = intent.token1;
+      const normalizedToken2 = intent.token2;
+      const enrichedIntent: LiquidityIntentState = {
+        ...intent,
+        poolName:
+          intent.poolName ??
+          (normalizedToken1 && normalizedToken2 ? `${normalizedToken1}/${normalizedToken2}` : undefined),
+      };
+
       if (activeComponent === "liquidity") {
-        mergeLiquidityIntent(intent);
+        mergeLiquidityIntent(enrichedIntent);
       } else {
-        activateLiquidity(intent);
+        activateLiquidity(enrichedIntent);
       }
 
       if (intent.hookWarning) {
@@ -426,10 +549,43 @@ export default function MainContent() {
         );
       }
 
+      ensureAvailablePoolsPrompt(chatId, enrichedIntent.poolName ? { searchQuery: enrichedIntent.poolName } : {});
+
       return true;
     },
-    [activateLiquidity, activeComponent, addMessage, mergeLiquidityIntent],
+    [activateLiquidity, activeComponent, addMessage, ensureAvailablePoolsPrompt, mergeLiquidityIntent],
   ); // LIQUIDITY REGRESSION FIX: centralized liquidity intent handler
+
+  const handleAvailablePoolSelection = useCallback(
+    (pool: AvailablePool) => {
+      const chatId = currentChat?.id ?? pendingChatIdRef.current;
+      const hookConfig = resolveHookConfigById(pool.hookId);
+      const nextIntent: LiquidityIntentState = {
+        token1: pool.token1,
+        token2: pool.token2,
+        feeTier: pool.feeTierValue,
+        selectedHook: pool.hookId ?? "no-hook",
+        showCustomHook: false,
+        hookWarning: undefined,
+        hook: hookConfig,
+        poolName: `${pool.token1}/${pool.token2}`,
+      };
+
+      if (chatId) {
+        pendingAvailablePoolsRef.current[chatId] = undefined;
+        addMessage(
+          {
+            content: `Opening the ${pool.token1}/${pool.token2} pool for adding liquidity.`,
+            sender: "assistant",
+          },
+          chatId,
+        );
+      }
+
+      activateLiquidity(nextIntent);
+    },
+    [activateLiquidity, addMessage, currentChat?.id],
+  );
 
   const isWalletConnected = Boolean(account);
 
@@ -486,6 +642,7 @@ export default function MainContent() {
       setActiveComponent(null);
       setSwapProps(null);
       setLiquidityProps(null);
+      setAvailablePoolsSearch("");
       previousChatIdRef.current = null;
       return;
     }
@@ -497,6 +654,7 @@ export default function MainContent() {
       setActiveComponent(null);
       setSwapProps(null);
       setLiquidityProps(null);
+      setAvailablePoolsSearch("");
     }
 
     previousChatIdRef.current = newChatId;
@@ -829,13 +987,18 @@ export default function MainContent() {
       }
     }
 
+    const feeTier = liquidityDefaults.feeTier;
+    const poolName = token1 && token2 ? `${token1}/${token2}` : liquidityDefaults.poolName;
+
     return {
       token1,
       token2,
+      feeTier,
       selectedHook: baseDetails.selectedHook ?? liquidityDefaults.selectedHook,
       showCustomHook: baseDetails.showCustomHook ?? liquidityDefaults.showCustomHook,
       hookWarning: baseDetails.hookWarning,
       hook: baseDetails.hook,
+      poolName,
     };
   };
 
@@ -995,11 +1158,26 @@ export default function MainContent() {
             typeof params.tokenB === "string"
               ? canonicalizeTokenSymbol(params.tokenB)
               : baseIntent.token2;
+          const poolName =
+            tokenA && tokenB ? `${tokenA}/${tokenB}` : baseIntent.poolName;
           const nextIntent: LiquidityIntentState = {
             ...baseIntent,
             token1: tokenA,
             token2: tokenB,
+            poolName,
           };
+
+          if (tokenA && tokenB) {
+            nextIntent.poolName = `${tokenA}/${tokenB}`;
+          }
+
+          const feeTierParam =
+            typeof params.feeTier === "string"
+              ? sanitizeFeeTier(params.feeTier)
+              : sanitizeFeeTier(baseIntent.feeTier);
+          if (feeTierParam) {
+            nextIntent.feeTier = feeTierParam;
+          }
 
           const hookId =
             typeof params.hookId === "string" ? params.hookId : baseIntent.selectedHook;
@@ -1146,6 +1324,32 @@ export default function MainContent() {
       chatId,
     );
 
+    const pendingPoolsPrompt = pendingAvailablePoolsRef.current[chatId];
+    if (pendingPoolsPrompt) {
+      if (isAffirmativeResponse(normalizedMessage)) {
+        commitAvailablePoolsView(chatId, pendingPoolsPrompt.searchQuery);
+        return;
+      }
+
+      if (isNegativeResponse(normalizedMessage)) {
+        pendingAvailablePoolsRef.current[chatId] = undefined;
+        addMessage(
+          {
+            content: "No problem — just let me know when you want to explore liquidity pools.",
+            sender: "assistant",
+          },
+          chatId,
+        );
+        return;
+      }
+    }
+
+    const poolsPrompt = detectAvailablePoolsPrompt(trimmedMessage);
+    if (poolsPrompt) {
+      presentAvailablePoolsPrompt(chatId, poolsPrompt);
+      return;
+    }
+
     const pendingClarification = pendingClarificationsRef.current[chatId];
     let skipClarificationCheck = false;
 
@@ -1254,21 +1458,6 @@ export default function MainContent() {
                     );
                   }
 
-                  if (message.component?.type === "pools_list") {
-                    return (
-                      <div key={message.id} className="flex justify-start">
-                        <div className="w-full max-w-full space-y-3">
-                          <InlinePoolsList
-                            onAddLiquidity={handlePoolSelection}
-                            onViewDetails={(poolId) => {
-                              console.log("View pool:", poolId);
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  }
-
                   return (
                     <div
                       key={message.id}
@@ -1310,7 +1499,25 @@ export default function MainContent() {
                     </div>
                   </div>
                 )}
-                
+
+                {activeComponent === 'available-pools' && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] space-y-3">
+                      <div
+                        className="bg-background border rounded-2xl shadow-sm overflow-hidden"
+                        data-testid="component-available-pools-active"
+                      >
+                        <AvailablePoolsPage
+                          inlineMode={true}
+                          initialSearchQuery={availablePoolsSearch}
+                          onBack={exitAvailablePools}
+                          onViewPool={handleAvailablePoolSelection}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {activeComponent === 'liquidity' && (
                   <div className="flex justify-start">
                     <div className="max-w-[90%] space-y-3">
@@ -1320,8 +1527,10 @@ export default function MainContent() {
                           key={liquidityIntentKey}
                           initialToken1={liquidityProps?.token1}
                           initialToken2={liquidityProps?.token2}
+                          initialFeeTier={liquidityProps?.feeTier ?? liquidityDefaults.feeTier}
                           initialSelectedHook={liquidityProps?.selectedHook ?? liquidityDefaults.selectedHook}
                           initialShowCustomHook={liquidityProps?.showCustomHook ?? liquidityDefaults.showCustomHook}
+                          poolName={liquidityProps?.poolName}
                           intentHook={liquidityProps?.hook}
                           initialHookWarning={liquidityProps?.hookWarning}
                           inlineMode={true}

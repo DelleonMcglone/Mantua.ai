@@ -40,6 +40,7 @@ You can paste the hook's address to validate it, pick a supported hook, or conti
 interface AddLiquidityProps {
   initialToken1?: string;
   initialToken2?: string;
+  initialFeeTier?: string;
   initialSelectedHook?: string;
   initialShowCustomHook?: boolean;
   poolName?: string;
@@ -48,9 +49,10 @@ interface AddLiquidityProps {
   initialHookWarning?: string;
 }
 
-export default function AddLiquidity({ 
+export default function AddLiquidity({
   initialToken1,
   initialToken2,
+  initialFeeTier,
   initialSelectedHook = 'no-hook',
   initialShowCustomHook = false,
   poolName,
@@ -62,7 +64,7 @@ export default function AddLiquidity({
   const [token2, setToken2] = useState(initialToken2 ?? '');
   const [amount1, setAmount1] = useState('');
   const [amount2, setAmount2] = useState('');
-  const [feeTier, setFeeTier] = useState('0.30');
+  const [feeTier, setFeeTier] = useState(initialFeeTier ?? '0.30');
   const [selectedHook, setSelectedHook] = useState(initialSelectedHook || 'no-hook');
   const [customHookAddress, setCustomHookAddress] = useState('');
   const [isValidatingHook, setIsValidatingHook] = useState(false);
@@ -142,6 +144,12 @@ export default function AddLiquidity({
     setToken1(initialToken1 ?? "");
     setToken2(initialToken2 ?? "");
   }, [initialToken1, initialToken2]);
+
+  useEffect(() => {
+    if (typeof initialFeeTier === "string") {
+      setFeeTier(initialFeeTier);
+    }
+  }, [initialFeeTier]);
 
   useEffect(() => {
     setSelectedHook(initialSelectedHook || "no-hook");

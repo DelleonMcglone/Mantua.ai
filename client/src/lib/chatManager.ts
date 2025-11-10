@@ -14,10 +14,6 @@ type ChatComponent =
   | {
       type: "analysis";
       props: AnalysisResponsePayload;
-    }
-  | {
-      type: "pools_list";
-      props: Record<string, never>;
     };
 
 export interface ChatMessage {
