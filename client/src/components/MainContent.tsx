@@ -17,7 +17,6 @@ import { canonicalizeTokenSymbol, extractTokensFromText } from "@/lib/tokenParsi
 import { txUrl } from "@/utils/explorers";
 import { baseSepolia } from "wagmi/chains";
 import { AnalyzeResponseCard } from "@/components/analyze/AnalyzeResponseCard";
-import { AnalyzeInterface } from "@/components/analyze/AnalyzeInterface";
 import { requestAnalyze, requestParseIntent, ApiError, type ParseIntentResponse } from "@/lib/api";
 import { type AnalysisResponsePayload } from "@/types/analysis";
 import { useGeckoTerminal } from "@/hooks/useGeckoTerminal";
@@ -545,13 +544,7 @@ export default function MainContent() {
     if (actionId === 'analyze') {
       if (!isAnalyzeModeActive) {
         activateAnalyzeMode();
-        addMessage(
-          {
-            content: "Analyze Mode engaged. Ask a market or onchain question for real-time insights.",
-            sender: "assistant",
-          },
-          activeChatId,
-        );
+        // No message needed - analyze mode should be invisible in the UI
       }
       return;
     }
@@ -852,13 +845,19 @@ export default function MainContent() {
       setIsAnalyzeLoading(true);
       try {
         const response = await requestAnalyze(question);
+
+        // Only create a component wrapper if there's visualizable data (metrics or charts)
+        const hasVisualizableData = (response.metrics && response.metrics.length > 0) || response.chart;
+
         const analysisMessage = {
           content: response.summary,
           sender: "assistant" as const,
-          component: {
-            type: "analysis" as const,
-            props: response as AnalysisResponsePayload,
-          },
+          ...(hasVisualizableData && {
+            component: {
+              type: "analysis" as const,
+              props: response as AnalysisResponsePayload,
+            },
+          }),
         };
         addMessage(analysisMessage, chatId);
       } catch (error) {
@@ -1332,19 +1331,6 @@ export default function MainContent() {
                   </div>
                 )}
 
-                {isAnalyzeModeActive && (
-                  <div className="flex justify-start">
-                    <div className="w-full max-w-full space-y-3">
-                      <div className="bg-background border rounded-2xl shadow-sm overflow-hidden p-4" data-testid="component-analyze-active">
-                        <AnalyzeInterface
-                          onQuerySubmit={handleChatSubmit}
-                          isLoading={isAnalyzeLoading || isGeckoLoading}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {isGeckoLoading && (
                   <div className="flex justify-start">
                     <div className="max-w-[70%] px-4 py-2 rounded-2xl bg-muted text-muted-foreground text-sm shadow-sm">
@@ -1382,11 +1368,6 @@ export default function MainContent() {
                         onAnalyzeModeRequest={activateAnalyzeMode}
                         onAnalyzeModeExit={exitAnalyzeMode}
                       />
-                      {isAnalyzeModeActive && isAnalyzeLoading && (
-                        <p className="text-xs text-muted-foreground px-2">
-                          Gathering market data…
-                        </p>
-                      )}
                     </div>
                   </>
                 )}
@@ -1440,11 +1421,6 @@ export default function MainContent() {
                   onAnalyzeModeRequest={activateAnalyzeMode}
                   onAnalyzeModeExit={exitAnalyzeMode}
                 />
-                {isAnalyzeModeActive && isAnalyzeLoading && (
-                  <p className="text-xs text-muted-foreground px-2 text-left">
-                    Gathering market data…
-                  </p>
-                )}
               </div>
             )}
 
